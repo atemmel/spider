@@ -1,5 +1,7 @@
 #include <ncurses.h>
 #include <filesystem>
+#include <string>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -21,8 +23,12 @@ void print_dirs()
 
 	for(auto & it : fs::directory_iterator(current_path) )
 	{
+		std::string path = it.path().string();
+		int last_sep = path.find_last_of('/');
+
 		index == n_index ? attron(A_REVERSE) : attroff(A_REVERSE);
-		mvprintw(n_index + oy, ox, " %s", fs::relative(it.path() ).c_str() );
+		mvprintw(n_index + oy, ox, " %s", path.c_str() + last_sep + 1);
+
 		++n_index;
 	}
 
@@ -33,7 +39,14 @@ void enter_dir()
 {
 	auto it = fs::directory_iterator(current_path);
 	for(int i = 0; i < index; i++) ++it;
-	current_path /= it->path();
+		
+	index = 0;
+
+	if(fs::is_directory(it->path() ) )
+	{
+		current_path /= it->path();
+		return;
+	}
 }
 
 void process_input(char input)
@@ -43,13 +56,12 @@ void process_input(char input)
 		case 68:	/* Left */
 		case 'h':
 			clear();
-			printw("LEFT\n");
 			current_path = current_path.parent_path();
+			index = 0;
 			break;
 		case 67:	/* Right */
 		case 'l':
 			clear();
-			printw("RIGHT\n");
 			enter_dir();
 			break;
 		case 66:	/* Down */
@@ -78,14 +90,20 @@ int main()
 	start_color(); //Check for return
 	init_pair(1, 4, COLOR_BLACK);
 
-	while(c != 'q')
+	try
 	{
-		print_header();
-		print_dirs();
-		c = getch();
-		process_input(c);
+		while(c != 'q')
+		{
+			print_header();
+			print_dirs();
+			c = getch();
+			process_input(c);
+		}
 	}
-
+	catch(...)
+	{
+		std::cerr << "Unexpected execption caught\n";
+	}
 
 	endwin();
 }
