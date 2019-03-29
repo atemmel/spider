@@ -75,18 +75,21 @@ void print_header()
 void print_dirs()
 {
 	constexpr int ox = 0, oy = 1;
-	std::string path;
-	n_index = 0;
+	int limit = oy + index - (window_height >> 1), y = 0;
+	auto it = entries.begin();
 
-	for(auto &entry : entries)
+	if(limit < 0) limit = 0;
+	for(int i = 0; i < limit; i++) ++it;
+
+	for(int i = 0; it != entries.end(); i++, it++)
 	{
-		int last_sep = entry.name.find_last_of('/');
+		int last_sep = it->name.find_last_of('/');
 
-		index == n_index ? attron(A_REVERSE) : attroff(A_REVERSE);
-		mvprintw(n_index + oy, ox, " %s", entry.name.substr(last_sep + 1, window_width - ox).c_str() );
+		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
+		mvprintw(i + oy, ox, " %s", it->name.substr(last_sep + 1, window_width - ox).c_str() );
 
-		++n_index;
 	}
+	
 
 	attroff(A_REVERSE);
 }
