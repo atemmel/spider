@@ -27,12 +27,12 @@ struct FileEntryComp
 	{
 		if(fs::is_directory(rhs.type) )
 		{
-			if(fs::is_directory(lhs.type) ) return lhs.name < rhs.name;
+			if(fs::is_directory(lhs.type) ) return caseInsensitive(lhs.name, rhs.name);
 			else return false;
 		}
 		else if(fs::is_directory(lhs.type) ) return true;
 
-		return lhs.name < rhs.name;
+		return caseInsensitive(lhs.name, rhs.name); 
 	}
 
 private:
@@ -42,11 +42,16 @@ private:
 
 		while(lit != lhs.end() && rit != rhs.end() )
 		{
-			if(toupper(*lit) < toupper(*rit) ) return true;
-			++lit, ++rit;
+			char a = toupper(*lit), b = toupper(*rit);
+
+			if(a < b) return true;
+			else if(a > b) return false;
+
+			++lit;
+			++rit;
 		}
 
-		return lit == lhs.end();
+		return lit == lhs.end() && rit != rhs.end();
 	}
 };
 
