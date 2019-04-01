@@ -28,11 +28,25 @@ struct FileEntryComp
 		if(fs::is_directory(rhs.type) )
 		{
 			if(fs::is_directory(lhs.type) ) return lhs.name < rhs.name;
-			else return true;
+			else return false;
 		}
-		else if(fs::is_directory(lhs.type) ) return false;
+		else if(fs::is_directory(lhs.type) ) return true;
 
 		return lhs.name < rhs.name;
+	}
+
+private:
+	bool caseInsensitive(const std::string &lhs, const std::string &rhs)
+	{
+		auto lit = lhs.begin(), rit = rhs.begin();
+
+		while(lit != lhs.end() && rit != rhs.end() )
+		{
+			if(toupper(*lit) < toupper(*rit) ) return true;
+			++lit, ++rit;
+		}
+
+		return lit == lhs.end();
 	}
 };
 
@@ -75,10 +89,13 @@ void print_header()
 void print_dirs()
 {
 	constexpr int ox = 0, oy = 1;
-	int limit = oy + index - (window_height >> 1), y = 0;
+	const int upperLimit = std::abs(n_index - window_height + oy);
+	int limit = oy + index - (window_height >> 1);
 	auto it = entries.begin();
+	std::string blanks(window_width, ' ');
+	
+	limit = std::clamp(limit, 0, upperLimit);
 
-	if(limit < 0) limit = 0;
 	for(int i = 0; i < limit; i++) ++it;
 
 	for(int i = 0; it != entries.end(); i++, it++)
@@ -86,8 +103,9 @@ void print_dirs()
 		int last_sep = it->name.find_last_of('/');
 
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
+		mvprintw(i + oy, ox, "%s", blanks.c_str() );
 		mvprintw(i + oy, ox, " %s", it->name.substr(last_sep + 1, window_width - ox).c_str() );
-
+		
 	}
 	
 
@@ -101,7 +119,6 @@ void enter_dir()
 	if(fs::is_directory(path) )
 	{
 		current_path /= path;
-		std::cerr << current_path.c_str() << '\n';
 		fill_list();
 		index = 0;
 	}
