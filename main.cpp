@@ -185,6 +185,7 @@ int main(int argc, char** argv)
 	current_path = fs::current_path();
 	fill_list();
 
+	setlocale(LC_ALL, "");
 	initscr();
 	noecho();
 	timeout(tick_rate);
