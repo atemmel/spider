@@ -8,6 +8,9 @@
 #include <string>
 #include <list>
 
+#include <unistd.h>
+#include <sys/types.h>
+
 namespace fs = std::filesystem;
 
 struct FileEntry
@@ -141,6 +144,23 @@ void enter_dir() //TODO: Camelcase
 	}
 }
 
+void createTerminal()
+{
+	endwin();
+	pid_t pid = fork();
+
+	if(pid == 0)	//Child process
+	{
+		system("urxvt");
+		exit(0);
+	}
+	else
+	{
+		//Parent process
+		initscr();
+	}
+}
+
 void process_input(char input) //TODO: Camelcase
 {
 	switch(input)
@@ -151,6 +171,9 @@ void process_input(char input) //TODO: Camelcase
 			endwin();
 			system("bash");
 			initscr();
+			break;
+		case 'S':
+			createTerminal();
 			break;
 		case 68:	/* Left */
 		case 'h':
