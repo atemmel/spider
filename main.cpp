@@ -128,6 +128,7 @@ void enter_dir() //TODO: Camelcase
 	if(fs::is_directory(path) )
 	{
 		current_path /= path;
+		fs::current_path(current_path);
 		fill_list();
 		index = 0;
 	}
@@ -135,7 +136,7 @@ void enter_dir() //TODO: Camelcase
 	{	
 		endwin();
 		//TODO: Move into config/similar
-		system( ("nvim " + (current_path / path).string() ).c_str() );
+		system( ("nvim " + (path).string() ).c_str() );
 		initscr();
 	}
 }
@@ -146,10 +147,16 @@ void process_input(char input) //TODO: Camelcase
 	{
 		case -1: 
 			break;
+		case's':
+			endwin();
+			system("bash");
+			initscr();
+			break;
 		case 68:	/* Left */
 		case 'h':
 			clear();
 			current_path = current_path.parent_path();
+			fs::current_path(current_path);
 			index = 0;
 			fill_list();
 			break;
