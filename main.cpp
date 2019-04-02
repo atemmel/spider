@@ -18,6 +18,7 @@ struct FileEntry
 
 using EntryIterator = std::list<FileEntry>::iterator;
 
+//TODO: Move to separate header/impl
 /**
  *	Implements less-than comparison between two file entries
  */
@@ -57,7 +58,8 @@ private:
 
 constexpr unsigned tick_rate = 300; //ms
 
-std::list<FileEntry> entries;
+//TODO: Wrap in global object
+std::list<FileEntry> entries;	//TODO: Benchmark std::list vs std::vector on "final" product
 fs::path current_path;
 EntryIterator entryIterator;
 int index = 0;
@@ -65,7 +67,7 @@ int n_index = 0;
 int window_width = 0;
 int window_height = 0;
 
-void fill_list()
+void fill_list() //TODO: Camelcase
 {
 	entries.clear();
 	FileEntry entry;
@@ -84,14 +86,14 @@ void fill_list()
 	entryIterator = entries.begin();
 }
 
-void print_header()
+void print_header() //TODO: Camelcase
 {
 	attron(A_BOLD | COLOR_PAIR(1) );
 	mvprintw(0, 0, current_path.string().substr(0, window_width).c_str() );
 	attroff(A_BOLD | COLOR_PAIR(1) );
 }
 
-void print_dirs()
+void print_dirs() //TODO: Camelcase
 {
 	constexpr int ox = 0, oy = 1;
 	const int upperLimit = std::abs(n_index - window_height + oy);
@@ -107,9 +109,11 @@ void print_dirs()
 	{
 		int last_sep = it->name.find_last_of('/');
 
-		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
+		attroff(A_REVERSE);
 		mvprintw(i + oy, ox, "%s", blanks.c_str() );
-		mvprintw(i + oy, ox, " %s", it->name.substr(last_sep + 1, window_width - ox).c_str() );
+		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
+		fs::is_directory(it->type) ? attron(A_BOLD) : attroff(A_BOLD);
+		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
 		
 	}
 	
@@ -117,7 +121,7 @@ void print_dirs()
 	attroff(A_REVERSE);
 }
 
-void enter_dir()
+void enter_dir() //TODO: Camelcase
 {
 	fs::path path(entryIterator->name);
 
@@ -127,9 +131,16 @@ void enter_dir()
 		fill_list();
 		index = 0;
 	}
+	else 
+	{	
+		endwin();
+		//TODO: Move into config/similar
+		system( ("nvim " + (current_path / path).string() ).c_str() );
+		initscr();
+	}
 }
 
-void process_input(char input)
+void process_input(char input) //TODO: Camelcase
 {
 	switch(input)
 	{
@@ -178,8 +189,8 @@ int main(int argc, char** argv)
 	noecho();
 	timeout(tick_rate);
 	curs_set(0);
-	start_color(); //Check for return
-	init_pair(1, 4, COLOR_BLACK);
+	start_color();	//TODO: Check for return
+	init_pair(1, COLOR_BLUE, COLOR_BLACK);
 
 	try
 	{
