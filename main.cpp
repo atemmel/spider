@@ -70,7 +70,7 @@ int n_index = 0;
 int window_width = 0;
 int window_height = 0;
 
-void fill_list() //TODO: Camelcase
+void fillList() 
 {
 	entries.clear();
 	FileEntry entry;
@@ -89,14 +89,14 @@ void fill_list() //TODO: Camelcase
 	entryIterator = entries.begin();
 }
 
-void print_header() //TODO: Camelcase
+void printHeader() 
 {
 	attron(A_BOLD | COLOR_PAIR(1) );
 	mvprintw(0, 0, current_path.string().substr(0, window_width).c_str() );
 	attroff(A_BOLD | COLOR_PAIR(1) );
 }
 
-void print_dirs() //TODO: Camelcase
+void printDirs() 
 {
 	constexpr int ox = 0, oy = 1;
 	const int upperLimit = std::abs(n_index - window_height + oy);
@@ -124,7 +124,7 @@ void print_dirs() //TODO: Camelcase
 	attroff(A_REVERSE);
 }
 
-void enter_dir() //TODO: Camelcase
+void enterDir() 
 {
 	fs::path path(entryIterator->name);
 
@@ -132,7 +132,7 @@ void enter_dir() //TODO: Camelcase
 	{
 		current_path /= path;
 		fs::current_path(current_path);
-		fill_list();
+		fillList();
 		index = 0;
 	}
 	else 
@@ -154,19 +154,17 @@ void createTerminal()
 		system("urxvt");
 		exit(0);
 	}
-	else
+	else //Parent process (Original)
 	{
-		//Parent process
 		initscr();
 	}
 }
 
-void process_input(char input) //TODO: Camelcase
+void processInput(char input) 
 {
 	switch(input)
 	{
-		case -1: 
-			break;
+		case -1: break;
 		case's':
 			endwin();
 			system("bash");
@@ -181,12 +179,12 @@ void process_input(char input) //TODO: Camelcase
 			current_path = current_path.parent_path();
 			fs::current_path(current_path);
 			index = 0;
-			fill_list();
+			fillList();
 			break;
 		case 67:	/* Right */
 		case 'l':
 			clear();
-			enter_dir();
+			enterDir();
 			break;
 		case 66:	/* Down */
 		case 'j':
@@ -213,7 +211,7 @@ int main(int argc, char** argv)
 {
 	char c = '\0';
 	current_path = fs::current_path();
-	fill_list();
+	fillList();
 
 	setlocale(LC_ALL, "");
 	initscr();
@@ -221,17 +219,17 @@ int main(int argc, char** argv)
 	timeout(tick_rate);
 	curs_set(0);
 	start_color();	//TODO: Check for return
-	init_pair(1, COLOR_BLUE, COLOR_BLACK);
+	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config
 
 	try
 	{
 		while(c != 'q')
 		{
 			getmaxyx(stdscr, window_height, window_width);
-			print_header();
-			print_dirs();
+			printHeader();
+			printDirs();
 			c = getch();
-			process_input(c);
+			processInput(c);
 		}
 	}
 	catch(...)
