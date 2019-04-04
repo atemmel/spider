@@ -1,3 +1,6 @@
+#include "prompt.hpp"
+#include "utils.hpp"
+
 // External dependencies
 #include <ncurses.h>
 
@@ -5,11 +8,9 @@
 #include <filesystem>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <list>
-
-#include <unistd.h>
-#include <sys/types.h>
 
 namespace fs = std::filesystem;
 
@@ -18,8 +19,6 @@ struct FileEntry
 	std::string name;
 	fs::file_status type;
 };
-
-using EntryIterator = std::list<FileEntry>::iterator;
 
 //TODO: Move to separate header/impl
 /**
@@ -63,8 +62,8 @@ constexpr unsigned tick_rate = 300; //ms
 
 //TODO: Wrap in global object
 std::list<FileEntry> entries;	//TODO: Benchmark std::list vs std::vector on "final" product
+std::list<FileEntry>::iterator entryIterator;
 fs::path current_path;
-EntryIterator entryIterator;
 int index = 0;
 int n_index = 0;
 int window_width = 0;
@@ -119,7 +118,6 @@ void printDirs()
 		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
 		
 	}
-	
 
 	attroff(A_REVERSE);
 }
@@ -146,18 +144,10 @@ void enterDir()
 
 void createTerminal()
 {
-	endwin();
-	pid_t pid = fork();
-
-	if(pid == 0)	//Child process
+	createProcess([]()
 	{
 		system("urxvt");
-		exit(0);
-	}
-	else //Parent process (Original)
-	{
-		initscr();
-	}
+	});
 }
 
 void processInput(char input) 
@@ -203,6 +193,13 @@ void processInput(char input)
 				index = n_index - 1;
 				entryIterator = entries.end(), --entryIterator;
 			}
+			break;
+		case 'c':
+			auto fileName = prompt("Name of file:");
+			std::ofstream file(fileName.c_str() );
+			fillList();
+			printHeader();
+			printDirs();
 			break;
 	}
 }
