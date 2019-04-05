@@ -196,6 +196,7 @@ void processInput(char input)
 			break;
 		case 'c':
 			auto fileName = prompt("Name of file:");
+			if(fs::exists(fileName.c_str() ) ) return;
 			std::ofstream file(fileName.c_str() );
 			fillList();
 			printHeader();
