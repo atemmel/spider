@@ -15,7 +15,6 @@ void createProcess(T function)
 	if(pid == 0)	//Child process
 	{
 		function();
-		//system("urxvt");
 		std::exit(EXIT_SUCCESS);
 	}
 	else //Parent process (Original)
@@ -23,4 +22,22 @@ void createProcess(T function)
 		initscr();
 	}
 
+}
+
+bool caseInsensitiveComparison(const std::string &lhs, const std::string &rhs)
+{
+	auto lit = lhs.begin(), rit = rhs.begin();
+
+	while(lit != lhs.end() && rit != rhs.end() )
+	{
+		char a = toupper(*lit), b = toupper(*rit);
+
+		if(a < b) return true;
+		else if(a > b) return false;
+
+		++lit;
+		++rit;
+	}
+
+	return lit == lhs.end() && rit != rhs.end();
 }

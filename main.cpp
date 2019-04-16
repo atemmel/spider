@@ -30,31 +30,12 @@ struct FileEntryComp
 	{
 		if(fs::is_directory(rhs.type) )
 		{
-			if(fs::is_directory(lhs.type) ) return caseInsensitive(lhs.name, rhs.name);
+			if(fs::is_directory(lhs.type) ) return caseInsensitiveComparison(lhs.name, rhs.name);
 			else return false;
 		}
 		else if(fs::is_directory(lhs.type) ) return true;
 
-		return caseInsensitive(lhs.name, rhs.name); 
-	}
-
-private:
-	bool caseInsensitive(const std::string &lhs, const std::string &rhs)
-	{
-		auto lit = lhs.begin(), rit = rhs.begin();
-
-		while(lit != lhs.end() && rit != rhs.end() )
-		{
-			char a = toupper(*lit), b = toupper(*rit);
-
-			if(a < b) return true;
-			else if(a > b) return false;
-
-			++lit;
-			++rit;
-		}
-
-		return lit == lhs.end() && rit != rhs.end();
+		return caseInsensitiveComparison(lhs.name, rhs.name); 
 	}
 };
 
@@ -76,7 +57,7 @@ void findPath()
 
 	while(c != 27)
 	{
-		c = continuousPrompt(str, "Go:");
+		c = Prompt::get(str, "Go:");
 
 		if(c != '\0') str.push_back(c);
 
@@ -100,9 +81,7 @@ void fillList()
 		++n_index;
 	}
 
-	//entries.sort(FileEntryComp{} );
 	std::sort(entries.begin(), entries.end(), FileEntryComp() );
-	//entryIterator = entries.begin();
 }
 
 void printHeader() 
@@ -141,7 +120,6 @@ void printDirs()
 
 void enterDir() 
 {
-	//fs::path path(entryIterator->name);
 	fs::path path(entries[index].name);
 
 	if(fs::is_directory(path) )
@@ -164,6 +142,7 @@ void createTerminal()
 {
 	createProcess([]()
 	{
+		//TODO: Move into config/similar
 		system("urxvt");
 	});
 }
@@ -205,7 +184,7 @@ void processInput(char input)
 			if(index < 0) index = n_index - 1;
 			break;
 		case 'c':
-			auto fileName = prompt("Name of file:");
+			auto fileName = Prompt::getString("Name of file:");
 			if(fs::exists(fileName.c_str() ) ) return;
 			std::ofstream file(fileName.c_str() );
 			fillList();
