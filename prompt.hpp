@@ -84,6 +84,6 @@ namespace Prompt
 
 		exit(x, y);
 
-		return isprint(c) || c == 27 ? c : '\0';
+		return isprint(c) || c == 27 || c == ' ' || c == 127 ? c : '\0';
 	}
 }

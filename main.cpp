@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -45,77 +46,22 @@ constexpr unsigned tick_rate = 300; //ms
 std::vector<FileEntry> entries;	
 fs::path current_path;
 int index = 0;
-int n_index = 0;
 int window_width = 0;
 int window_height = 0;
-
-//TODO: Implement function
-void findPath()
-{
-	std::string str;
-	char c = '\0';
-
-	while(c != 27)
-	{
-		c = Prompt::get(str, "Go:");
-
-		if(c != '\0') str.push_back(c);
-
-		//if(fileLike(str) open(str);
-	}
-
-}
 
 void fillList() 
 {
 	entries.clear();
 	FileEntry entry;
 
-	n_index = 0;
-
 	for(auto &it : fs::directory_iterator(current_path) )
 	{
 		entry.name = std::move(it.path().string() );
 		entry.type = it.status();
 		entries.push_back(entry);
-		++n_index;
 	}
 
 	std::sort(entries.begin(), entries.end(), FileEntryComp() );
-}
-
-void printHeader() 
-{
-	attron(A_BOLD | COLOR_PAIR(1) );
-	mvprintw(0, 0, current_path.string().substr(0, window_width).c_str() );
-	attroff(A_BOLD | COLOR_PAIR(1) );
-}
-
-void printDirs() 
-{
-	constexpr int ox = 0, oy = 1;
-	const int upperLimit = std::abs(n_index - window_height + oy);
-	int limit = oy + index - (window_height >> 1);
-	auto it = entries.begin();
-	std::string blanks(window_width, ' ');
-	
-	limit = std::clamp(limit, 0, upperLimit);
-
-	for(int i = 0; i < limit; i++) ++it;
-
-	for(int i = 0; it != entries.end(); i++, it++)
-	{
-		int last_sep = it->name.find_last_of('/');
-
-		attroff(A_REVERSE);
-		mvprintw(i + oy, ox, "%s", blanks.c_str() );
-		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
-		fs::is_directory(it->type) ? attron(A_BOLD) : attroff(A_BOLD);
-		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
-		
-	}
-
-	attroff(A_REVERSE);
 }
 
 void enterDir() 
@@ -138,6 +84,77 @@ void enterDir()
 	}
 }
 
+void printHeader() 
+{
+	attron(A_BOLD | COLOR_PAIR(1) );
+	mvprintw(0, 0, current_path.string().substr(0, window_width).c_str() );
+	attroff(A_BOLD | COLOR_PAIR(1) );
+}
+
+void printDirs() 
+{
+	constexpr int ox = 0, oy = 1;
+	const int upperLimit = std::abs(static_cast<int>(entries.size() ) - window_height + oy);
+	int limit = oy + static_cast<int>(index) - (window_height >> 1);
+	auto it = entries.begin();
+	std::string blanks(window_width, ' ');
+	
+	limit = std::clamp(limit, 0, upperLimit);
+
+	it += limit;
+
+	for(int i = 0; it != entries.end(); i++, it++)
+	{
+		int last_sep = it->name.find_last_of('/');
+
+		attroff(A_REVERSE);
+		mvprintw(i + oy, ox, "%s", blanks.c_str() );
+		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
+		fs::is_directory(it->type) ? attron(A_BOLD) : attroff(A_BOLD);
+		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
+		
+	}
+
+	attroff(A_REVERSE);
+}
+
+void findPath()
+{
+	std::string input;
+	char c = '\0';
+	bool consecutive = false;
+
+	while(1)
+	{
+		c = Prompt::get(input, "Go:");
+
+		if(c == 127 && !input.empty() ) input.pop_back();
+		else if(c == 27) break;
+		else if(c != '\0') input.push_back(c);
+
+		if(input.empty() ) continue;
+
+		for(size_t i = 0; i < entries.size(); i++)
+		{
+			std::string str = entries[i].name;
+			str = str.substr(str.find_last_of('/') + 1);
+
+			if(startsWith(str, input) ) 
+			{
+				index = static_cast<int>(i);
+				consecutive = !consecutive;
+			}
+			else if(consecutive) 
+			{
+				clear();
+				enterDir();
+				return;
+			}
+		}
+	}
+
+}
+
 void createTerminal()
 {
 	createProcess([]()
@@ -149,6 +166,10 @@ void createTerminal()
 
 void processInput(char input) 
 {
+
+	std::string fileName;
+	std::ofstream file;
+
 	switch(input)
 	{
 		case -1: break;
@@ -176,24 +197,24 @@ void processInput(char input)
 		case 66:	/* Down */
 		case 'j':
 			++index;
-			if(index >= n_index)  index = 0;
+			if(index >= static_cast<int>(entries.size() ) )  index = 0;
 			break;
 		case 65:	/* Up */
 		case 'k':
 			--index;
-			if(index < 0) index = n_index - 1;
+			if(index < 0) index = entries.size() - 1;
 			break;
 		case 'c':
-			auto fileName = Prompt::getString("Name of file:");
+			fileName = Prompt::getString("Name of file:");
 			if(fs::exists(fileName.c_str() ) ) return;
-			std::ofstream file(fileName.c_str() );
+			file.open(fileName.c_str() );
 			fillList();
 			printHeader();
 			printDirs();
 			break;
-		//case 'f':
-			//findPath();
-			//break;
+		case 'f':
+			findPath();
+			break;
 	}
 }
 
