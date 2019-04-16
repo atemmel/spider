@@ -10,7 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <list>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -61,13 +61,29 @@ private:
 constexpr unsigned tick_rate = 300; //ms
 
 //TODO: Wrap in global object
-std::list<FileEntry> entries;	//TODO: Benchmark std::list vs std::vector on "final" product
-std::list<FileEntry>::iterator entryIterator;
+std::vector<FileEntry> entries;	
 fs::path current_path;
 int index = 0;
 int n_index = 0;
 int window_width = 0;
 int window_height = 0;
+
+//TODO: Implement function
+void findPath()
+{
+	std::string str;
+	char c = '\0';
+
+	while(c != 27)
+	{
+		c = continuousPrompt(str, "Go:");
+
+		if(c != '\0') str.push_back(c);
+
+		//if(fileLike(str) open(str);
+	}
+
+}
 
 void fillList() 
 {
@@ -84,8 +100,9 @@ void fillList()
 		++n_index;
 	}
 
-	entries.sort(FileEntryComp{} );
-	entryIterator = entries.begin();
+	//entries.sort(FileEntryComp{} );
+	std::sort(entries.begin(), entries.end(), FileEntryComp() );
+	//entryIterator = entries.begin();
 }
 
 void printHeader() 
@@ -124,7 +141,8 @@ void printDirs()
 
 void enterDir() 
 {
-	fs::path path(entryIterator->name);
+	//fs::path path(entryIterator->name);
+	fs::path path(entries[index].name);
 
 	if(fs::is_directory(path) )
 	{
@@ -178,21 +196,13 @@ void processInput(char input)
 			break;
 		case 66:	/* Down */
 		case 'j':
-			++index, ++entryIterator;
-			if(index >= n_index) 
-			{
-				index = 0;
-				entryIterator = entries.begin();
-			}
+			++index;
+			if(index >= n_index)  index = 0;
 			break;
 		case 65:	/* Up */
 		case 'k':
-			--index, --entryIterator;
-			if(index < 0) 
-			{
-				index = n_index - 1;
-				entryIterator = entries.end(), --entryIterator;
-			}
+			--index;
+			if(index < 0) index = n_index - 1;
 			break;
 		case 'c':
 			auto fileName = prompt("Name of file:");
@@ -202,10 +212,14 @@ void processInput(char input)
 			printHeader();
 			printDirs();
 			break;
+		//case 'f':
+			//findPath();
+			//break;
 	}
 }
 
-int main(int argc, char** argv)
+//int main(int argc, char** argv)
+int main()
 {
 	char c = '\0';
 	current_path = fs::current_path();
