@@ -10,13 +10,20 @@
 #include <fstream>
 #include <cassert>
 #include <vector>
+#include <limits>
 
 namespace fs = std::filesystem;
 
 struct FileEntry
 {
+	bool hasSize() const
+	{
+		return size == std::numeric_limits<std::uintmax_t>::max();
+	}
+
 	std::string name;
-	fs::file_status type;
+	fs::file_status status;
+	std::uintmax_t size;
 };
 
 //TODO: Move to separate header/impl
@@ -27,12 +34,12 @@ struct FileEntryComp
 {
 	bool operator()(const FileEntry &lhs, const FileEntry &rhs)
 	{
-		if(fs::is_directory(rhs.type) )
+		if(fs::is_directory(rhs.status) )
 		{
-			if(fs::is_directory(lhs.type) ) return caseInsensitiveComparison(lhs.name, rhs.name);
+			if(fs::is_directory(lhs.status) ) return caseInsensitiveComparison(lhs.name, rhs.name);
 			else return false;
 		}
-		else if(fs::is_directory(lhs.type) ) return true;
+		else if(fs::is_directory(lhs.status) ) return true;
 
 		return caseInsensitiveComparison(lhs.name, rhs.name); 
 	}
@@ -55,7 +62,11 @@ void fillList()
 	for(auto &it : fs::directory_iterator(current_path) )
 	{
 		entry.name = std::move(it.path().string() );
-		entry.type = it.status();
+		entry.status = it.status();
+
+		if(fs::is_regular_file(entry.status) || fs::is_symlink(entry.status) ) entry.size = fs::file_size(it);
+		else entry.size = std::numeric_limits<std::uintmax_t>::max();
+
 		entries.push_back(entry);
 	}
 
@@ -108,7 +119,7 @@ void printDirs()
 		attroff(A_REVERSE);
 		mvprintw(i + oy, ox, "%s", blanks.c_str() );
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
-		fs::is_directory(it->type) ? attron(A_BOLD) : attroff(A_BOLD);
+		fs::is_directory(it->status) ? attron(A_BOLD) : attroff(A_BOLD);
 		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
 		
 	}
