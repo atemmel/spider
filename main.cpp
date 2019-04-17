@@ -21,13 +21,13 @@ struct FileEntry
 	{
 		return size != std::numeric_limits<std::uintmax_t>::max();
 	}
-	
 
 	std::string name;
 	fs::file_status status;
 	std::uintmax_t size;
 	std::string sizeStr;
 };
+
 
 //TODO: Move to separate header/impl
 /**
@@ -100,7 +100,7 @@ void enterDir()
 	{	
 		endwin();
 		//TODO: Move into config/similar
-		system( ("nvim " + (path).string() ).c_str() );
+		system( ("xdg-open " + (path).string() ).c_str() );
 		initscr();
 	}
 }
@@ -120,7 +120,7 @@ void printDirs()
 	int limit = oy + static_cast<int>(index) - (window_height >> 1);
 	auto it = entries.begin();
 	std::string blanks(window_width, ' ');
-	constexpr std::string_view dirStr = "/..";
+	constexpr std::string_view dirStr = "/  ";
 	
 	if(static_cast<int>(entries.size() ) < window_height - oy) upperLimit = 0;
 	limit = std::clamp(limit, 0, upperLimit);
@@ -136,12 +136,11 @@ void printDirs()
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
 		fs::is_directory(it->status) ? attron(A_BOLD) : attroff(A_BOLD);
 
-		mvprintw(i + oy, ox, " %d %10s %s ", 
-					it->status.permissions(), 
+		mvprintw(i + oy, ox, " %o %10s %s ", 
+					static_cast<int>(it->status.permissions() ) & 00777, 
 					it->hasSize() ? it->sizeStr.c_str() : dirStr.data(), 
 					it->name.substr(last_sep + 1, window_width - ox).c_str() 
 				);
-		
 	}
 
 	attroff(A_REVERSE);
