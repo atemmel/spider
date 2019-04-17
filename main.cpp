@@ -81,7 +81,7 @@ struct FileEntryComp
 	}
 };
 
-constexpr unsigned tick_rate = 300; //ms
+constexpr unsigned tick_rate = 1000; //ms
 
 //TODO: Wrap in global object
 std::vector<FileEntry> entries;	
@@ -119,9 +119,14 @@ void enterDir()
 
 	if(fs::is_directory(path) )
 	{
+		std::string blanks(window_width, ' ');
 		current_path /= path;
 		fs::current_path(current_path);
+		int oldSize = entries.size() + 1;
 		fillList();
+		int newSize = entries.size() + 1;
+
+		for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
 		index = 0;
 	}
 	else 
@@ -135,6 +140,7 @@ void enterDir()
 
 void printHeader() 
 {
+	mvprintw(0, 0, std::string(window_width, ' ').c_str() );
 	attron(A_BOLD | COLOR_PAIR(1) );
 	mvprintw(0, 0, current_path.string().substr(0, window_width).c_str() );
 	attroff(A_BOLD | COLOR_PAIR(1) );
@@ -143,16 +149,16 @@ void printHeader()
 void printDirs() 
 {
 	constexpr int ox = 0, oy = 1;
-	const int upperLimit = std::abs(static_cast<int>(entries.size() ) - window_height + oy);
+	int upperLimit = std::abs(static_cast<int>(entries.size() ) - window_height + oy);
 	int limit = oy + static_cast<int>(index) - (window_height >> 1);
 	auto it = entries.begin();
 	std::string blanks(window_width, ' ');
-	constexpr std::string_view dirStr = "       DIR";
+	constexpr std::string_view dirStr = "/..";
 	
+	if(static_cast<int>(entries.size() ) < window_height - oy) upperLimit = 0;
 	limit = std::clamp(limit, 0, upperLimit);
 
 	it += limit;
-
 
 	for(int i = 0; it != entries.end(); i++, it++)
 	{
@@ -206,7 +212,6 @@ void findPath()
 
 			if(std::find(it + 1, bits.end(), true) == bits.end() )
 			{
-				clear();
 				enterDir();
 				return;
 			}
@@ -232,8 +237,9 @@ void createTerminal()
 void processInput(char input) 
 {
 
-	std::string fileName;
+	std::string fileName, blanks(window_width, ' ');
 	std::ofstream file;
+	int oldSize, newSize;
 
 	switch(input)
 	{
@@ -248,15 +254,18 @@ void processInput(char input)
 			break;
 		case 68:	/* Left */
 		case 'h':
-			clear();
 			current_path = current_path.parent_path();
 			fs::current_path(current_path);
 			index = 0;
+			oldSize = entries.size() + 1;
 			fillList();
+			newSize = entries.size() + 1;
+
+			for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
+			//fillList();
 			break;
 		case 67:	/* Right */
 		case 'l':
-			clear();
 			enterDir();
 			break;
 		case 66:	/* Down */

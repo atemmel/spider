@@ -18,7 +18,7 @@ void Prompt::exit(int x, int y)
 {
 	clear(x, y);
 	noecho();
-	timeout(300);
+	timeout(1000);
 }
 
 std::string Prompt::getString(const std::string &message)
