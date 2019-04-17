@@ -6,11 +6,9 @@
 
 // This looks good :)
 #include <filesystem>
-#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <cassert>
-#include <string>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -142,15 +140,6 @@ void findPath()
 			str = str.substr(str.find_last_of('/') + 1);
 
 			bits[i] = startsWith(str, input);
-			/*
-			 *
-			else if(consecutive) 
-			{
-				clear();
-				enterDir();
-				return;
-			}
-			*/
 		}
 
 		if(auto it = std::find(bits.begin(), bits.end(), true ); it != bits.end() )
