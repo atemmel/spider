@@ -40,3 +40,37 @@ void toUpper(std::string &str)
 		return std::toupper(c);
 	});
 }
+
+std::string bytesToString(std::uintmax_t bytes)
+{
+	constexpr std::string_view prefix[] = {"Byt", "KiB", "MiB", "GiB", "TiB"};
+	std::uintmax_t remainder = 0;
+	int i = 0;
+
+	while(bytes > 1024)
+	{
+		remainder = bytes & 1023; 
+		bytes >>= 10, ++i;
+	}
+
+	float right = static_cast<float>(remainder);
+
+	right /= 1024.f;	//normalize
+	right *= 10;		//Scale so that 0 > right > 10
+
+	right = static_cast<float>(static_cast<int>(right + 0.5f) );
+
+	std::string str(10, '\0');
+
+	if(right > 1.f)
+	{
+		std::snprintf(str.data(), str.size(), "%zu.%.0f%s", bytes, right, prefix[i].data() );
+	}
+	else
+	{
+		std::snprintf(str.data(), str.size(), "%zu%s", bytes, prefix[i].data() );
+	}
+
+	return str;
+}
+

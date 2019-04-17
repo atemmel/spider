@@ -14,6 +14,8 @@ bool startsWith(const std::string &origin, const std::string &match);
 
 void toUpper(std::string &str);
 
+std::string bytesToString(std::uintmax_t bytes);
+
 template<typename T>
 void createProcess(T function)
 {
