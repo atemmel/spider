@@ -5,6 +5,7 @@
 #include <ncurses.h>
 
 // This looks good :)
+#include <string_view>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -18,13 +19,48 @@ struct FileEntry
 {
 	bool hasSize() const
 	{
-		return size == std::numeric_limits<std::uintmax_t>::max();
+		return size != std::numeric_limits<std::uintmax_t>::max();
 	}
+	
 
 	std::string name;
 	fs::file_status status;
 	std::uintmax_t size;
+	std::string sizeStr;
 };
+
+std::string bytesToString(std::uintmax_t bytes)
+{
+	constexpr std::string_view prefix[] = {"Byt", "KiB", "MiB", "GiB", "TiB"};
+	std::uintmax_t remainder = 0;
+	int i = 0;
+
+	while(bytes > 1024)
+	{
+		remainder = bytes & 1023; 
+		bytes >>= 10, ++i;
+	}
+
+	float right = static_cast<float>(remainder);
+
+	right /= 1024.f;	//normalize
+	right *= 10;		//Scale so that 0 > right > 10
+
+	right = static_cast<float>(static_cast<int>(right + 0.5f) );
+
+	std::string str(10, '\0');
+
+	if(right > 1.f)
+	{
+		std::snprintf(str.data(), str.size(), "%zu.%.0f%s", bytes, right, prefix[i].data() );
+	}
+	else
+	{
+		std::snprintf(str.data(), str.size(), "%zu%s", bytes, prefix[i].data() );
+	}
+
+	return str;
+}
 
 //TODO: Move to separate header/impl
 /**
@@ -64,7 +100,11 @@ void fillList()
 		entry.name = std::move(it.path().string() );
 		entry.status = it.status();
 
-		if(fs::is_regular_file(entry.status) || fs::is_symlink(entry.status) ) entry.size = fs::file_size(it);
+		if(fs::is_regular_file(entry.status) || fs::is_symlink(entry.status) ) 
+		{
+			entry.size = fs::file_size(it);
+			entry.sizeStr = bytesToString(entry.size);
+		}
 		else entry.size = std::numeric_limits<std::uintmax_t>::max();
 
 		entries.push_back(entry);
@@ -107,10 +147,12 @@ void printDirs()
 	int limit = oy + static_cast<int>(index) - (window_height >> 1);
 	auto it = entries.begin();
 	std::string blanks(window_width, ' ');
+	constexpr std::string_view dirStr = "       DIR";
 	
 	limit = std::clamp(limit, 0, upperLimit);
 
 	it += limit;
+
 
 	for(int i = 0; it != entries.end(); i++, it++)
 	{
@@ -120,7 +162,12 @@ void printDirs()
 		mvprintw(i + oy, ox, "%s", blanks.c_str() );
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
 		fs::is_directory(it->status) ? attron(A_BOLD) : attroff(A_BOLD);
-		mvprintw(i + oy, ox, " %s ", it->name.substr(last_sep + 1, window_width - ox).c_str() );
+
+		mvprintw(i + oy, ox, " %d %10s %s ", 
+					it->status.permissions(), 
+					it->hasSize() ? it->sizeStr.c_str() : dirStr.data(), 
+					it->name.substr(last_sep + 1, window_width - ox).c_str() 
+				);
 		
 	}
 
