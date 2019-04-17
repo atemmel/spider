@@ -122,7 +122,7 @@ void findPath()
 {
 	std::string input;
 	char c = '\0';
-	bool consecutive = false;
+	std::vector<bool> bits(entries.size(), false);
 
 	while(1)
 	{
@@ -134,23 +134,41 @@ void findPath()
 
 		if(input.empty() ) continue;
 
+		std::fill(bits.begin(), bits.end(), false);
+
 		for(size_t i = 0; i < entries.size(); i++)
 		{
 			std::string str = entries[i].name;
 			str = str.substr(str.find_last_of('/') + 1);
 
-			if(startsWith(str, input) ) 
-			{
-				index = static_cast<int>(i);
-				consecutive = !consecutive;
-			}
+			bits[i] = startsWith(str, input);
+			/*
+			 *
 			else if(consecutive) 
 			{
 				clear();
 				enterDir();
 				return;
 			}
+			*/
 		}
+
+		if(auto it = std::find(bits.begin(), bits.end(), true ); it != bits.end() )
+		{
+			index = it - bits.begin();
+
+			if(std::find(it + 1, bits.end(), true) == bits.end() )
+			{
+				clear();
+				enterDir();
+				return;
+			}
+
+			printHeader();
+			printDirs();
+		}
+
+		
 	}
 
 }
