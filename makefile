@@ -1,5 +1,5 @@
 TARGET=spider
-LIBS=-lncursesw -lstdc++fs -std=c++17
+LIBS=-lncursesw -lstdc++fs -lmagic -std=c++17
 CFLAGS=-O3 -pedantic -Wall -Wextra
 SRCS=*.cpp
 CC=g++

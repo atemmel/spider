@@ -3,6 +3,7 @@
 
 // External dependencies
 #include <ncurses.h>
+#include <magic.h>
 
 // This looks good :)
 #include <string_view>
@@ -57,6 +58,8 @@ int index = 0;
 int window_width = 0;
 int window_height = 0;
 
+magic_t cookie;
+
 void fillList() 
 {
 	entries.clear();
@@ -99,8 +102,20 @@ void enterDir()
 	else 
 	{	
 		endwin();
-		//TODO: Move into config/similar
-		system( ("xdg-open " + (path).string() ).c_str() );
+
+		std::string mime = magic_file(cookie, path.c_str() );
+
+		if(mime.find("text") == 0)
+		{
+			system( ("nvim " + (path).string() ).c_str() );	//TODO: Move into config/similar
+		}
+		else //TODO: Spawn separate process so as to not block main program
+		{
+			system( ("xdg-open " + (path).string() ).c_str() );	//TODO: Move into config/similar
+		}
+
+		fillList();
+
 		initscr();
 	}
 }
@@ -273,6 +288,9 @@ int main()
 	start_color();	//TODO: Check for return
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config
 
+	cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
+	magic_load(cookie, 0);	//TODO: Check for return
+
 	try
 	{
 		while(c != 'q')
@@ -290,4 +308,5 @@ int main()
 	}
 
 	endwin();
+	magic_close(cookie);
 }
