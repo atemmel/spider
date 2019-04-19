@@ -109,9 +109,12 @@ void enterDir()
 		{
 			system( ("nvim " + (path).string() ).c_str() );	//TODO: Move into config/similar
 		}
-		else //TODO: Spawn separate process so as to not block main program
+		else 
 		{
-			system( ("xdg-open " + (path).string() ).c_str() );	//TODO: Move into config/similar
+			createProcess([&]()
+			{
+				system( ("xdg-open " + (path).string() ).c_str() );	//TODO: Move into config/similar
+			});
 		}
 
 		fillList();
