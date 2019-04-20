@@ -62,8 +62,11 @@ magic_t cookie;
 
 void fillList() 
 {
+	int oldSize = entries.size() + 1;
 	entries.clear();
+	int newSize = entries.size() + 1;
 	FileEntry entry;
+	std::string blanks(window_width, ' ');
 
 	for(auto &it : fs::directory_iterator(current_path) )
 	{
@@ -81,6 +84,7 @@ void fillList()
 	}
 
 	std::sort(entries.begin(), entries.end(), FileEntryComp() );
+	for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
 }
 
 void enterDir() 
@@ -89,14 +93,9 @@ void enterDir()
 
 	if(fs::is_directory(path) )
 	{
-		std::string blanks(window_width, ' ');
 		current_path /= path;
 		fs::current_path(current_path);
-		int oldSize = entries.size() + 1;
 		fillList();
-		int newSize = entries.size() + 1;
-
-		for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
 		index = 0;
 	}
 	else 
@@ -108,6 +107,7 @@ void enterDir()
 		if(mime.find("text") == 0)
 		{
 			system( ("nvim " + (path).string() ).c_str() );	//TODO: Move into config/similar
+			fillList();
 		}
 		else 
 		{
@@ -116,8 +116,6 @@ void enterDir()
 				system( ("xdg-open " + (path).string() ).c_str() );	//TODO: Move into config/similar
 			});
 		}
-
-		fillList();
 
 		initscr();
 	}
@@ -218,6 +216,23 @@ void createTerminal()
 	});
 }
 
+void deleteEntry()
+{
+	if(fs::is_directory(entries[index].status) )
+	{
+		int prompt = Prompt::get("", "Delete directory?(Y/N):");
+
+		if(prompt == 'y' || prompt == 'Y')
+		{
+			fs::remove_all(entries[index].name);
+		}
+	}
+	else
+	{
+		fs::remove(entries[index].name);
+	}
+}
+
 void processInput(int input) 
 {
 
@@ -273,6 +288,12 @@ void processInput(int input)
 			prompt = Prompt::getString("Name of directory:");
 			if(fs::exists(prompt.c_str() ) ) return;
 			fs::create_directory(prompt.c_str() );
+			fillList();
+			printHeader();
+			printDirs();
+			break;
+		case 'D':
+			deleteEntry();
 			fillList();
 			printHeader();
 			printDirs();

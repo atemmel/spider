@@ -56,7 +56,7 @@ std::string bytesToString(std::uintmax_t bytes)
 	float right = static_cast<float>(remainder);
 
 	right /= 1024.f;	//normalize
-	right *= 10;		//Scale so that 0 > right > 10
+	right *= 10.f;		//Scale so that 0 < right < 10
 
 	right = static_cast<float>(static_cast<int>(right + 0.5f) );
 
