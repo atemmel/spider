@@ -167,7 +167,7 @@ void printDirs()
 void findPath()
 {
 	std::string input;
-	char c = '\0';
+	int c = '\0';
 	std::vector<bool> bits(entries.size(), false);
 
 	while(1)
@@ -218,10 +218,10 @@ void createTerminal()
 	});
 }
 
-void processInput(char input) 
+void processInput(int input) 
 {
 
-	std::string fileName, blanks(window_width, ' ');
+	std::string prompt, blanks(window_width, ' ');
 	std::ofstream file;
 	int oldSize, newSize;
 
@@ -236,7 +236,7 @@ void processInput(char input)
 		case 'S':
 			createTerminal();
 			break;
-		case 68:	/* Left */
+		case KEY_LEFT:	/* Left */
 		case 'h':
 			current_path = current_path.parent_path();
 			fs::current_path(current_path);
@@ -246,26 +246,33 @@ void processInput(char input)
 			newSize = entries.size() + 1;
 
 			for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
-			//fillList();
 			break;
-		case 67:	/* Right */
+		case KEY_RIGHT:/* Right */
 		case 'l':
 			enterDir();
 			break;
-		case 66:	/* Down */
+		case KEY_DOWN:	/* Down */
 		case 'j':
 			++index;
 			if(index >= static_cast<int>(entries.size() ) )  index = 0;
 			break;
-		case 65:	/* Up */
+		case KEY_UP:	/* Up */
 		case 'k':
 			--index;
 			if(index < 0) index = entries.size() - 1;
 			break;
 		case 'c':
-			fileName = Prompt::getString("Name of file:");
-			if(fs::exists(fileName.c_str() ) ) return;
-			file.open(fileName.c_str() );
+			prompt = Prompt::getString("Name of file:");
+			if(fs::exists(prompt.c_str() ) ) return;
+			file.open(prompt.c_str() );
+			fillList();
+			printHeader();
+			printDirs();
+			break;
+		case 'C':
+			prompt = Prompt::getString("Name of directory:");
+			if(fs::exists(prompt.c_str() ) ) return;
+			fs::create_directory(prompt.c_str() );
 			fillList();
 			printHeader();
 			printDirs();
@@ -279,13 +286,14 @@ void processInput(char input)
 //int main(int argc, char** argv)
 int main()
 {
-	char c = '\0';
+	int c = '\0';
 	current_path = fs::current_path();
 	fillList();
 
 	setlocale(LC_ALL, "");
 	initscr();
 	noecho();
+	keypad(stdscr, TRUE);
 	timeout(tick_rate);
 	curs_set(0);
 	start_color();	//TODO: Check for return
@@ -304,12 +312,13 @@ int main()
 			c = getch();
 			processInput(c);
 		}
+		endwin();
 	}
 	catch(...)
 	{
+		endwin();
 		std::cerr << "Unexpected execption caught\n";
 	}
 
-	endwin();
 	magic_close(cookie);
 }
