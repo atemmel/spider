@@ -27,6 +27,7 @@ struct FileEntry
 	fs::file_status status;
 	std::uintmax_t size;
 	std::string sizeStr;
+	bool marked = 0;
 };
 
 
@@ -52,7 +53,8 @@ struct FileEntryComp
 constexpr unsigned tick_rate = 1000; //ms
 
 //TODO: Wrap in global object
-std::vector<FileEntry> entries;	
+using FileEntries = std::vector<FileEntry>;
+FileEntries entries;	
 fs::path current_path;
 int index = 0;
 int window_width = 0;
@@ -152,9 +154,10 @@ void printDirs()
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
 		fs::is_directory(it->status) ? attron(A_BOLD) : attroff(A_BOLD);
 
-		mvprintw(i + oy, ox, " %o %10s %s ", 
+		mvprintw(i + oy, ox, " %o %10s %s%s ", 
 					static_cast<int>(it->status.permissions() ) & 00777, 
 					it->hasSize() ? it->sizeStr.c_str() : dirStr.data(), 
+					it->marked ? "  " : "",
 					it->name.substr(last_sep + 1, window_width - ox).c_str() 
 				);
 	}
@@ -218,6 +221,36 @@ void createTerminal()
 
 void deleteEntry()
 {
+	auto marked = [](const FileEntry &entry)
+	{
+		return entry.marked;
+	};
+
+	auto it = std::find_if(entries.begin(), entries.end(), marked);
+
+	if(it != entries.end() )
+	{
+		std::vector<FileEntries::iterator> marks;
+		while(it != entries.end() )
+		{
+			marks.push_back(it);
+			it = std::find_if(it + 1, entries.end(), marked);
+		}
+
+		int prompt = Prompt::get("", "Delete " + std::to_string(marks.size() ) + " objects?(Y/N):");
+
+		if(prompt == 'y' || prompt == 'Y')
+		{
+			for(auto it : marks)
+			{
+				if(fs::is_directory(it->status) ) fs::remove_all(it->name);
+				else fs::remove(it->name);
+			}
+		}
+
+		return;
+	}
+
 	if(fs::is_directory(entries[index].status) )
 	{
 		int prompt = Prompt::get("", "Delete directory?(Y/N):");
@@ -294,12 +327,17 @@ void processInput(int input)
 			break;
 		case 'D':
 			deleteEntry();
+			index = 0;
 			fillList();
 			printHeader();
 			printDirs();
 			break;
 		case 'f':
 			findPath();
+			break;
+		case ' ':
+			entries[index].marked ^= 1;
+			printDirs();
 			break;
 	}
 }
