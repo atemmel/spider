@@ -268,10 +268,8 @@ void deleteEntry()
 
 void processInput(int input) 
 {
-
-	std::string prompt, blanks(window_width, ' ');
+	std::string prompt;
 	std::ofstream file;
-	int oldSize, newSize;
 
 	switch(input)
 	{
@@ -289,11 +287,7 @@ void processInput(int input)
 			current_path = current_path.parent_path();
 			fs::current_path(current_path);
 			index = 0;
-			oldSize = entries.size() + 1;
 			fillList();
-			newSize = entries.size() + 1;
-
-			for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
 			break;
 		case KEY_RIGHT:/* Right */
 		case 'l':
