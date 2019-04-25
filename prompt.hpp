@@ -9,7 +9,7 @@ class Prompt
 public:
 	static std::string getString(const std::string &message);
 
-	static char get(const std::string &value, const std::string &message);
+	static int get(const std::string &value, const std::string &message);
 
 private:
 	Prompt() = delete;
