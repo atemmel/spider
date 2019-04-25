@@ -24,7 +24,7 @@ void Prompt::exit(int x, int y)
 std::string Prompt::getString(const std::string &message)
 {
 	int x, y;
-	char c = 0;
+	int c = 0;
 	std::string in;
 
 	getmaxyx(stdscr, y, x);
@@ -56,7 +56,7 @@ std::string Prompt::getString(const std::string &message)
 				return in;
 		}
 
-		if(std::isprint(c) ) in.push_back(c);
+		if(std::isprint(c) || c > 127 ) in.push_back(c);
 	}
 
 	return "";
