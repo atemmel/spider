@@ -191,7 +191,7 @@ void findPath()
 			bits[i] = startsWith(str, input);
 		}
 
-		if(auto it = std::find(bits.begin(), bits.end(), true ); it != bits.end() )
+		if(auto it = std::find(bits.begin(), bits.end(), true); it != bits.end() )
 		{
 			index = it - bits.begin();
 
@@ -204,10 +204,7 @@ void findPath()
 			printHeader();
 			printDirs();
 		}
-
-		
 	}
-
 }
 
 void createTerminal()
@@ -247,7 +244,6 @@ void deleteEntry()
 				else fs::remove(it->name);
 			}
 		}
-
 		return;
 	}
 
@@ -266,7 +262,7 @@ void deleteEntry()
 	}
 }
 
-//TODO: Load bindings from file/similiar
+//TODO: Load bindings from file/similar
 /*
  *	h: Left (../)
  *	l: Right (go down/open)
