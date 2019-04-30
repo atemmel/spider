@@ -270,6 +270,8 @@ void processInput(int input)
 {
 	std::string prompt;
 	std::ofstream file;
+	std::error_code ec;
+	int c = 0;
 
 	switch(input)
 	{
@@ -314,7 +316,7 @@ void processInput(int input)
 		case 'C':
 			prompt = Prompt::getString("Name of directory:");
 			if(fs::exists(prompt.c_str() ) ) return;
-			fs::create_directory(prompt.c_str() );
+			fs::create_directory(prompt.c_str(), ec);
 			fillList();
 			printHeader();
 			printDirs();
@@ -333,6 +335,22 @@ void processInput(int input)
 			entries[index].marked ^= 1;
 			printDirs();
 			break;
+		case 'R':
+			prompt = Prompt::getString("New name:");
+			if(prompt.empty() ) return;
+			if(fs::exists(prompt.c_str() ) && prompt.find("..") != 0 && prompt != ".") 
+			{
+				c = Prompt::get("", "Warning: " + prompt + " already exists. Overwrite?(Y/N):");
+				if(c != 'Y' && c != 'y') return;
+			}
+			fs::rename(entries[index].name, prompt, ec);
+			printDirs();
+			break;
+	}
+
+	if(ec)
+	{
+		Prompt::get(ec.message(), "Operation failed: ");
 	}
 }
 
