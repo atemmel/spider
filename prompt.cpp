@@ -23,12 +23,10 @@ void Prompt::exit(int x, int y)
 
 std::string Prompt::getString(const std::string &message)
 {
-	int x, y;
-	int c = 0;
-	std::string in;
+	int x, y, c = 0;
+	std::string in = "";
 
 	getmaxyx(stdscr, y, x);
-	echo();
 	timeout(-1);
 
 	print(y, in.c_str(), message.c_str() );
@@ -39,33 +37,32 @@ std::string Prompt::getString(const std::string &message)
 
 		switch(c)
 		{
-			case '\b':
+			//case '\b':
 			case '\t':
 				continue;
-			case 127:
+			case KEY_BACKSPACE:
 				if(!in.empty() ) in.pop_back();
-				clear(x, y);
-				print(y, in.c_str(), message.c_str() );
 				break;
-			case 27:
-				exit(x, y);
+			case 27:	//ESC
+				Prompt::exit(x, y);
 				return "";
 			case '\n':
-				clear(x, y);
-				exit(x, y);
+				Prompt::exit(x, y);
 				return in;
+			default:
+				in.push_back(c);
 		}
 
-		if(std::isprint(c) || c > 127 ) in.push_back(c);
+		Prompt::clear(x, y);
+		Prompt::print(y, in.c_str(), message.c_str() );
 	}
 
-	return "";
+	return "";	//Only here so that all paths return a value
 }
 
-char Prompt::get(const std::string &value, const std::string &message)
+int Prompt::get(const std::string &value, const std::string &message)
 {
-	int x, y;
-	char c = 0;
+	int x, y, c = 0;
 	std::string in;
 
 	getmaxyx(stdscr, y, x);
@@ -78,5 +75,5 @@ char Prompt::get(const std::string &value, const std::string &message)
 
 	exit(x, y);
 
-	return isprint(c) || c == 27 || c == ' ' || c == 127 ? c : '\0';
+	return isprint(c) || c == 27 || c == ' ' || c == 127 || c > 127 ? c : '\0';
 }

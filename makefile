@@ -1,11 +1,22 @@
-TARGET=spider
-LIBS=-lncursesw -lstdc++fs -lmagic -std=c++17
-CFLAGS=-O3 -pedantic -Wall -Wextra
-SRCS=*.cpp
-CC=g++
+TARGET := spider
+RELEASE := $(TARGET)-release
+LDLIBS := -lncursesw -lstdc++fs -lmagic 
+CXXFLAGS := -pedantic -Wall -Wextra -std=c++17
+DBGFLAGS := -g
+RELEASEFLAGS := -O3
+SRC := $(wildcard *.cpp)
+OBJ := $(SRC:%.cpp=%.o)
+CC := g++
 
-$(TARGET): $(SRCS)
-	$(CC) -o $(TARGET) $(SRCS) $(LIBS) $(CFLAGS)
+all: debug $(TARGET)
+release: $(RELEASE)
+clean: rm $(TARGET) $(OBJ)
 
-test: $(TARGET)
-	./$(TARGET)
+$(TARGET): $(OBJ)
+	$(CC) -o $@ $^ $(LDLIBS) 
+
+debug: $(eval CXXFLAGS += $(DBGFLAGS))
+
+$(RELEASE): $(SRC)
+	$(CC) -o $@ $(SRC) $(LDLIBS) $(CXXFLAGS) $(RELEASEFLAGS)
+

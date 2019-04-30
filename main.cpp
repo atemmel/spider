@@ -106,7 +106,7 @@ void enterDir()
 
 		std::string mime = magic_file(cookie, path.c_str() );
 
-		if(mime.find("text") == 0)
+		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
 			system( ("nvim " + (path).string() ).c_str() );	//TODO: Move into config/similar
 			fillList();
@@ -191,7 +191,7 @@ void findPath()
 			bits[i] = startsWith(str, input);
 		}
 
-		if(auto it = std::find(bits.begin(), bits.end(), true ); it != bits.end() )
+		if(auto it = std::find(bits.begin(), bits.end(), true); it != bits.end() )
 		{
 			index = it - bits.begin();
 
@@ -204,10 +204,7 @@ void findPath()
 			printHeader();
 			printDirs();
 		}
-
-		
 	}
-
 }
 
 void createTerminal()
@@ -247,7 +244,6 @@ void deleteEntry()
 				else fs::remove(it->name);
 			}
 		}
-
 		return;
 	}
 
@@ -265,6 +261,19 @@ void deleteEntry()
 		fs::remove(entries[index].name);
 	}
 }
+
+//TODO: Load bindings from file/similar
+/*
+ *	h: Left (../)
+ *	l: Right (go down/open)
+ *	j: Down
+ *	k: Up
+ *	c: Create file
+ *	C: Create directoru
+ *	D: Delete item(s)
+ *	f: Fast travel
+ *	 : Mark item
+ */
 
 void processInput(int input) 
 {
@@ -307,7 +316,7 @@ void processInput(int input)
 			break;
 		case 'c':
 			prompt = Prompt::getString("Name of file:");
-			if(fs::exists(prompt.c_str() ) ) return;
+			if(prompt.empty() || fs::exists(prompt.c_str() ) ) return;
 			file.open(prompt.c_str() );
 			fillList();
 			printHeader();
@@ -315,8 +324,8 @@ void processInput(int input)
 			break;
 		case 'C':
 			prompt = Prompt::getString("Name of directory:");
-			if(fs::exists(prompt.c_str() ) ) return;
-			fs::create_directory(prompt.c_str(), ec);
+			if(prompt.empty() || fs::exists(prompt.c_str() ) ) return;
+			fs::create_directory(prompt.c_str() );
 			fillList();
 			printHeader();
 			printDirs();
@@ -344,6 +353,7 @@ void processInput(int input)
 				if(c != 'Y' && c != 'y') return;
 			}
 			fs::rename(entries[index].name, prompt, ec);
+			fillList();
 			printDirs();
 			break;
 	}
