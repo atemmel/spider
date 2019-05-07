@@ -372,18 +372,7 @@ int main()
 	current_path = fs::current_path();
 	fillList();
 
-	setlocale(LC_ALL, "");
-	initscr();
-	noecho();
-	keypad(stdscr, TRUE);
-	timeout(Global::tick);
-	curs_set(0);
-	start_color();	//TODO: Check for return
-	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config
-
-	Global::cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
-	magic_load(Global::cookie, 0);	//TODO: Check for return
-	git_libgit2_init();	//TODO: Check for return
+	Global::init();
 
 	try
 	{
@@ -395,16 +384,13 @@ int main()
 			c = getch();
 			processInput(c);
 		}
-		endwin();
+		Global::destroy();
 	}
 	catch(...)
 	{
-		endwin();
+		Global::destroy();
 		std::cerr << "Unexpected execption caught\n";
 	}
-
-	magic_close(Global::cookie);
-	git_libgit2_shutdown();
 
 	return 0;
 }
