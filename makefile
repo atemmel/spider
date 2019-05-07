@@ -1,22 +1,31 @@
 TARGET := spider
 RELEASE := $(TARGET)-release
-LDLIBS := -lncursesw -lstdc++fs -lmagic 
-CXXFLAGS := -pedantic -Wall -Wextra -std=c++17
+LDLIBS := -lncursesw -lstdc++fs -lmagic -lgit2
+CXXFLAGS := -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wno-unused-parameter -Wundef -Wcast-qual -Wshadow -Wredundant-decls -std=c++17
 DBGFLAGS := -g
-RELEASEFLAGS := -O3
+RELEASEFLAGS := -Ofast
 SRC := $(wildcard *.cpp)
 OBJ := $(SRC:%.cpp=%.o)
 CC := g++
 
-all: debug $(TARGET)
-release: $(RELEASE)
-clean: rm $(TARGET) $(OBJ)
+#release: release $(TARGET)
+
+#debug: debug $(TARGET)
+#$(RELEASE): $(SRC)
+	#$(CC) -o $@ $(SRC) $(LDLIBS) $(CXXFLAGS) $(RELEASEFLAGS)
+all: $(TARGET)
+
+.PHONY: clean
+clean: 
+	rm $(TARGET) $(OBJ)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $@ $^ $(LDLIBS) 
+	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
 
-debug: $(eval CXXFLAGS += $(DBGFLAGS))
+debug: clean
+	$(eval CXXFLAGS += $(DBGFLAGS))
+	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
 
-$(RELEASE): $(SRC)
-	$(CC) -o $@ $(SRC) $(LDLIBS) $(CXXFLAGS) $(RELEASEFLAGS)
-
+release: 
+	$(eval CXXFLAGS += $(RELEASEFLAGS))
+	$(CC) -o $(RELEASE) $(SRC) $(LDLIBS) $(CXXFLAGS) 

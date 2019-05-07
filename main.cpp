@@ -1,5 +1,6 @@
 #include "prompt.hpp"
 #include "utils.hpp"
+#include "git.hpp"
 
 // External dependencies
 #include <ncurses.h>
@@ -238,10 +239,10 @@ void deleteEntry()
 
 		if(prompt == 'y' || prompt == 'Y')
 		{
-			for(auto it : marks)
+			for(auto mark : marks)
 			{
-				if(fs::is_directory(it->status) ) fs::remove_all(it->name);
-				else fs::remove(it->name);
+				if(fs::is_directory(mark->status) ) fs::remove_all(mark->name);
+				else fs::remove(mark->name);
 			}
 		}
 		return;
@@ -356,6 +357,10 @@ void processInput(int input)
 			fillList();
 			printDirs();
 			break;
+		case 'G':
+			clear();
+			Git::activate(current_path.c_str() );
+			break;
 	}
 
 	if(ec)
@@ -367,7 +372,7 @@ void processInput(int input)
 //int main(int argc, char** argv)
 int main()
 {
-	int c = '\0';
+	int c = 0;
 	current_path = fs::current_path();
 	fillList();
 
@@ -382,6 +387,7 @@ int main()
 
 	cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
 	magic_load(cookie, 0);	//TODO: Check for return
+	git_libgit2_init();	//TODO: Check for return
 
 	try
 	{
@@ -402,4 +408,7 @@ int main()
 	}
 
 	magic_close(cookie);
+	git_libgit2_shutdown();
+
+	return 0;
 }
