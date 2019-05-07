@@ -14,8 +14,7 @@ all: $(TARGET)
 clean: 
 	rm $(TARGET) $(OBJ)
 
-debug: $(OBJ)
-	$(eval CXXFLAGS += $(DBGFLAGS))
+debug: $(eval CXXFLAGS += $(DBGFLAGS)) $(OBJ)
 	$(CC) -o $(TARGET) $^ $(LDLIBS)  $(CXXFLAGS)
 
 release: 
