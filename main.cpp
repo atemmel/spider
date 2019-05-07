@@ -1,10 +1,10 @@
 #include "prompt.hpp"
 #include "utils.hpp"
 #include "git.hpp"
+#include "global.hpp"
 
 // External dependencies
 #include <ncurses.h>
-#include <magic.h>
 
 // This looks good :)
 #include <string_view>
@@ -51,8 +51,6 @@ struct FileEntryComp
 	}
 };
 
-constexpr unsigned tick_rate = 1000; //ms
-
 //TODO: Wrap in global object
 using FileEntries = std::vector<FileEntry>;
 FileEntries entries;	
@@ -60,8 +58,6 @@ fs::path current_path;
 int index = 0;
 int window_width = 0;
 int window_height = 0;
-
-magic_t cookie;
 
 void fillList() 
 {
@@ -105,7 +101,7 @@ void enterDir()
 	{	
 		endwin();
 
-		std::string mime = magic_file(cookie, path.c_str() );
+		std::string mime = magic_file(Global::cookie, path.c_str() );
 
 		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
@@ -380,13 +376,13 @@ int main()
 	initscr();
 	noecho();
 	keypad(stdscr, TRUE);
-	timeout(tick_rate);
+	timeout(Global::tick);
 	curs_set(0);
 	start_color();	//TODO: Check for return
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config
 
-	cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
-	magic_load(cookie, 0);	//TODO: Check for return
+	Global::cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
+	magic_load(Global::cookie, 0);	//TODO: Check for return
 	git_libgit2_init();	//TODO: Check for return
 
 	try
@@ -407,7 +403,7 @@ int main()
 		std::cerr << "Unexpected execption caught\n";
 	}
 
-	magic_close(cookie);
+	magic_close(Global::cookie);
 	git_libgit2_shutdown();
 
 	return 0;

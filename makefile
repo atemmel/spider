@@ -8,24 +8,20 @@ SRC := $(wildcard *.cpp)
 OBJ := $(SRC:%.cpp=%.o)
 CC := g++
 
-#release: release $(TARGET)
-
-#debug: debug $(TARGET)
-#$(RELEASE): $(SRC)
-	#$(CC) -o $@ $(SRC) $(LDLIBS) $(CXXFLAGS) $(RELEASEFLAGS)
 all: $(TARGET)
 
 .PHONY: clean
 clean: 
 	rm $(TARGET) $(OBJ)
 
-$(TARGET): $(OBJ)
-	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
-
-debug: clean
+debug: $(OBJ)
 	$(eval CXXFLAGS += $(DBGFLAGS))
-	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
+	$(CC) -o $(TARGET) $^ $(LDLIBS)  $(CXXFLAGS)
 
 release: 
 	$(eval CXXFLAGS += $(RELEASEFLAGS))
 	$(CC) -o $(RELEASE) $(SRC) $(LDLIBS) $(CXXFLAGS) 
+
+$(TARGET): $(OBJ)
+	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
+

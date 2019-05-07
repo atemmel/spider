@@ -1,4 +1,5 @@
 #include "prompt.hpp"
+#include "global.hpp"
 
 void Prompt::clear(int x, int y)
 {
@@ -18,7 +19,7 @@ void Prompt::exit(int x, int y)
 {
 	clear(x, y);
 	noecho();
-	timeout(1000);
+	timeout(Global::tick);
 }
 
 std::string Prompt::getString(const std::string &message)
