@@ -108,6 +108,10 @@ void enterDir()
 			system( (Global::config.editor + " \"" + (path).string() + '\"').c_str() );
 			fillList();
 		}
+		else if(mime.find("application/x-pie-executable") == 0)
+		{
+			system(path.c_str() );
+		}
 		else 
 		{
 			createProcess([&]()
@@ -354,6 +358,10 @@ void processInput(int input)
 			break;
 		case 'm':
 			marks.clear();
+			break;
+		case 'a':
+			prompt = magic_file(Global::cookie, entries[index].name.c_str() );
+			c = Prompt::get(prompt, "MIME type: ");
 			break;
 	}
 
