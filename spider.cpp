@@ -107,7 +107,7 @@ void enterDir()
 
 			if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 			{
-				system( (Global::config.editor + ' ' + (path).string() ).c_str() );
+				system( (Global::config.editor + " \"" + (path).string() + '\"').c_str() );
 				fillList();
 			}
 			else 
