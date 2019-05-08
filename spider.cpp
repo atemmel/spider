@@ -28,7 +28,7 @@ struct FileEntry
 	fs::file_status status;
 	std::uintmax_t size;
 	std::string sizeStr;
-	bool marked = 0;
+	bool marked = 0;	//TODO: Refactor marked system into std::set implementation
 };
 
 
@@ -51,7 +51,6 @@ struct FileEntryComp
 	}
 };
 
-//TODO: Wrap in global object
 using FileEntries = std::vector<FileEntry>;
 FileEntries entries;	
 fs::path current_path;
@@ -101,18 +100,28 @@ void enterDir()
 	{	
 		endwin();
 
-		std::string mime = magic_file(Global::cookie, path.c_str() );
-
-		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
+		if(!Global::config.forkEditor)
 		{
-			system( ("nvim " + (path).string() ).c_str() );	//TODO: Move into config/similar
-			fillList();
+			std::string mime = magic_file(Global::cookie, path.c_str() );
+
+			if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
+			{
+				system( (Global::config.editor + ' ' + (path).string() ).c_str() );
+				fillList();
+			}
+			else 
+			{
+				createProcess([&]()
+				{
+					system( (Global::config.opener + ' ' + (path).string() ).c_str() );
+				});
+			}
 		}
 		else 
 		{
 			createProcess([&]()
 			{
-				system( ("xdg-open " + (path).string() ).c_str() );	//TODO: Move into config/similar
+				system( (Global::config.opener + ' ' + (path).string() ).c_str() );
 			});
 		}
 
@@ -209,7 +218,7 @@ void createTerminal()
 	createProcess([]()
 	{
 		//TODO: Move into config/similar
-		system("urxvt");
+		system(Global::config.terminal.data() );
 	});
 }
 
@@ -270,6 +279,8 @@ void deleteEntry()
  *	D: Delete item(s)
  *	f: Fast travel
  *	 : Mark item
+ *	R: Rename item
+ *	G: Enter git mode (experimental)
  */
 
 void processInput(int input) 
