@@ -14,6 +14,7 @@
 #include <cassert>
 #include <vector>
 #include <limits>
+#include <set>
 
 namespace fs = std::filesystem;
 
@@ -28,7 +29,6 @@ struct FileEntry
 	fs::file_status status;
 	std::uintmax_t size;
 	std::string sizeStr;
-	bool marked = 0;	//TODO: Refactor marked system into std::set implementation
 };
 
 
@@ -53,6 +53,7 @@ struct FileEntryComp
 
 using FileEntries = std::vector<FileEntry>;
 FileEntries entries;	
+std::set<std::string> marks;
 fs::path current_path;
 int index = 0;
 int window_width = 0;
@@ -163,7 +164,7 @@ void printDirs()
 		mvprintw(i + oy, ox, " %o %10s %s%s ", 
 					static_cast<int>(it->status.permissions() ) & 00777, 
 					it->hasSize() ? it->sizeStr.c_str() : dirStr.data(), 
-					it->marked ? "  " : "",
+					marks.find(it->name) != marks.end() ? " " : "",
 					it->name.substr(last_sep + 1, window_width - ox).c_str() 
 				);
 	}
@@ -217,38 +218,25 @@ void createTerminal()
 {
 	createProcess([]()
 	{
-		//TODO: Move into config/similar
 		system(Global::config.terminal.data() );
 	});
 }
 
 void deleteEntry()
 {
-	auto marked = [](const FileEntry &entry)
+	if(!marks.empty() )
 	{
-		return entry.marked;
-	};
-
-	auto it = std::find_if(entries.begin(), entries.end(), marked);
-
-	if(it != entries.end() )
-	{
-		std::vector<FileEntries::iterator> marks;
-		while(it != entries.end() )
-		{
-			marks.push_back(it);
-			it = std::find_if(it + 1, entries.end(), marked);
-		}
-
 		int prompt = Prompt::get("", "Delete " + std::to_string(marks.size() ) + " objects?(Y/N):");
 
 		if(prompt == 'y' || prompt == 'Y')
 		{
-			for(auto mark : marks)
+			for(auto &mark : marks)
 			{
-				if(fs::is_directory(mark->status) ) fs::remove_all(mark->name);
-				else fs::remove(mark->name);
+				if(fs::is_directory(mark) ) fs::remove_all(mark);
+				else fs::remove(mark);
 			}
+
+			marks.clear();
 		}
 		return;
 	}
@@ -281,6 +269,7 @@ void deleteEntry()
  *	 : Mark item
  *	R: Rename item
  *	G: Enter git mode (experimental)
+ *	m: Remove all marks
  */
 
 void processInput(int input) 
@@ -349,7 +338,12 @@ void processInput(int input)
 			findPath();
 			break;
 		case ' ':
-			entries[index].marked ^= 1;
+			if(auto mark = marks.find(entries[index].name); mark != marks.end() )
+			{
+				marks.erase(mark);
+			}
+			else marks.insert(entries[index].name);
+			if(index < static_cast<int>(entries.size() ) ) ++index;
 			printDirs();
 			break;
 		case 'R':
@@ -367,6 +361,9 @@ void processInput(int input)
 		case 'G':
 			clear();
 			Git::activate(current_path.c_str() );
+			break;
+		case 'm':
+			marks.clear();
 			break;
 	}
 
