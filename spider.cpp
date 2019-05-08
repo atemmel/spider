@@ -101,22 +101,12 @@ void enterDir()
 	{	
 		endwin();
 
-		if(!Global::config.forkEditor)
-		{
-			std::string mime = magic_file(Global::cookie, path.c_str() );
+		std::string mime = magic_file(Global::cookie, path.c_str() );
 
-			if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
-			{
-				system( (Global::config.editor + " \"" + (path).string() + '\"').c_str() );
-				fillList();
-			}
-			else 
-			{
-				createProcess([&]()
-				{
-					system( (Global::config.opener + ' ' + (path).string() ).c_str() );
-				});
-			}
+		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
+		{
+			system( (Global::config.editor + " \"" + (path).string() + '\"').c_str() );
+			fillList();
 		}
 		else 
 		{
