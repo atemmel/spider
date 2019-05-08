@@ -10,11 +10,8 @@ CC := g++
 
 all: $(TARGET)
 
-.PHONY: clean
-clean: 
-	rm $(TARGET) $(OBJ)
-
-debug: $(eval CXXFLAGS += $(DBGFLAGS)) $(OBJ)
+debug: $(OBJ)
+	$(eval CXXFLAGS += $(DBGFLAGS))
 	$(CC) -o $(TARGET) $^ $(LDLIBS)  $(CXXFLAGS)
 
 release: 
@@ -24,3 +21,6 @@ release:
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
 
+.PHONY: clean
+clean: 
+	rm $(TARGET) $(OBJ)
