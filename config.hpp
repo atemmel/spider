@@ -3,8 +3,10 @@
 
 struct Config
 {
-	const std::string editor = "nvim";
-	const std::string terminal = "urxvt";
-	const std::string opener = "xdg-open";
+	Config();
+
+	std::string editor;
+	std::string terminal;
+	std::string opener;
 	constexpr static bool forkEditor = false;
 };
