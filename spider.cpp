@@ -176,7 +176,7 @@ void findPath()
 	{
 		c = Prompt::get(input, "Go:");
 
-		if(c == 127 && !input.empty() ) input.pop_back();
+		if(c == KEY_BACKSPACE && !input.empty() ) input.pop_back();
 		else if(c == 27) break;
 		else if(c != '\0') input.push_back(c);
 
@@ -291,7 +291,7 @@ void processInput(int input)
 			index = 0;
 			fillList();
 			break;
-		case KEY_RIGHT:/* Right */
+		case KEY_RIGHT:	/* Right */
 		case 'l':
 			enterDir();
 			break;
@@ -382,7 +382,7 @@ int main()
 
 	try
 	{
-		while(c != 'q')
+		while(c != 'q' && c != 4)
 		{
 			getmaxyx(stdscr, window_height, window_width);
 			printHeader();

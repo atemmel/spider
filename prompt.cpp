@@ -76,5 +76,5 @@ int Prompt::get(const std::string &value, const std::string &message)
 
 	exit(x, y);
 
-	return isprint(c) || c == 27 || c == ' ' || c == 127 || c > 127 ? c : '\0';
+	return isprint(c) || c == 27 || c == ' ' || c > 127 ? c : '\0';
 }
