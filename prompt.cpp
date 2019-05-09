@@ -1,7 +1,7 @@
 #include "prompt.hpp"
 #include "global.hpp"
 
-void Prompt::clear(int x, int y)
+static void clear(int x, int y)
 {
 	move(y - 1, 0);
 	for(int i = 0; i < x; i++)
@@ -10,12 +10,12 @@ void Prompt::clear(int x, int y)
 	}
 }
 
-void Prompt::print(int y, const char* value, const char* message)
+static void print(int y, const char* value, const char* message)
 {
 	mvprintw(y - 1, 0, "%s%s", message, value);
 }
 
-void Prompt::exit(int x, int y)
+static void exit(int x, int y)
 {
 	clear(x, y);
 	noecho();
@@ -38,24 +38,23 @@ std::string Prompt::getString(const std::string &message)
 
 		switch(c)
 		{
-			//case '\b':
 			case '\t':
 				continue;
 			case KEY_BACKSPACE:
 				if(!in.empty() ) in.pop_back();
 				break;
 			case 27:	//ESC
-				Prompt::exit(x, y);
+				exit(x, y);
 				return "";
 			case '\n':
-				Prompt::exit(x, y);
+				exit(x, y);
 				return in;
 			default:
 				in.push_back(c);
 		}
 
-		Prompt::clear(x, y);
-		Prompt::print(y, in.c_str(), message.c_str() );
+		clear(x, y);
+		print(y, in.c_str(), message.c_str() );
 	}
 
 	return "";	//Only here so that all paths return a value

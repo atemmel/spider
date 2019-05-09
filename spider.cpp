@@ -337,7 +337,7 @@ void processInput(int input)
 				marks.erase(mark);
 			}
 			else marks.insert(entries[index].name);
-			if(index < static_cast<int>(entries.size() ) ) ++index;
+			if(index < static_cast<int>(entries.size() ) - 1) ++index;
 			printDirs();
 			break;
 		case 'R':
