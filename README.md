@@ -1,8 +1,10 @@
 # spider
 
+Use at your own risk :^)
+
 ## Dependencies
 
-* ncursesw
+* ncurses
 * libmagic
 * libgit2
-* C++17
+* c++17
