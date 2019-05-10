@@ -40,12 +40,12 @@ struct FileEntryComp
 {
 	bool operator()(const FileEntry &lhs, const FileEntry &rhs)
 	{
-		if(fs::is_directory(rhs.status) )
+		if(fs::is_directory(rhs.name) )
 		{
-			if(fs::is_directory(lhs.status) ) return caseInsensitiveComparison(lhs.name, rhs.name);
+			if(fs::is_directory(lhs.name) ) return caseInsensitiveComparison(lhs.name, rhs.name);
 			else return false;
 		}
-		else if(fs::is_directory(lhs.status) ) return true;
+		else if(fs::is_directory(lhs.name) ) return true;
 
 		return caseInsensitiveComparison(lhs.name, rhs.name); 
 	}
@@ -72,7 +72,7 @@ void fillList()
 		entry.name = std::move(it.path().string() );
 		entry.status = it.status();
 
-		if(fs::is_regular_file(entry.status) || fs::is_symlink(entry.status) ) 
+		if(fs::is_regular_file(entry.name) && !fs::is_symlink(entry.name) ) 
 		{
 			entry.size = fs::file_size(it);
 			entry.sizeStr = bytesToString(entry.size);
@@ -140,6 +140,7 @@ void printDirs()
 	auto it = entries.begin();
 	std::string blanks(window_width, ' ');
 	constexpr std::string_view dirStr = "/  ";
+	constexpr std::string_view lnStr  = "~> ";
 	
 	if(static_cast<int>(entries.size() ) < window_height - oy) upperLimit = 0;
 	limit = std::clamp(limit, 0, upperLimit);
@@ -153,11 +154,13 @@ void printDirs()
 		attroff(A_REVERSE);
 		mvprintw(i + oy, ox, "%s", blanks.c_str() );
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
-		fs::is_directory(it->status) ? attron(A_BOLD) : attroff(A_BOLD);
+		fs::is_directory(it->name) ? attron(A_BOLD) : attroff(A_BOLD);
 
 		mvprintw(i + oy, ox, " %o %10s %s%s ", 
 					static_cast<int>(it->status.permissions() ) & 00777, 
-					it->hasSize() ? it->sizeStr.c_str() : dirStr.data(), 
+					fs::is_symlink(it->name) ? lnStr.data() :
+						it->hasSize() ? it->sizeStr.c_str() :
+							dirStr.data(),
 					marks.find(it->name) != marks.end() ? " " : "",
 					it->name.substr(last_sep + 1, window_width - ox).c_str() 
 				);
@@ -235,7 +238,7 @@ void deleteEntry()
 		return;
 	}
 
-	if(fs::is_directory(entries[index].status) )
+	if(fs::is_directory(entries[index].name) )
 	{
 		int prompt = Prompt::get("", "Delete directory?(Y/N):");
 
@@ -361,6 +364,7 @@ void processInput(int input)
 			break;
 		case 'a':
 			prompt = magic_file(Global::cookie, entries[index].name.c_str() );
+			if(fs::is_symlink(entries[index].name) ) prompt += ", is symlink";
 			c = Prompt::get(prompt, "MIME type: ");
 			break;
 	}
