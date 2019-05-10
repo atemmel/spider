@@ -1,17 +1,22 @@
 TARGET := spider
 RELEASE := $(TARGET)-release
 LDLIBS := -lncursesw -lstdc++fs -lmagic -lgit2
-CXXFLAGS := -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wno-unused-parameter -Wundef -Wcast-qual -Wshadow -Wredundant-decls -std=c++17
+OBJDIR := bin
+INCDIR := include
+SRCDIR := src
+SRC := $(wildcard $(SRCDIR)/*.cpp)
+OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:%.cpp=%.o))
+CC := g++
+CXXFLAGS := -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wno-unused-parameter -Wundef -Wcast-qual -Wshadow -Wredundant-decls -std=c++17 -I$(INCDIR)
 DBGFLAGS := -g
 RELEASEFLAGS := -Ofast
-SRC := $(wildcard *.cpp)
-OBJ := $(SRC:%.cpp=%.o)
-CC := g++
+
+TARGET := $(OBJDIR)/$(TARGET)
+RELEASE := $(OBJDIR)/$(RELEASE)
 
 all: $(TARGET)
 
-debug: $(OBJ)
-	$(eval CXXFLAGS += $(DBGFLAGS))
+debug: $(eval CXXFLAGS += $(DBGFLAGS)) $(OBJ)
 	$(CC) -o $(TARGET) $^ $(LDLIBS)  $(CXXFLAGS)
 
 release: 
@@ -21,6 +26,12 @@ release:
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(LDLIBS)  $(CXXFLAGS)
 
-.PHONY: clean
+$(OBJ): $(OBJDIR)%.o : $(SRCDIR)%.cpp
+	$(CC) -o $@ -c $< $(LDLIBS) $(CXXFLAGS)
+
+.PHONY: clean setup
 clean: 
 	rm $(TARGET) $(OBJ)
+
+setup:
+	mkdir $(OBJDIR)
