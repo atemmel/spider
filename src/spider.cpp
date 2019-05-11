@@ -368,6 +368,19 @@ void processInput(int input)
 			if(fs::is_symlink(entries[index].name) ) prompt += ", is symlink";
 			c = Prompt::get(prompt, "MIME type: ");
 			break;
+		case 'p':
+			for(auto &mark : marks)
+			{
+				fs::copy(mark, 
+						current_path.string()
+							+ mark.substr(mark.find_last_of('/') ),
+						fs::copy_options::recursive, 
+						ec);
+			}
+			marks.clear();
+			fillList();
+			printDirs();
+			break;
 	}
 
 	if(ec)
