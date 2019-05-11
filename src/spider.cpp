@@ -1,10 +1,7 @@
+#include "global.hpp"
 #include "prompt.hpp"
 #include "utils.hpp"
 #include "git.hpp"
-#include "global.hpp"
-
-// External dependencies
-#include <ncurses.h>
 
 // This looks good :)
 #include <string_view>
@@ -23,6 +20,11 @@ struct FileEntry
 	bool hasSize() const
 	{
 		return size != std::numeric_limits<std::uintmax_t>::max();
+	}
+
+	fs::path file() const
+	{
+		return fs::path(name).filename();
 	}
 
 	std::string name;
@@ -238,14 +240,13 @@ void deleteEntry()
 		return;
 	}
 
+	int prompt = Prompt::get("", "Delete " + entries[index].file().string() +  "?(Y/N):");
+
+	if(prompt != 'y' && prompt != 'Y') return;
+
 	if(fs::is_directory(entries[index].name) )
 	{
-		int prompt = Prompt::get("", "Delete directory?(Y/N):");
-
-		if(prompt == 'y' || prompt == 'Y')
-		{
-			fs::remove_all(entries[index].name);
-		}
+		fs::remove_all(entries[index].name);
 	}
 	else
 	{
