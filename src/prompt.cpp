@@ -30,6 +30,7 @@ std::string Prompt::getString(const std::string &message)
 	getmaxyx(stdscr, y, x);
 	timeout(-1);
 
+	clear(x, y);
 	print(y, in.c_str(), message.c_str() );
 
 	while(1)
