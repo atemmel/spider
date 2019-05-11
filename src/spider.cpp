@@ -268,6 +268,9 @@ void deleteEntry()
  *	R: Rename item
  *	G: Enter git mode (experimental)
  *	m: Remove all marks
+ *	a: Read MIME data
+ *	p: Paste marked files
+ *	v: Move marked files
  */
 
 void processInput(int input) 
