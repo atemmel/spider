@@ -365,7 +365,6 @@ void processInput(int input)
 			break;
 		case 'a':
 			prompt = magic_file(Global::cookie, entries[index].name.c_str() );
-			if(fs::is_symlink(entries[index].name) ) prompt += ", is symlink";
 			c = Prompt::get(prompt, "MIME type: ");
 			break;
 		case 'p':
@@ -375,6 +374,18 @@ void processInput(int input)
 						current_path.string()
 							+ mark.substr(mark.find_last_of('/') ),
 						fs::copy_options::recursive, 
+						ec);
+			}
+			marks.clear();
+			fillList();
+			printDirs();
+			break;
+		case 'v':
+			for(auto &mark : marks)
+			{
+				fs::rename(mark,
+						current_path.string()
+							+ mark.substr(mark.find_last_of('/') ),
 						ec);
 			}
 			marks.clear();
