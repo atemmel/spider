@@ -27,6 +27,11 @@ struct FileEntry
 		return fs::path(name).filename();
 	}
 
+	std::string dir() const
+	{
+		return Utils::dir(name);
+	}
+
 	std::string name;
 	fs::file_status status;
 	std::uintmax_t size;
@@ -44,12 +49,12 @@ struct FileEntryComp
 	{
 		if(fs::is_directory(rhs.name) )
 		{
-			if(fs::is_directory(lhs.name) ) return caseInsensitiveComparison(lhs.name, rhs.name);
+			if(fs::is_directory(lhs.name) ) return Utils::caseInsensitiveComparison(lhs.name, rhs.name);
 			else return false;
 		}
 		else if(fs::is_directory(lhs.name) ) return true;
 
-		return caseInsensitiveComparison(lhs.name, rhs.name); 
+		return Utils::caseInsensitiveComparison(lhs.name, rhs.name); 
 	}
 };
 
@@ -77,7 +82,7 @@ void fillList()
 		if(fs::is_regular_file(entry.name) && !fs::is_symlink(entry.name) ) 
 		{
 			entry.size = fs::file_size(it);
-			entry.sizeStr = bytesToString(entry.size);
+			entry.sizeStr = Utils::bytesToString(entry.size);
 		}
 		else entry.size = std::numeric_limits<std::uintmax_t>::max();
 
@@ -116,7 +121,7 @@ void enterDir()
 		}
 		else 
 		{
-			createProcess([&]()
+			Utils::createProcess([&]()
 			{
 				system( (Global::config.opener + ' ' + (path).string() ).c_str() );
 			});
@@ -191,10 +196,9 @@ void findPath()
 
 		for(size_t i = 0; i < entries.size(); i++)
 		{
-			std::string str = entries[i].name;
-			str = str.substr(str.find_last_of('/') + 1);
+			std::string str = entries[i].file();
 
-			bits[i] = startsWith(str, input);
+			bits[i] = Utils::startsWith(str, input);
 		}
 
 		if(auto it = std::find(bits.begin(), bits.end(), true); it != bits.end() )
@@ -215,7 +219,7 @@ void findPath()
 
 void createTerminal()
 {
-	createProcess([]()
+	Utils::createProcess([]()
 	{
 		system(Global::config.terminal.data() );
 	});
@@ -374,8 +378,7 @@ void processInput(int input)
 			for(auto &mark : marks)
 			{
 				fs::copy(mark, 
-						current_path.string()
-							+ mark.substr(mark.find_last_of('/') ),
+						current_path / Utils::file(mark),
 						fs::copy_options::recursive, 
 						ec);
 			}
@@ -387,8 +390,7 @@ void processInput(int input)
 			for(auto &mark : marks)
 			{
 				fs::rename(mark,
-						current_path.string()
-							+ mark.substr(mark.find_last_of('/') ),
+						current_path / Utils::file(mark),
 						ec);
 			}
 			marks.clear();

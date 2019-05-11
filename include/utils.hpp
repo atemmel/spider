@@ -8,6 +8,13 @@
 #include <cstdlib>
 #include <string>
 
+namespace Utils
+{
+
+std::string file(const std::string &str);
+
+std::string dir(const std::string &str);
+
 bool caseInsensitiveComparison(const std::string &lhs, const std::string &rhs);
 
 bool startsWith(const std::string &origin, const std::string &match);
@@ -31,5 +38,7 @@ void createProcess(T function)
 	{
 		initscr();
 	}
+
+}
 
 }

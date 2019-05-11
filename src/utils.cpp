@@ -1,5 +1,18 @@
 #include "utils.hpp"
 
+namespace Utils
+{
+
+std::string file(const std::string &str)
+{
+	return str.substr(str.find_last_of('/') + 1);
+}
+
+std::string dir(const std::string &str)
+{
+	return str.substr(0, str.find_last_of('/') );
+}
+
 bool caseInsensitiveComparison(const std::string &lhs, const std::string &rhs)
 {
 	auto lit = lhs.begin(), rit = rhs.begin();
@@ -74,3 +87,4 @@ std::string bytesToString(std::uintmax_t bytes)
 	return str;
 }
 
+}
