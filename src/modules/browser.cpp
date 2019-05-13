@@ -1,72 +1,8 @@
-#include "browser.hpp"
-
-#include "global.hpp"
-#include "prompt.hpp"
-#include "utils.hpp"
-#include "git.hpp"
-
-// This looks good :)
-#include <string_view>
-#include <filesystem>
-#include <iostream>
-#include <fstream>
-#include <cassert>
-#include <vector>
-#include <limits>
-#include <set>
+#include "modules/browser.hpp"
 
 namespace fs = std::filesystem;
 
-struct FileEntry
-{
-	bool hasSize() const
-	{
-		return size != std::numeric_limits<std::uintmax_t>::max();
-	}
-
-	fs::path file() const
-	{
-		return fs::path(name).filename();
-	}
-
-	std::string dir() const
-	{
-		return Utils::dir(name);
-	}
-
-	std::string name;
-	fs::file_status status;
-	std::uintmax_t size;
-	std::string sizeStr;
-};
-
-
-//TODO: Move to separate header/impl
-/**
- *	Implements less-than comparison between two file entries
- */
-struct FileEntryComp
-{
-	bool operator()(const FileEntry &lhs, const FileEntry &rhs)
-	{
-		if(fs::is_directory(rhs.name) )
-		{
-			if(fs::is_directory(lhs.name) ) return Utils::caseInsensitiveComparison(lhs.name, rhs.name);
-			else return false;
-		}
-		else if(fs::is_directory(lhs.name) ) return true;
-
-		return Utils::caseInsensitiveComparison(lhs.name, rhs.name); 
-	}
-};
-
-using FileEntries = std::vector<FileEntry>;
-FileEntries entries;	
-std::set<std::string> marks;
-fs::path current_path;
-int index = 0;
-
-static void fillList() 
+void Browser::fillList() 
 {
 	int oldSize = entries.size() + 1;
 	entries.clear();
@@ -93,7 +29,7 @@ static void fillList()
 	for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
 }
 
-static void enterDir() 
+void Browser::enterDir() 
 {
 	fs::path path(entries[index].name);
 
@@ -131,7 +67,7 @@ static void enterDir()
 	}
 }
 
-static void printHeader() 
+void Browser::printHeader() 
 {
 	mvprintw(0, 0, std::string(Global::windowWidth, ' ').c_str() );
 	attron(A_BOLD | COLOR_PAIR(1) );
@@ -139,7 +75,7 @@ static void printHeader()
 	attroff(A_BOLD | COLOR_PAIR(1) );
 }
 
-static void printDirs() 
+void Browser::printDirs() 
 {
 	constexpr int ox = 0, oy = 1;
 	int upperLimit = std::abs(static_cast<int>(entries.size() ) - Global::windowHeight + oy);
@@ -176,7 +112,7 @@ static void printDirs()
 	attroff(A_REVERSE);
 }
 
-static void findPath()
+void Browser::findPath()
 {
 	std::string input;
 	int c = '\0';
@@ -217,7 +153,7 @@ static void findPath()
 	}
 }
 
-static void createTerminal()
+void Browser::createTerminal()
 {
 	Utils::createProcess([]()
 	{
@@ -225,7 +161,7 @@ static void createTerminal()
 	});
 }
 
-static void deleteEntry()
+void Browser::deleteEntry()
 {
 	if(!marks.empty() )
 	{
@@ -258,7 +194,7 @@ static void deleteEntry()
 	}
 }
 
-void Browser::init()
+Browser::Browser()
 {
 	current_path = fs::current_path();
 	fillList();
@@ -289,7 +225,7 @@ void Browser::display()
  *	v: Move marked files
  */
 
-void Browser::processInput(int input) 
+void Browser::update(int input) 
 {
 	std::string prompt;
 	std::ofstream file;
