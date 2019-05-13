@@ -33,4 +33,6 @@ void destroy()
 magic_t cookie;
 Config config;
 
+int windowWidth, windowHeight;
+
 }

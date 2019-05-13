@@ -17,4 +17,7 @@ extern Config config;
 
 extern magic_t cookie;
 
+extern int windowWidth;
+extern int windowHeight;
+
 }
