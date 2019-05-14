@@ -4,20 +4,16 @@
 
 #include <magic.h>
 
-namespace Global
+struct Global
 {
+	Global();
+ 	~Global();
 
-void init();
+	constexpr static unsigned tick = 1000; //ms
+	Config config;
+	magic_t cookie;
+	int windowWidth;
+	int windowHeight;
+};
 
-void destroy();
-
-constexpr unsigned tick = 1000; //ms
-
-extern Config config;
-
-extern magic_t cookie;
-
-extern int windowWidth;
-extern int windowHeight;
-
-}
+extern Global global;

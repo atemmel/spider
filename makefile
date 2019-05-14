@@ -34,5 +34,5 @@ clean:
 	rm $(TARGET) $(OBJ)
 
 setup:
-	mkdir $(OBJDIR)
-	mkdir $(OBJDIR)/modules
+	-mkdir $(OBJDIR)
+	-mkdir $(OBJDIR)/modules

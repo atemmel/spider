@@ -5,10 +5,7 @@
 
 #include <clocale>
 
-namespace Global
-{
-
-void init()
+Global::Global()
 {
 	std::setlocale(LC_ALL, "");
 	initscr();
@@ -23,16 +20,11 @@ void init()
 	git_libgit2_init();	//TODO: Check for return
 }
 
-void destroy()
+Global::~Global()
 {
 	endwin();
 	magic_close(cookie);
 	git_libgit2_shutdown();
 }
 
-magic_t cookie;
-Config config;
-
-int windowWidth, windowHeight;
-
-}
+Global global;

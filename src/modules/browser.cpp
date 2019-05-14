@@ -8,7 +8,7 @@ void Browser::fillList()
 	entries.clear();
 	int newSize = entries.size() + 1;
 	FileEntry entry;
-	std::string blanks(Global::windowWidth, ' ');
+	std::string blanks(global.windowWidth, ' ');
 
 	for(auto &it : fs::directory_iterator(current_path) )
 	{
@@ -44,11 +44,11 @@ void Browser::enterDir()
 	{	
 		endwin();
 
-		std::string mime = magic_file(Global::cookie, path.c_str() );
+		std::string mime = magic_file(global.cookie, path.c_str() );
 
 		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
-			system( (Global::config.editor + " \"" + (path).string() + '\"').c_str() );
+			system( (global.config.editor + " \"" + (path).string() + '\"').c_str() );
 			fillList();
 		}
 		else if(mime.find("application/x-pie-executable") == 0)
@@ -59,7 +59,7 @@ void Browser::enterDir()
 		{
 			Utils::createProcess([&]()
 			{
-				system( (Global::config.opener + ' ' + (path).string() ).c_str() );
+				system( (global.config.opener + ' ' + (path).string() ).c_str() );
 			});
 		}
 
@@ -69,23 +69,23 @@ void Browser::enterDir()
 
 void Browser::printHeader() 
 {
-	mvprintw(0, 0, std::string(Global::windowWidth, ' ').c_str() );
+	mvprintw(0, 0, std::string(global.windowWidth, ' ').c_str() );
 	attron(A_BOLD | COLOR_PAIR(1) );
-	mvprintw(0, 0, current_path.string().substr(0, Global::windowWidth).c_str() );
+	mvprintw(0, 0, current_path.string().substr(0, global.windowWidth).c_str() );
 	attroff(A_BOLD | COLOR_PAIR(1) );
 }
 
 void Browser::printDirs() 
 {
 	constexpr int ox = 0, oy = 1;
-	int upperLimit = std::abs(static_cast<int>(entries.size() ) - Global::windowHeight + oy);
-	int limit = oy + static_cast<int>(index) - (Global::windowHeight >> 1);
+	int upperLimit = std::abs(static_cast<int>(entries.size() ) - global.windowHeight + oy);
+	int limit = oy + static_cast<int>(index) - (global.windowHeight >> 1);
 	auto it = entries.begin();
-	std::string blanks(Global::windowWidth, ' ');
+	std::string blanks(global.windowWidth, ' ');
 	constexpr std::string_view dirStr = "/  ";
 	constexpr std::string_view lnStr  = "~> ";
 	
-	if(static_cast<int>(entries.size() ) < Global::windowHeight - oy) upperLimit = 0;
+	if(static_cast<int>(entries.size() ) < global.windowHeight - oy) upperLimit = 0;
 	limit = std::clamp(limit, 0, upperLimit);
 
 	it += limit;
@@ -105,7 +105,7 @@ void Browser::printDirs()
 						it->hasSize() ? it->sizeStr.c_str() :
 							dirStr.data(),
 					marks.find(it->name) != marks.end() ? " " : "",
-					it->name.substr(last_sep + 1, Global::windowWidth - ox).c_str() 
+					it->name.substr(last_sep + 1, global.windowWidth - ox).c_str() 
 				);
 	}
 
@@ -157,7 +157,7 @@ void Browser::createTerminal()
 {
 	Utils::createProcess([]()
 	{
-		system(Global::config.terminal.data() );
+		system(global.config.terminal.data() );
 	});
 }
 
@@ -239,6 +239,8 @@ void Browser::update(int input)
 			endwin();
 			system("bash");
 			initscr();
+			fillList();
+			printDirs();
 			break;
 		case 'S':
 			createTerminal();
@@ -319,7 +321,7 @@ void Browser::update(int input)
 			marks.clear();
 			break;
 		case 'a':
-			prompt = magic_file(Global::cookie, entries[index].name.c_str() );
+			prompt = magic_file(global.cookie, entries[index].name.c_str() );
 			c = Prompt::get(prompt, "MIME type: ");
 			break;
 		case 'p':
