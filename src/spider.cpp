@@ -1,4 +1,4 @@
-#include "modules/browser.hpp"
+#include "plugins/browser.hpp"
 #include "global.hpp"
 
 #include <ncurses.h>
@@ -17,7 +17,7 @@ int main()
 		while(c != 'q' && c != 4)
 		{
 			getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
-			browser.display();
+			browser.draw();
 			c = getch();
 			browser.update(c);
 		}

@@ -1,5 +1,5 @@
 #pragma once
-#include "module.hpp"
+#include "plugin.hpp"
 #include "global.hpp"
 #include "prompt.hpp"
 #include "utils.hpp"
@@ -17,13 +17,13 @@
 
 namespace fs = std::filesystem;
 
-class Browser : public Module
+class Browser : public Plugin
 {
 public:
 //void init();
 	Browser();
 
-	void display() override;
+	void draw() override;
 
 	void update(int keypress) override;
 private:

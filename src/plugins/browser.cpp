@@ -1,4 +1,4 @@
-#include "modules/browser.hpp"
+#include "plugins/browser.hpp"
 
 namespace fs = std::filesystem;
 
@@ -200,7 +200,7 @@ Browser::Browser()
 	fillList();
 }
 
-void Browser::display()
+void Browser::draw()
 {
 	printHeader();
 	printDirs();

@@ -1,9 +1,10 @@
 TARGET := spider
 RELEASE := $(TARGET)-release
-LDLIBS := -lncursesw -lstdc++fs -lmagic -lgit2
+LDLIBS := -lncursesw -lstdc++fs -lmagic -lgit2 -ldl
 OBJDIR := bin
 INCDIR := include
 SRCDIR := src
+PLUGINDIR := $(OBJDIR)/plugins
 SRC := $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/*/*.cpp)
 OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:%.cpp=%.o))
 CC := g++
@@ -16,8 +17,8 @@ RELEASE := $(OBJDIR)/$(RELEASE)
 
 all: $(TARGET)
 
-debug: $(eval CXXFLAGS += $(DBGFLAGS)) $(OBJ)
-	$(CC) -o $(TARGET) $^ $(LDLIBS)  $(CXXFLAGS)
+debug: CXXFLAGS += DBGFLAGS
+debug: $(TARGET)
 
 release: 
 	$(eval CXXFLAGS += $(RELEASEFLAGS))
@@ -35,4 +36,4 @@ clean:
 
 setup:
 	-mkdir $(OBJDIR)
-	-mkdir $(OBJDIR)/modules
+	-mkdir $(PLUGINDIR)
