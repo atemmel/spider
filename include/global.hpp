@@ -3,6 +3,7 @@
 #include "config.hpp"
 
 #include <magic.h>
+#include <memory>
 
 struct Global
 {
@@ -16,4 +17,6 @@ struct Global
 	int windowHeight;
 };
 
-extern Global global;
+std::unique_ptr<Global> makeGlobal();
+
+extern Global* globals;

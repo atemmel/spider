@@ -1,6 +1,7 @@
 #include "global.hpp"
 
 #include <ncurses.h>
+#include <cassert>
 #include <git2.h>
 
 #include <clocale>
@@ -27,4 +28,11 @@ Global::~Global()
 	git_libgit2_shutdown();
 }
 
-Global global;
+std::unique_ptr<Global> makeGlobal()
+{
+	static bool created = 0;
+	assert(!created);	//Assert that only one global is ever instantiated
+	return std::make_unique<Global>();
+}
+
+Global* globals = nullptr;
