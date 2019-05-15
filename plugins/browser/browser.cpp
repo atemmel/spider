@@ -1,4 +1,4 @@
-#include "plugins/browser.hpp"
+#include "browser.hpp"
 
 namespace fs = std::filesystem;
 
@@ -155,7 +155,7 @@ void Browser::findPath()
 
 void Browser::createTerminal()
 {
-	Utils::createProcess([]()
+	Utils::createProcess([&]()
 	{
 		system(globals->config.terminal.data() );
 	});

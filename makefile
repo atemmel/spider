@@ -4,7 +4,7 @@ LDLIBS := -lncursesw -lstdc++fs -lmagic -lgit2 -ldl
 OBJDIR := bin
 INCDIR := include
 SRCDIR := src
-PLUGINDIR := $(OBJDIR)/plugins
+PLUGINDIR := $(OBJDIR)/spider.d
 SRC := $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/*/*.cpp)
 OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:%.cpp=%.o))
 CC := g++

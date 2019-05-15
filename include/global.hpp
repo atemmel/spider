@@ -18,5 +18,3 @@ struct Global
 };
 
 std::unique_ptr<Global> makeGlobal();
-
-extern Global* globals;

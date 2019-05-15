@@ -84,3 +84,5 @@ private:
 	fs::path current_path;
 	int index = 0;
 };
+
+SPIDER_PLUGIN_EXPORT(Browser)
