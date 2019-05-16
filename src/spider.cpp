@@ -8,20 +8,17 @@
 int main(int argc, char** argv)
 {
 	constexpr std::string_view pluginFlag = "-l";
-	std::string pluginDir = "spider.d/";
+	auto globals = makeGlobal();
 
 	if(argc > 2)
 	{
 		if(pluginFlag == argv[1]) 
 		{
-			pluginDir = argv[2];
+			globals->pluginDir = argv[2];
 		}
 	}
 
-	Loader loader(pluginDir);
 	auto browser = std::make_unique<Browser>();
-
-	auto globals = makeGlobal();
 	browser->globals = globals.get();
 
 	int c = 0;

@@ -3,11 +3,12 @@
 #include "config.hpp"
 
 #include <magic.h>
+#include <string>
 #include <memory>
 
 struct Global
 {
-	Global();
+	friend std::unique_ptr<Global> makeGlobal();
  	~Global();
 
 	constexpr static unsigned tick = 1000; //ms
@@ -15,6 +16,10 @@ struct Global
 	magic_t cookie;
 	int windowWidth;
 	int windowHeight;
+	std::string pluginDir;
+
+private:
+	Global();
 };
 
 std::unique_ptr<Global> makeGlobal();

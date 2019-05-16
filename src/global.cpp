@@ -32,7 +32,5 @@ std::unique_ptr<Global> makeGlobal()
 {
 	static bool created = 0;
 	assert(!created);	//Assert that only one global is ever instantiated
-	return std::make_unique<Global>();
+	return std::unique_ptr<Global>(new Global() );
 }
-
-Global* globals = nullptr;
