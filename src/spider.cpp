@@ -1,3 +1,4 @@
+#include "browser.hpp"
 #include "loader.hpp"
 #include "global.hpp"
 
@@ -7,7 +8,7 @@
 int main(int argc, char** argv)
 {
 	constexpr std::string_view pluginFlag = "-l";
-	std::string pluginDir = "spider.d";
+	std::string pluginDir = "spider.d/";
 
 	if(argc > 2)
 	{
@@ -18,13 +19,7 @@ int main(int argc, char** argv)
 	}
 
 	Loader loader(pluginDir);
-	auto browser = loader["browser.so"];
-
-	if(!browser)
-	{
-		std::cerr << "Plugin: \"browser.so\" not loaded\n";
-		return EXIT_FAILURE;
-	}
+	auto browser = std::make_unique<Browser>();
 
 	auto globals = makeGlobal();
 	browser->globals = globals.get();
@@ -32,6 +27,7 @@ int main(int argc, char** argv)
 	int c = 0;
 	try
 	{
+		browser->onActivate();
 		while(c != 'q' && c != 4)
 		{
 			getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
@@ -39,6 +35,7 @@ int main(int argc, char** argv)
 			c = getch();
 			browser->update(c);
 		}
+		browser->onDeactivate();
 	}
 	catch(...)
 	{

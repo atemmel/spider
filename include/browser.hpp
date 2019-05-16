@@ -10,7 +10,6 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
-#include <cassert>
 #include <vector>
 #include <limits>
 #include <set>
@@ -20,12 +19,12 @@ namespace fs = std::filesystem;
 class Browser : public Plugin
 {
 public:
-//void init();
-	Browser();
-
 	void draw() override;
 
 	void update(int keypress) override;
+
+	void onActivate() override;
+
 private:
 	void fillList();
 	void enterDir();
@@ -85,4 +84,4 @@ private:
 	int index = 0;
 };
 
-SPIDER_PLUGIN_EXPORT(Browser)
+//SPIDER_PLUGIN_EXPORT(Browser)

@@ -6,6 +6,8 @@
 
 Loader::Loader(const std::string& path)
 {
+	if(!std::filesystem::exists(path) ) return;
+
 	for(auto&file : std::filesystem::directory_iterator(path) )
 	{
 		if(file.path().extension() == ".so")
@@ -14,10 +16,13 @@ Loader::Loader(const std::string& path)
 		}
 	}
 
+	/*
+	std::cerr << "List of active plugins:\n";
 	for(auto &plug : _plugins)
 	{
-		std::cerr << "Plugin " << plug.first << " loaded\n";
+		std::cerr << '\t' << plug.first << '\n';
 	}
+	*/
 }
 
 void Loader::load(const std::string& lib)	//TODO: Better error handling, e.g throwing an exception or similiar
@@ -49,15 +54,6 @@ void Loader::load(const std::string& lib)	//TODO: Better error handling, e.g thr
 		return;
 	}
 
-	/*
-	auto deleter = [destroy](Plugin* ptr)
-	{
-		destroy(ptr);
-	};
-	*/
-
-	//_plugins.insert(std::make_pair(lib, std::make_unique(create(), deleter) ) );
-	
 	_plugins.insert(std::make_pair(lib, PluginPtr(create(), destroy) ) );
 }
 

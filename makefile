@@ -17,7 +17,7 @@ RELEASE := $(OBJDIR)/$(RELEASE)
 
 all: $(TARGET)
 
-debug: CXXFLAGS += DBGFLAGS
+debug: CXXFLAGS += $(DBGFLAGS)
 debug: $(TARGET)
 
 release: 

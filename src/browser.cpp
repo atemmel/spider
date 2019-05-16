@@ -194,7 +194,7 @@ void Browser::deleteEntry()
 	}
 }
 
-Browser::Browser()
+void Browser::onActivate()
 {
 	current_path = fs::current_path();
 	fillList();
