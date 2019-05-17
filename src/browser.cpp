@@ -347,6 +347,9 @@ void Browser::update(int input)
 			fillList();
 			printDirs();
 			break;
+		case 'y':
+			system(("echo " + current_path.string() + " | xclip -selection clipboard").c_str() );
+			break;
 	}
 
 	if(ec)
