@@ -30,7 +30,7 @@ std::vector<Token> Lexer::parse(const std::string &str)
 {
 	std::string word;
 	std::vector<Token> tokens;
-	auto it = str.begin(), wordstart = str.begin(), end = str.end() - 2;
+	auto it = str.begin(), wordstart = str.begin(), end = str.end();
 
 	auto next = [&]()
 	{
@@ -60,10 +60,11 @@ std::vector<Token> Lexer::parse(const std::string &str)
 			next();
 			continue;
 		}
-		else if(std::isspace(*it) )
+		else if(std::isspace(*it) || it + 1 == end)
 		{
 			Token token;
 			word.assign(wordstart, it);
+			if(word.empty() ) break;
 
 			//Replace this once more tokens are added
 
