@@ -48,7 +48,7 @@ void Browser::enterDir()
 
 		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
-			system( (globals->config.editor + " \"" + (path).string() + '\"').c_str() );
+			system( (globals->config.editor + " \"" + (path).string() + '"').c_str() );
 			fillList();
 		}
 		else if(mime.find("application/x-pie-executable") == 0)
@@ -59,7 +59,7 @@ void Browser::enterDir()
 		{
 			Utils::createProcess([&]()
 			{
-				system( (globals->config.opener + ' ' + (path).string() ).c_str() );
+				system( (globals->config.opener + " \"" + (path).string() + '"').c_str() );
 			});
 		}
 
