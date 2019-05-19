@@ -16,11 +16,45 @@ Config::Config()
 
 	Lexer lexer;
 
-	std::cerr << "Reading tokens from " << home + "/.config/spider/spider.conf\n";
+	//std::cerr << "Reading tokens from " << home + "/.config/spider/spider.conf\n";
 	auto tokens = lexer.open((home + "/.config/spider/spider.conf").c_str() );
 
+	/*
 	for(auto &t : tokens)
 	{
 		std::cerr << t << '\n';
+	}
+	*/
+
+	Token::Type expected;
+
+	for(size_t i = 0; i < tokens.size(); i++)
+	{
+		if(tokens[i].type == Token::Type::Set)
+		{
+			expected = Token::Type::ConfigOffset;
+		}
+		else if(tokens[i].type > Token::Type::ConfigOffset)
+		{
+			if(expected != Token::Type::ConfigOffset) continue;
+
+			expected = tokens[i].type;
+			++i;
+
+			if(tokens[i].type != Token::Type::String
+					|| tokens[i].value.empty() ) continue;
+
+			switch(expected)
+			{
+				case Token::Type::Terminal:
+					terminal = tokens[i].value;
+					break;
+				case Token::Type::Visual:
+					editor = tokens[i].value;
+					break;
+				default:
+					break;
+			}
+		}
 	}
 }
