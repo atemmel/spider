@@ -1,28 +1,28 @@
 #include "git.hpp"
 
-Git::Repository::Repository(const char* path)
+Repository::Repository(const char* path)
 {
 	m_error = git_repository_open(&m_repo, path);
 }
 
-Git::Repository::operator git_repository* ()
+Repository::operator git_repository* ()
 {
 	return m_repo;
 }
 
-Git::Repository::operator int ()
+Repository::operator int ()
 {
 	return m_error;
 }
 
-Git::Repository::~Repository()
+Repository::~Repository()
 {
 	git_repository_free(m_repo);
 }
 
-void Git::activate(const char* path)
+void Git::onActivate()
 {
-	Repository repo(path);
+	Repository repo(globals->current_path.c_str() );
 
 	if(repo != 0) 
 	{
@@ -49,7 +49,6 @@ void Git::activate(const char* path)
 			printw("D");
 			break;
 			case GIT_STATUS_IGNORED:
-			//printw("I");
 			return 0;
 			break;
 			case GIT_STATUS_INDEX_TYPECHANGE:

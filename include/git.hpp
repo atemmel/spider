@@ -1,11 +1,9 @@
 #pragma once
 
 #include "prompt.hpp"
+#include "plugin.hpp"
 
 #include <git2.h>
-
-namespace Git
-{
 
 class Repository
 {
@@ -23,6 +21,8 @@ private:
 	int m_error;
 };
 
-void activate(const char* path);
+class Git : public Plugin
+{
+	void onActivate() override;
 
-}
+};

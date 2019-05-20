@@ -80,7 +80,6 @@ private:
 	using FileEntries = std::vector<FileEntry>;
 	FileEntries entries;	
 	std::set<std::string> marks;
-	fs::path current_path;
 	int index = 0;
 };
 

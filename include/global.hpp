@@ -2,6 +2,7 @@
 
 #include "config.hpp"
 
+#include <filesystem>
 #include <magic.h>
 #include <string>
 #include <memory>
@@ -17,6 +18,7 @@ struct Global
 	int windowWidth;
 	int windowHeight;
 	std::string pluginDir;
+	std::filesystem::path current_path;
 
 private:
 	Global();

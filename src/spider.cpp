@@ -9,6 +9,7 @@ int main(int argc, char** argv)
 {
 	constexpr std::string_view pluginFlag = "-l";
 	auto globals = makeGlobal();
+	getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
 
 	if(argc > 2)
 	{

@@ -10,7 +10,7 @@ void Browser::fillList()
 	FileEntry entry;
 	std::string blanks(globals->windowWidth, ' ');
 
-	for(auto &it : fs::directory_iterator(current_path) )
+	for(auto &it : fs::directory_iterator(globals->current_path) )
 	{
 		entry.name = std::move(it.path().string() );
 		entry.status = it.status();
@@ -35,8 +35,8 @@ void Browser::enterDir()
 
 	if(fs::is_directory(path) )
 	{
-		current_path /= path;
-		fs::current_path(current_path);
+		globals->current_path /= path;
+		fs::current_path(globals->current_path);
 		fillList();
 		index = 0;
 	}
@@ -71,7 +71,7 @@ void Browser::printHeader()
 {
 	mvprintw(0, 0, std::string(globals->windowWidth, ' ').c_str() );
 	attron(A_BOLD | COLOR_PAIR(1) );
-	mvprintw(0, 0, current_path.string().substr(0, globals->windowWidth).c_str() );
+	mvprintw(0, 0, globals->current_path.string().substr(0, globals->windowWidth).c_str() );
 	attroff(A_BOLD | COLOR_PAIR(1) );
 }
 
@@ -196,7 +196,7 @@ void Browser::deleteEntry()
 
 void Browser::onActivate()
 {
-	current_path = fs::current_path();
+	globals->current_path = fs::current_path();
 	fillList();
 }
 
@@ -247,8 +247,8 @@ void Browser::update(int input)
 			break;
 		case KEY_LEFT:	/* Left */
 		case 'h':
-			current_path = current_path.parent_path();
-			fs::current_path(current_path);
+			globals->current_path = globals->current_path.parent_path();
+			fs::current_path(globals->current_path);
 			index = 0;
 			fillList();
 			break;
@@ -313,10 +313,12 @@ void Browser::update(int input)
 			fillList();
 			printDirs();
 			break;
+			/*
 		case 'G':
 			clear();
 			Git::activate(current_path.c_str() );
 			break;
+			*/
 		case 'm':
 			marks.clear();
 			break;
@@ -328,7 +330,7 @@ void Browser::update(int input)
 			for(auto &mark : marks)
 			{
 				fs::copy(mark, 
-						current_path / Utils::file(mark),
+						globals->current_path / Utils::file(mark),
 						fs::copy_options::recursive, 
 						ec);
 			}
@@ -340,7 +342,7 @@ void Browser::update(int input)
 			for(auto &mark : marks)
 			{
 				fs::rename(mark,
-						current_path / Utils::file(mark),
+						globals->current_path / Utils::file(mark),
 						ec);
 			}
 			marks.clear();
@@ -348,7 +350,7 @@ void Browser::update(int input)
 			printDirs();
 			break;
 		case 'y':
-			system(("echo " + current_path.string() + " | xclip -selection clipboard").c_str() );
+			system(("echo " + globals->current_path.string() + " | xclip -selection clipboard").c_str() );
 			break;
 	}
 

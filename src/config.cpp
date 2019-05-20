@@ -26,7 +26,7 @@ Config::Config()
 	}
 	*/
 
-	Token::Type expected;
+	Token::Type expected = Token::Type::String;
 
 	for(size_t i = 0; i < tokens.size(); i++)
 	{
