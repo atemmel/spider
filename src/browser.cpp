@@ -376,7 +376,7 @@ void Browser::update(int input)
 		case 'y':
 			system(("echo " + globals->current_path.string() + " | xclip -selection clipboard").c_str() );
 			break;
-		case 'B':
+		case 'b':
 			if(auto mark = bookmarks.find(globals->current_path ); mark != bookmarks.end() )
 			{
 				bookmarks.erase(mark);
@@ -384,7 +384,7 @@ void Browser::update(int input)
 			else if(static_cast<char>(bookmarks.size() ) < 'z' - 'a') bookmarks.insert(globals->current_path );
 			printDirs();
 			break;
-		case 'b':
+		case 'g':
 			showBookmarks();
 			break;
 	}
