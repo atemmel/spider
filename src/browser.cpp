@@ -2,6 +2,36 @@
 
 namespace fs = std::filesystem;
 
+void Browser::showBookmarks()
+{
+	auto it = bookmarks.begin();
+	size_t i = 0;
+
+	clear();
+	for(; i < bookmarks.size(); i++, it++)
+	{
+		if(i % 2 == 0)
+		{
+			mvprintw(i, 0, "%c %s", i + 'a', it->c_str() );
+		}
+		else
+		{
+			mvprintw(i - 1, globals->windowWidth - it->size() - 2, "%c %s", i + 'a', it->c_str() );
+		}
+	}
+
+	char c = Prompt::get("Select bookmark:", "");
+
+	if(!std::isalpha(c) && c - 'a' < static_cast<char>(i) ) return;
+
+	it = bookmarks.begin();
+	std::advance(it, c - 'a');
+	globals->current_path = *it;
+	fs::current_path(globals->current_path);
+	index = 0;
+	fillList();
+}
+
 void Browser::fillList() 
 {
 	int oldSize = entries.size() + 1;
@@ -351,6 +381,17 @@ void Browser::update(int input)
 			break;
 		case 'y':
 			system(("echo " + globals->current_path.string() + " | xclip -selection clipboard").c_str() );
+			break;
+		case 'B':
+			if(auto mark = bookmarks.find(globals->current_path ); mark != bookmarks.end() )
+			{
+				bookmarks.erase(mark);
+			}
+			else if(static_cast<char>(bookmarks.size() ) < 'z' - 'a') bookmarks.insert(globals->current_path );
+			printDirs();
+			break;
+		case 'b':
+			showBookmarks();
 			break;
 	}
 

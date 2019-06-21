@@ -33,6 +33,7 @@ private:
 	void findPath();
 	void createTerminal();
 	void deleteEntry();
+	void showBookmarks();
 
 	struct FileEntry
 	{
@@ -80,6 +81,7 @@ private:
 	using FileEntries = std::vector<FileEntry>;
 	FileEntries entries;	
 	std::set<std::string> marks;
+	std::set<std::string> bookmarks;
 	int index = 0;
 };
 
