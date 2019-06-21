@@ -5,24 +5,18 @@ namespace fs = std::filesystem;
 void Browser::showBookmarks()
 {
 	auto it = bookmarks.begin();
-	size_t i = 0;
+	int y = 0, c = 'a';
 
 	clear();
-	for(; i < bookmarks.size(); i++, it++)
+
+	for(; it != bookmarks.end(); it++, y++) 
 	{
-		if(i % 2 == 0)
-		{
-			mvprintw(i, 0, "%c %s", i + 'a', it->c_str() );
-		}
-		else
-		{
-			mvprintw(i - 1, globals->windowWidth - it->size() - 2, "%c %s", i + 'a', it->c_str() );
-		}
+		mvprintw(y, 0, "%c %s", y + 'a', it->c_str() );
 	}
 
-	char c = Prompt::get("Select bookmark:", "");
+	c = Prompt::get("Select bookmark:", "");
 
-	if(!std::isalpha(c) && c - 'a' < static_cast<char>(i) ) return;
+	if(!std::isalpha(c) && c - 'a' < static_cast<char>(bookmarks.size() ) ) return;
 
 	it = bookmarks.begin();
 	std::advance(it, c - 'a');
