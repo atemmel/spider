@@ -1,9 +1,9 @@
 #pragma once
-#include <string_view>
 #include <functional>
+#include <string>
 
 struct Bind
 {
 	std::function<void()> action;
-	std::string_view description;
+	std::string description;
 };

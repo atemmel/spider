@@ -1,8 +1,6 @@
 #include "config.hpp"
 #include "lexer.hpp"
 
-#include <iostream>
-
 Config::Config()
 {
 	char* editorEnv = getenv("VISUAL");
@@ -27,12 +25,35 @@ Config::Config()
 	*/
 
 	Token::Type expected = Token::Type::String;
+	size_t i = 0;
 
-	for(size_t i = 0; i < tokens.size(); i++)
+	for(; i < tokens.size(); i++)
 	{
 		if(tokens[i].type == Token::Type::Set)
 		{
 			expected = Token::Type::ConfigOffset;
+		}
+		if(tokens[i].type == Token::Type::Bind)
+		{
+			//Expect string
+			++i;
+			if(i == tokens.size() ) return;
+			if(tokens[i].type != Token::Type::String
+					|| tokens[i].value.empty() 
+					|| tokens[i].value.size() != 1) continue;
+			
+			int ch = tokens[i].value.front();
+
+			//Expect string
+			++i;
+			if(i == tokens.size() ) return;
+			if(tokens[i].type != Token::Type::String
+					|| tokens[i].value.empty() ) continue;
+
+			Bind bind;
+			bind.description = tokens[i].value;
+
+			bindings.insert(std::make_pair(ch, bind) );
 		}
 		else if(tokens[i].type > Token::Type::ConfigOffset)
 		{
@@ -40,6 +61,7 @@ Config::Config()
 
 			expected = tokens[i].type;
 			++i;
+			if(i == tokens.size() ) return;
 
 			if(tokens[i].type != Token::Type::String
 					|| tokens[i].value.empty() ) continue;

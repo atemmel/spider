@@ -1,5 +1,7 @@
 #include "browser.hpp"
 
+#include <regex>
+
 namespace fs = std::filesystem;
 
 void Browser::showBookmarks()
@@ -221,6 +223,22 @@ void Browser::deleteEntry()
 void Browser::onActivate()
 {
 	globals->current_path = fs::current_path();
+
+	for(auto &bind : globals->config.bindings)
+	{
+		if(!bind.second.action)
+		{
+			bind.second.action = [&]()
+			{
+				std::string cmd = std::regex_replace(bind.second.description, std::regex("\\%F"),
+							std::string(" ") + globals->current_path.c_str() + ' ');
+
+				system(cmd.c_str() );
+				fillList();
+			};
+		}
+	}
+
 	fillList();
 }
 
@@ -387,6 +405,11 @@ void Browser::update(int input)
 		case 'g':
 			showBookmarks();
 			break;
+		default:
+			if(auto it = globals->config.bindings.find(input); it != globals->config.bindings.end() )
+			{
+				it->second.action();
+			}
 	}
 
 	if(ec)
