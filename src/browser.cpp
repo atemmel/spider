@@ -391,9 +391,6 @@ void Browser::update(int input)
 			fillList();
 			printDirs();
 			break;
-		case 'y':
-			system(("echo " + globals->current_path.string() + " | xclip -selection clipboard").c_str() );
-			break;
 		case 'b':
 			if(auto mark = bookmarks.find(globals->current_path ); mark != bookmarks.end() )
 			{
