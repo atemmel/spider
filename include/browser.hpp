@@ -25,6 +25,8 @@ public:
 
 	void onActivate() override;
 
+	void onDeactivate() override;
+
 private:
 	void fillList();
 	void enterDir();
@@ -34,6 +36,9 @@ private:
 	void createTerminal();
 	void deleteEntry();
 	void showBookmarks();
+
+	void loadBookmarks();
+	void saveBookmarks();
 
 	struct FileEntry
 	{

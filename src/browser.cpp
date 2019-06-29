@@ -242,6 +242,11 @@ void Browser::onActivate()
 	fillList();
 }
 
+void Browser::onDeactivate()
+{
+
+}
+
 void Browser::draw()
 {
 	printHeader();
@@ -413,4 +418,14 @@ void Browser::update(int input)
 	{
 		Prompt::get(ec.message(), "Operation failed: ");
 	}
+}
+
+void Browser::loadBookmarks()
+{
+
+}
+
+void Browser::saveBookmarks()
+{
+
 }
