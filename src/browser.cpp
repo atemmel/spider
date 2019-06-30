@@ -239,12 +239,13 @@ void Browser::onActivate()
 		}
 	}
 
+	loadBookmarks();
 	fillList();
 }
 
 void Browser::onDeactivate()
 {
-
+	saveBookmarks();
 }
 
 void Browser::draw()
@@ -422,10 +423,26 @@ void Browser::update(int input)
 
 void Browser::loadBookmarks()
 {
+	std::ifstream file((globals->config.home + bookmarkPath).c_str() );
+	if(!file.is_open() ) return;
 
+	std::string line;
+
+	while(std::getline(file, line) )
+	{
+		bookmarks.insert(line);
+	}
 }
 
 void Browser::saveBookmarks()
 {
+	std::ofstream file((globals->config.home + bookmarkPath).c_str() );
+	if(!file.is_open() ) return;
 
+	std::string line;
+
+	for(auto &mark : bookmarks)
+	{
+		file << mark << '\n';
+	}
 }

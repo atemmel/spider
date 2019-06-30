@@ -88,6 +88,8 @@ private:
 	std::set<std::string> marks;
 	std::set<std::string> bookmarks;
 	int index = 0;
+
+	const std::string bookmarkPath = "/.spider-bookmarks";
 };
 
 //SPIDER_PLUGIN_EXPORT(Browser)
