@@ -26,3 +26,10 @@ Use at your own risk :^)
 * libmagic
 * libgit2
 * c++17
+
+## Todo:
+
+* cmake
+* clang-tidy
+* Plugins (git, debug)
+* Remove use of `system`, replace with something from `exec` family
