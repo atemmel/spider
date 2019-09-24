@@ -41,4 +41,20 @@ void createProcess(T function)
 
 }
 
+template<typename T, typename U>
+void createProcess(T child, U parent) {
+	endwin();
+	pid_t pid = fork();
+
+	if(pid == 0) {	//Child process
+		child();
+		std::exit(EXIT_SUCCESS);
+	}
+	else { //Parent process (Original)
+		parent(pid);
+		initscr();
+	}
+
+}
+
 }

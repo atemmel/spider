@@ -1,5 +1,6 @@
 #include "browser.hpp"
 
+#include <sys/wait.h>
 #include <regex>
 
 namespace fs = std::filesystem;
@@ -9,7 +10,7 @@ void Browser::showBookmarks()
 	auto it = bookmarks.begin();
 	int y = 0, c = 'a';
 
-	clear();
+	erase();
 
 	for(; it != bookmarks.end(); it++, y++) 
 	{
@@ -30,11 +31,8 @@ void Browser::showBookmarks()
 
 void Browser::fillList() 
 {
-	int oldSize = entries.size() + 1;
 	entries.clear();
-	int newSize = entries.size() + 1;
 	FileEntry entry;
-	std::string blanks(globals->windowWidth, ' ');
 
 	for(auto &it : fs::directory_iterator(globals->current_path) )
 	{
@@ -52,7 +50,7 @@ void Browser::fillList()
 	}
 
 	std::sort(entries.begin(), entries.end(), FileEntryComp() );
-	for(int i = newSize; i < oldSize; i++) mvprintw(i, 0, blanks.c_str() );
+	erase();
 }
 
 void Browser::enterDir() 
@@ -68,28 +66,45 @@ void Browser::enterDir()
 	}
 	else 
 	{	
-		endwin();
-
 		std::string mime = magic_file(globals->cookie, path.c_str() );
+
+		auto hold = [&](pid_t pid){
+			int status;
+			waitpid(pid, &status, 0);
+		};
 
 		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
-			system( (globals->config.editor + " \"" + (path).string() + '"').c_str() );
+			Utils::createProcess([&](){
+				execlp(globals->config.editor.c_str(), globals->config.editor.c_str(), path.c_str(), nullptr);
+			}, hold);
 			fillList();
 		}
-		else if(mime.find("application/x-pie-executable") == 0)
+		else if(static_cast<int>(entries[index].status.permissions() ) & 00111)	//If executable
 		{
-			system(path.c_str() );
-		}
-		else 
-		{
-			Utils::createProcess([&]()
-			{
-				system( (globals->config.opener + " \"" + (path).string() + '"').c_str() );
-			});
-		}
+			//TODO: This entire situation should be generalized
+			Utils::createProcess([&]() {
+				perror("yes");
+				execlp(path.c_str(), path.c_str(), nullptr);
+			}, hold);
 
-		initscr();
+			//Display output and confirm user input
+			timeout(0);
+			endwin();
+			printf("Press ENTER to return");
+			getchar();
+
+			//Restore state
+			initscr();
+			fillList();
+			timeout(Global::tick);
+		}
+		else
+		{
+			Utils::createProcess([&](){
+				execlp(globals->config.opener.c_str(), globals->config.opener.c_str(),  path.c_str(), nullptr);
+			}, hold);
+		}
 	}
 }
 
@@ -107,7 +122,7 @@ void Browser::printDirs()
 	int upperLimit = std::abs(static_cast<int>(entries.size() ) - globals->windowHeight + oy);
 	int limit = oy + static_cast<int>(index) - (globals->windowHeight >> 1);
 	auto it = entries.begin();
-	std::string blanks(globals->windowWidth, ' ');
+	
 	constexpr std::string_view dirStr = "/  ";
 	constexpr std::string_view lnStr  = "~> ";
 	
@@ -121,7 +136,6 @@ void Browser::printDirs()
 		int last_sep = it->name.find_last_of('/');
 
 		attroff(A_REVERSE);
-		mvprintw(i + oy, ox, "%s", blanks.c_str() );
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
 		fs::is_directory(it->name) ? attron(A_BOLD) : attroff(A_BOLD);
 
@@ -136,6 +150,7 @@ void Browser::printDirs()
 	}
 
 	attroff(A_REVERSE);
+	attroff(A_BOLD);
 }
 
 void Browser::findPath()
@@ -183,7 +198,8 @@ void Browser::createTerminal()
 {
 	Utils::createProcess([&]()
 	{
-		system(globals->config.terminal.data() );
+		const char *term = globals->config.terminal.data();
+		execlp(term, term, nullptr);
 	});
 }
 
@@ -245,11 +261,12 @@ void Browser::onActivate()
 
 void Browser::onDeactivate()
 {
-	saveBookmarks();
+	//saveBookmarks();
 }
 
 void Browser::draw()
 {
+	erase();
 	printHeader();
 	printDirs();
 }
@@ -398,11 +415,15 @@ void Browser::update(int input)
 			printDirs();
 			break;
 		case 'b':
+			loadBookmarks();
 			if(auto mark = bookmarks.find(globals->current_path ); mark != bookmarks.end() )
 			{
 				bookmarks.erase(mark);
 			}
-			else if(static_cast<char>(bookmarks.size() ) < 'z' - 'a') bookmarks.insert(globals->current_path );
+			else if(static_cast<char>(bookmarks.size() ) < 'z' - 'a') {
+				bookmarks.insert(globals->current_path );
+				saveBookmarks();
+			}
 			printDirs();
 			break;
 		case 'g':
