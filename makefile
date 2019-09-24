@@ -9,7 +9,7 @@ SRC := $(wildcard $(SRCDIR)/*.cpp) $(wildcard $(SRCDIR)/*/*.cpp)
 OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:%.cpp=%.o))
 CC := g++
 CXXFLAGS := -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wno-unused-parameter -Wundef -Wcast-qual -Wshadow -Wredundant-decls -std=c++17 -I$(INCDIR)
-DBGFLAGS := -g
+DBGFLAGS := -g -DDEBUG
 RELEASEFLAGS := -Ofast
 
 TARGET := $(OBJDIR)/$(TARGET)
