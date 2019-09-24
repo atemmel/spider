@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.hpp"
+#include "debug.hpp"
 
 #include <filesystem>
 #include <magic.h>
@@ -19,6 +20,12 @@ struct Global
 	int windowHeight;
 	std::string pluginDir;
 	std::filesystem::path current_path;
+#ifdef DEBUG
+	Debug::Stream stream;
+#else
+	Debug::DummyStream stream;
+#endif
+
 
 private:
 	Global();
