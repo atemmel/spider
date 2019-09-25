@@ -37,3 +37,6 @@ clean:
 setup:
 	-mkdir $(OBJDIR)
 	-mkdir $(PLUGINDIR)
+
+tidy:
+	./tools/tidy
