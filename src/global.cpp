@@ -17,7 +17,7 @@ Global::Global()
 	start_color();	//TODO: Check for return
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config
 	Global::cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
-	magic_load(Global::cookie, 0);	//TODO: Check for return
+	magic_load(Global::cookie, nullptr);	//TODO: Check for return
 	git_libgit2_init();	//TODO: Check for return
 #ifdef DEBUG
 	stream.open("debug.log");
@@ -33,7 +33,7 @@ Global::~Global()
 
 std::unique_ptr<Global> makeGlobal()
 {
-	static bool created = 0;
+	static bool created = false;
 	assert(!created);	//Assert that only one global is ever instantiated
 	return std::unique_ptr<Global>(new Global() );
 }

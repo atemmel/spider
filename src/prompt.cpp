@@ -33,7 +33,7 @@ std::string Prompt::getString(const std::string &message)
 	clear(x, y);
 	print(y, in.c_str(), message.c_str() );
 
-	while(1)
+	while(true)
 	{
 		c = getch();
 

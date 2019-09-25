@@ -159,7 +159,7 @@ void Browser::findPath()
 	int c = '\0';
 	std::vector<bool> bits(entries.size(), false);
 
-	while(1)
+	while(true)
 	{
 		c = Prompt::get(input, "Go:");
 
