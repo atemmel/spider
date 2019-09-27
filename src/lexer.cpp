@@ -40,24 +40,35 @@ std::vector<Token> Lexer::parse(const std::string &str)
 	}
 	*/
 
+	/*
 	auto next = [&]()
 	{
 		while(it != end && std::isspace(*it) )
 		{
 			++it, ++wordstart;
+			if(it == end) goto DoneParsing;
 		}
-		//std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
+		std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 	};
+	*/
 
 	//TODO: This could probably be made more pretty with gotos
+
+ParseNext:
+	if(it == end) goto DoneParsing;
+	while(std::isspace(*it) )
+	{
+		++it, ++wordstart;
+		if(it == end) goto DoneParsing;
+	}
+	//std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 
 	while(it != end)
 	{
 		if(*it == '#')
 		{
 			wordstart = it = std::find(std::next(it), end, '\n');
-			next();
-			continue;
+			goto ParseNext;
 		}
 		else if(*it == '"')
 		{
@@ -66,18 +77,17 @@ std::vector<Token> Lexer::parse(const std::string &str)
 			token.value = std::string(std::next(it), endquote);
 			token.type = Token::Type::String;
 
-			//std::cerr << token << '\n';
+			std::cerr << token << '\n';
 			tokens.push_back(token);
 			wordstart = it = endquote;
 			++it, ++wordstart;
-			next();
-			continue;
+			goto ParseNext;
 		}
 		else if(std::isspace(*it) || it + 1 == end)
 		{
 			Token token;
 			word.assign(wordstart, it);
-			if(word.empty() ) break;
+			if(word.empty() ) goto ParseNext;
 
 			//Replace this once more tokens are added
 
@@ -100,15 +110,15 @@ std::vector<Token> Lexer::parse(const std::string &str)
 			}
 
 			wordstart = it;
-			//std::cerr << token << '\n';
+			std::cerr << token << '\n';
 			tokens.push_back(token);
 
-			next();
-			continue;
+			goto ParseNext;
 		}
 		
 		++it;
 	}
 
+DoneParsing:
 	return tokens;
 }
