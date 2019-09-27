@@ -40,85 +40,72 @@ std::vector<Token> Lexer::parse(const std::string &str)
 	}
 	*/
 
-	/*
-	auto next = [&]()
-	{
-		while(it != end && std::isspace(*it) )
-		{
-			++it, ++wordstart;
-			if(it == end) goto DoneParsing;
-		}
-		std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
-	};
-	*/
-
-	//TODO: This could probably be made more pretty with gotos
-
-ParseNext:
-	if(it == end) goto DoneParsing;
+Next:
+	if(it == end) goto Done;
 	while(std::isspace(*it) )
 	{
 		++it, ++wordstart;
-		if(it == end) goto DoneParsing;
+		if(it == end) goto Done;
 	}
 	//std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 
-	while(it != end)
+	if(*it == '#')
 	{
-		if(*it == '#')
+		wordstart = it = std::find(std::next(it), end, '\n');
+		goto Next;
+	}
+	else if(*it == '"')
+	{
+		Token token;
+		auto endquote = std::find(std::next(it), end, '"');
+		token.value = std::string(std::next(it), endquote);
+		token.type = Token::Type::String;
+
+		//std::cerr << token << '\n';
+		tokens.push_back(token);
+		wordstart = it = endquote;
+		++it, ++wordstart;
+		goto Next;
+	}
+	else
+	{
+		it = std::find_if(it, end, [](const char c) {
+			return std::isspace(c);
+		});
+
+		if(it + 1 == end) goto Done;
+
+		Token token;
+		word.assign(wordstart, it);
+		if(word.empty() ) goto Next;
+
+		//Replace this once more tokens are added
+
+		//If token
+		if(auto vt = std::find(validTokens.begin(), validTokens.end(), word); vt != validTokens.end() )
 		{
-			wordstart = it = std::find(std::next(it), end, '\n');
-			goto ParseNext;
+			token.type = static_cast<Token::Type>(std::distance(validTokens.begin(), vt) );
 		}
-		else if(*it == '"')
+		//If setting
+		else if(auto vc = std::find(validConfig.begin(), validConfig.end(), word); vc != validConfig.end() )
 		{
-			Token token;
-			auto endquote = std::find(std::next(it), end, '"');
-			token.value = std::string(std::next(it), endquote);
+			int offset = static_cast<int>(Token::Type::ConfigOffset) + 1;
+			token.type = static_cast<Token::Type>(offset + std::distance(validConfig.begin(), vc) );
+		}
+		//Otherwise, it must be a value
+		else
+		{
 			token.type = Token::Type::String;
-
-			std::cerr << token << '\n';
-			tokens.push_back(token);
-			wordstart = it = endquote;
-			++it, ++wordstart;
-			goto ParseNext;
+			token.value = word;
 		}
-		else if(std::isspace(*it) || it + 1 == end)
-		{
-			Token token;
-			word.assign(wordstart, it);
-			if(word.empty() ) goto ParseNext;
 
-			//Replace this once more tokens are added
+		wordstart = it;
+		//std::cerr << token << '\n';
+		tokens.push_back(token);
 
-			//If token
-			if(auto vt = std::find(validTokens.begin(), validTokens.end(), word); vt != validTokens.end() )
-			{
-				token.type = static_cast<Token::Type>(std::distance(validTokens.begin(), vt) );
-			}
-			//If setting
-			else if(auto vc = std::find(validConfig.begin(), validConfig.end(), word); vc != validConfig.end() )
-			{
-				int offset = static_cast<int>(Token::Type::ConfigOffset) + 1;
-				token.type = static_cast<Token::Type>(offset + std::distance(validConfig.begin(), vc) );
-			}
-			//Otherwise, it must be a value
-			else
-			{
-				token.type = Token::Type::String;
-				token.value = word;
-			}
-
-			wordstart = it;
-			std::cerr << token << '\n';
-			tokens.push_back(token);
-
-			goto ParseNext;
-		}
-		
-		++it;
+		goto Next;
 	}
 
-DoneParsing:
+Done:
 	return tokens;
 }
