@@ -20,11 +20,6 @@ struct Global
 	int windowHeight;
 	std::string pluginDir;
 	std::filesystem::path current_path;
-#ifdef DEBUG
-	Debug::Stream stream;
-#else
-	Debug::DummyStream stream;
-#endif
 
 
 private:

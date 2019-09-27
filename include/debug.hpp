@@ -1,35 +1,23 @@
 #pragma once
-#include <fstream>
-#include <errno.h>
+#include <iostream>
 
 namespace Debug {
 
 class DummyStream {
 public:
 	template<typename T>
-	DummyStream &operator<<(T rhs) {
+	constexpr DummyStream &operator<<(T rhs) {
 		return *this;
 	}
-
-	constexpr bool open(const std::string &str) const {
-		return true;
-	}
-
-	void flush() const {};
 };
 
-class Stream {
-	public:
-		bool open(const std::string &str);
-		void flush();
+#define CURRENT_LOCATION "File:" << __FILE__ << " Line:" << __LINE__ << ' '
 
-		template<typename T>
-		Stream &operator<<(const T& rhs) {
-			of << rhs;
-			return *this;
-		}
-	private:
-		std::ofstream of;
-};
+#ifdef DEBUG
+	#define LOG std::cerr << CURRENT_LOCATION
+#else
+	#define LOG Debug::DummyStream()
+#endif
+
 
 }

@@ -1,8 +1,8 @@
 #include "lexer.hpp"
+#include "debug.hpp"
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 
 std::vector<Token> Lexer::open(const char* path)
 {
@@ -33,12 +33,9 @@ std::vector<Token> Lexer::parse(const std::string &str)
 	std::vector<Token> tokens;
 	auto it = str.begin(), wordstart = str.begin(), end = str.end();
 
-	//TODO: replace cerr with logging stream
-	/*
 	for(size_t i = 0; i < str.size(); i++) {
-		std::cerr << i << " > " << str[i] << " : " << static_cast<int>(str[i]) << '\n';
+		LOG << i << " > " << str[i] << " : " << static_cast<int>(str[i]) << '\n';
 	}
-	*/
 
 Next:
 	if(it == end) goto Done;
@@ -47,7 +44,7 @@ Next:
 		++it, ++wordstart;
 		if(it == end) goto Done;
 	}
-	//std::cerr << "Token starts at: " << std::distance(str.begin(), it) << '\n';
+	LOG << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 
 	if(*it == '#')
 	{
@@ -61,7 +58,7 @@ Next:
 		token.value = std::string(std::next(it), endquote);
 		token.type = Token::Type::String;
 
-		//std::cerr << token << '\n';
+		LOG << token << '\n';
 		tokens.push_back(token);
 		wordstart = it = endquote;
 		++it, ++wordstart;
@@ -100,7 +97,7 @@ Next:
 		}
 
 		wordstart = it;
-		//std::cerr << token << '\n';
+		LOG << token << '\n';
 		tokens.push_back(token);
 
 		goto Next;

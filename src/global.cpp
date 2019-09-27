@@ -19,9 +19,6 @@ Global::Global()
 	Global::cookie = magic_open(MAGIC_MIME);	//TODO: Check for return
 	magic_load(Global::cookie, nullptr);	//TODO: Check for return
 	git_libgit2_init();	//TODO: Check for return
-#ifdef DEBUG
-	stream.open("debug.log");
-#endif
 }
 
 Global::~Global()
