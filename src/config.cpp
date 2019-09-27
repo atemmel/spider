@@ -1,6 +1,8 @@
 #include "config.hpp"
 #include "lexer.hpp"
 
+#include <iostream>
+
 Config::Config()
 {
 	char* editorEnv = getenv("VISUAL");

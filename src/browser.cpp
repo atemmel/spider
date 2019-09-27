@@ -249,7 +249,16 @@ void Browser::onActivate()
 				std::string cmd = std::regex_replace(bind.second.description, std::regex("\\%F"),
 							std::string(" ") + globals->current_path.c_str() + ' ');
 
-				system(cmd.c_str() );
+				//TODO: Violation of DRY
+				auto hold = [&](pid_t pid){
+					int status;
+					waitpid(pid, &status, 0);
+				};
+
+				Utils::createProcess([&](){
+					execlp("sh", "sh", "-c", cmd.c_str(), nullptr);
+				}, hold);
+
 				fillList();
 			};
 		}
