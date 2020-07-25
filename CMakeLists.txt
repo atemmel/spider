@@ -22,3 +22,5 @@ find_library(libdl dl REQUIRED IMPORTED)
 find_library(libfs stdc++fs REQUIRED IMPORTED)
 
 target_link_libraries(spider ${libcurses} ${libmagic} ${libgit2} ${libdl} ${libfs})
+
+install(TARGETS spider DESTINATION bin)
