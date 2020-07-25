@@ -29,7 +29,7 @@ Use at your own risk :^)
 
 ## Todo:
 
-* cmake
+* ~~cmake~~
 * clang-tidy
 * Plugins (git, debug)
 * ~~Remove use of `system`, replace with something from `exec` family~~

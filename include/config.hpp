@@ -8,6 +8,7 @@ struct Config
 {
 	Config();
 
+	std::string shell;
 	std::string editor;
 	std::string terminal;
 	std::string opener;

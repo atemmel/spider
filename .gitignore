@@ -1,5 +1,7 @@
+*.ccls-cache
 *.o
 *.so
+build
 spider
-spider-release
 debug.log
+compile_commands.json

@@ -35,8 +35,14 @@ int main(int argc, char** argv)
 		}
 		browser->onDeactivate();
 	}
+	catch(const std::filesystem::filesystem_error &err)
+	{
+		endwin();
+		std::cerr << "Filesystem error: " << err.what() << '\n';
+	}
 	catch(...)
 	{
+		endwin();
 		std::cerr << "Unexpected execption caught\n";
 	}
 

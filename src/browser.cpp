@@ -311,7 +311,7 @@ void Browser::update(int input)
 		case -1: break;
 		case's':
 			endwin();
-			system("bash");	//TODO: replace this
+			system(globals->config.shell.c_str());
 			initscr();
 			fillList();
 			printDirs();

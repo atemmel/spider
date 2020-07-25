@@ -8,10 +8,12 @@ Config::Config()
 	char* editorEnv = getenv("VISUAL");
 	char* terminalEnv = getenv("TERMCMD");
 	char* openerEnv = getenv("SPIDER-OPENER");
+	char* shellEnv = getenv("SHELL");
 
 	editor = editorEnv ? editorEnv : "nvim";
 	terminal = terminalEnv ? terminalEnv : "urxvt";
 	opener = openerEnv ? openerEnv : "xdg-open";
+	shell = shellEnv ? shellEnv : "bash";
 	home = getenv("HOME");
 
 	Lexer lexer;
