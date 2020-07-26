@@ -22,7 +22,7 @@ public:
 #ifdef DEBUG
 #define LOG std::cerr << CURRENT_LOCATION
 #else
-#define LOG Debug::DummyStream()
+#define LOG debug::DummyStream()
 #endif
 
 }  // namespace debug
