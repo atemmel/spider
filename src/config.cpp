@@ -18,15 +18,7 @@ Config::Config()
 
 	Lexer lexer;
 
-	//std::cerr << "Reading tokens from " << home + "/.config/spider/spider.conf\n";
 	auto tokens = lexer.open((home + "/.config/spider/spider.conf").c_str() );
-
-	/*
-	for(auto &t : tokens)
-	{
-		std::cerr << t << '\n';
-	}
-	*/
 
 	Token::Type expected = Token::Type::String;
 	size_t i = 0;

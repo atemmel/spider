@@ -5,14 +5,13 @@
 #include "utils.hpp"
 #include "git.hpp"
 
-// This looks good :)
+#include <unordered_set>
 #include <string_view>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <limits>
-#include <set>
 
 namespace fs = std::filesystem;
 
@@ -85,11 +84,9 @@ private:
 
 	using FileEntries = std::vector<FileEntry>;
 	FileEntries entries;	
-	std::set<std::string> marks;
-	std::set<std::string> bookmarks;
+	std::unordered_set<std::string> marks;
+	std::unordered_set<std::string> bookmarks;
 	int index = 0;
 
 	const std::string bookmarkPath = "/.spider-bookmarks";
 };
-
-//SPIDER_PLUGIN_EXPORT(Browser)

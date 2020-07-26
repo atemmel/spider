@@ -5,18 +5,11 @@
 #include <signal.h>
 #include <iostream>
 
-std::unique_ptr<Global> globals;
-
-void resizeHandler(int sig) {
-	getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
-}
 
 int main(int argc, char** argv)
 {
+	std::unique_ptr<Global> globals;
 	globals = makeGlobal();
-	getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
-
-	signal(SIGWINCH,  resizeHandler);
 
 	auto browser = std::make_unique<Browser>();
 	browser->globals = globals.get();
@@ -27,6 +20,7 @@ int main(int argc, char** argv)
 		browser->onActivate();
 		while(c != 'q' && c != 4)
 		{
+			refresh();
 			getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
 			browser->draw();
 			c = getch();

@@ -124,10 +124,17 @@ void Browser::printDirs()
 	
 	constexpr std::string_view dirStr = "/  ";
 	constexpr std::string_view lnStr  = "~> ";
+	static_assert(dirStr.size() == lnStr.size() );
+	constexpr int padBeforeFileName = 
+		+ 3 	// Length of permissions string
+		+ 10 	// Length of filesize/dirdef string
+		+ 4;	// Sum of individual padding between each column
 	
-	if(static_cast<int>(entries.size() ) < globals->windowHeight - oy) upperLimit = 0;
-	limit = std::clamp(limit, 0, upperLimit);
+	if(static_cast<int>(entries.size() ) < globals->windowHeight - oy) {
+		upperLimit = 0;
+	}
 
+	limit = std::clamp(limit, 0, upperLimit);
 	it += limit;
 
 	for(int i = 0; it != entries.end(); i++, it++)
@@ -139,12 +146,12 @@ void Browser::printDirs()
 		fs::is_directory(it->name) ? attron(A_BOLD) : attroff(A_BOLD);
 
 		mvprintw(i + oy, ox, " %o %10s %s%s ", 
-					static_cast<int>(it->status.permissions() ) & 00777, 
-					fs::is_symlink(it->name) ? lnStr.data() :
+					static_cast<int>(it->status.permissions() ) & 00777,	// Permissions
+					fs::is_symlink(it->name) ? lnStr.data() :				// Filesize/dirdef
 						it->hasSize() ? it->sizeStr.c_str() :
 							dirStr.data(),
-					marks.find(it->name) != marks.end() ? " " : "",
-					it->name.substr(last_sep + 1, globals->windowWidth - ox).c_str() 
+					marks.find(it->name) != marks.end() ? " " : "",			// Filename
+					it->name.substr(last_sep + 1, globals->windowWidth - ox - padBeforeFileName).c_str() 
 				);
 	}
 

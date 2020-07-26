@@ -10,6 +10,7 @@ Global::Global()
 {
 	std::setlocale(LC_ALL, "");
 	initscr();
+	getmaxyx(stdscr, windowHeight, windowWidth);
 	noecho();
 	keypad(stdscr, TRUE);
 	timeout(Global::tick);

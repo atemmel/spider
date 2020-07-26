@@ -1,6 +1,12 @@
 #pragma once
 #include <iostream>
 
+#ifndef DEBUG
+#ifndef NDEBUG
+#define DEBUG
+#endif
+#endif
+
 namespace Debug {
 
 class DummyStream {
