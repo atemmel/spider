@@ -30,6 +30,7 @@ Use at your own risk :^)
 ## Todo:
 
 * ~~cmake~~
-* clang-tidy
+* ~~clang-tidy~~
 * Plugins (git, debug)
+* Execute command(s) in background
 * ~~Remove use of `system`, replace with something from `exec` family~~
