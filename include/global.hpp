@@ -10,7 +10,7 @@
 #include "debug.hpp"
 
 struct Global {
-	friend std::unique_ptr<Global> makeGlobal();
+	friend void makeGlobal();
 	~Global();
 
 	constexpr static unsigned TICK = 1000;  // ms
@@ -24,4 +24,6 @@ private:
 	Global();
 };
 
-std::unique_ptr<Global> makeGlobal();
+extern std::unique_ptr<Global> globals;
+
+void makeGlobal();

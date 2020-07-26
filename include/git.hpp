@@ -20,6 +20,7 @@ private:
 	int error;
 };
 
+// TODO Plan out this a bit more
 class Git : public Plugin {
 	void onActivate() override;
 };

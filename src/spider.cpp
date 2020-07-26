@@ -7,23 +7,20 @@
 #include "global.hpp"
 
 int main(int /*argc*/, char** /*argv*/) {
-	std::unique_ptr<Global> globals;
-	globals = makeGlobal();
+	makeGlobal();
 
-	auto browser = std::make_unique<Browser>();
-	browser->globals = globals.get();
+	PluginPtr plugin = std::make_unique<Browser>();
 
 	int c = 0;
 	try {
-		browser->onActivate();
+		plugin->onActivate();
 		while (c != 'q' && c != 4) {
-			refresh();
 			getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
-			browser->draw();
+			plugin->draw();
 			c = getch();
-			browser->update(c);
+			plugin->update(c);
 		}
-		browser->onDeactivate();
+		plugin->onDeactivate();
 	} catch (const std::filesystem::filesystem_error& err) {
 		endwin();
 		std::cerr << "Filesystem error: " << err.what() << '\n';

@@ -34,8 +34,8 @@ std::vector<Token> Lexer::parse(const std::string &str) {
 	auto it = str.begin(), wordstart = str.begin(), end = str.end();
 
 	for (size_t i = 0; i < str.size(); i++) {
-		LOG << i << " > " << str[i] << " : " << static_cast<int>(str[i])
-		    << '\n';
+		// LOG << i << " > " << str[i] << " : " << static_cast<int>(str[i])
+		//<< '\n';
 	}
 
 Next:
@@ -48,7 +48,7 @@ Next:
 			goto Done;
 		}
 	}
-	LOG << "Token starts at: " << std::distance(str.begin(), it) << '\n';
+	// LOG << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 
 	if (*it == '#') {
 		wordstart = it = std::find(std::next(it), end, '\n');
@@ -59,7 +59,7 @@ Next:
 		token.value = std::string(std::next(it), endquote);
 		token.type = Token::Type::String;
 
-		LOG << token << '\n';
+		// LOG << token << '\n';
 		tokens.push_back(token);
 		wordstart = it = endquote;
 		++it, ++wordstart;
