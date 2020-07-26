@@ -17,9 +17,10 @@ void Browser::showBookmarks()
 		mvprintw(y, 0, "%c %s", y + 'a', it->c_str() );
 	}
 
-	c = Prompt::get("Select bookmark:", "");
+	c = prompt::get("Select bookmark:", "");
 
-	if(!std::isalpha(c) && c - 'a' < static_cast<char>(bookmarks.size() ) ) return;
+	if(!std::isalpha(c) && c - 'a' < static_cast<char>(bookmarks.size() ) ) { return;
+}
 
 	it = bookmarks.begin();
 	std::advance(it, c - 'a');
@@ -42,9 +43,10 @@ void Browser::fillList()
 		if(fs::is_regular_file(entry.name) && !fs::is_symlink(entry.name) ) 
 		{
 			entry.size = fs::file_size(it);
-			entry.sizeStr = Utils::bytesToString(entry.size);
+			entry.sizeStr = utils::bytesToString(entry.size);
 		}
-		else entry.size = std::numeric_limits<std::uintmax_t>::max();
+		else { entry.size = std::numeric_limits<std::uintmax_t>::max();
+}
 
 		entries.push_back(entry);
 	}
@@ -75,7 +77,7 @@ void Browser::enterDir()
 
 		if(mime.find("text") == 0 || mime.find("inode/x-empty") == 0)
 		{
-			Utils::createProcess([&](){
+			utils::createProcess([&](){
 				execlp(globals->config.editor.c_str(), globals->config.editor.c_str(), path.c_str(), nullptr);
 			}, hold);
 			fillList();
@@ -83,7 +85,7 @@ void Browser::enterDir()
 		else if(static_cast<int>(entries[index].status.permissions() ) & 00111)	//If executable
 		{
 			//TODO: This entire situation should be generalized
-			Utils::createProcess([&]() {
+			utils::createProcess([&]() {
 				execlp(path.c_str(), path.c_str(), nullptr);
 			}, hold);
 
@@ -96,11 +98,11 @@ void Browser::enterDir()
 			//Restore state
 			initscr();
 			fillList();
-			timeout(Global::tick);
+			timeout(Global::TICK);
 		}
 		else
 		{
-			Utils::createProcess([&](){
+			utils::createProcess([&](){
 				execlp(globals->config.opener.c_str(), globals->config.opener.c_str(),  path.c_str(), nullptr);
 			}, hold);
 		}
@@ -139,7 +141,7 @@ void Browser::printDirs()
 
 	for(int i = 0; it != entries.end(); i++, it++)
 	{
-		int last_sep = it->name.find_last_of('/');
+		int lastSep = it->name.find_last_of('/');
 
 		attroff(A_REVERSE);
 		index == i + limit ? attron(A_REVERSE) : attroff(A_REVERSE);
@@ -151,7 +153,7 @@ void Browser::printDirs()
 						it->hasSize() ? it->sizeStr.c_str() :
 							dirStr.data(),
 					marks.find(it->name) != marks.end() ? " " : "",			// Filename
-					it->name.substr(last_sep + 1, globals->windowWidth - ox - padBeforeFileName).c_str() 
+					it->name.substr(lastSep + 1, globals->windowWidth - ox - padBeforeFileName).c_str() 
 				);
 	}
 
@@ -167,13 +169,15 @@ void Browser::findPath()
 
 	while(true)
 	{
-		c = Prompt::get(input, "Go:");
+		c = prompt::get(input, "Go:");
 
-		if(c == KEY_BACKSPACE && !input.empty() ) input.pop_back();
-		else if(c == 27) break;
-		else if(c != '\0') input.push_back(c);
+		if(c == KEY_BACKSPACE && !input.empty() ) { input.pop_back();
+		} else if(c == 27) { break;
+		} else if(c != '\0') { input.push_back(c);
+}
 
-		if(input.empty() ) continue;
+		if(input.empty() ) { continue;
+}
 
 		std::fill(bits.begin(), bits.end(), false);
 
@@ -181,7 +185,7 @@ void Browser::findPath()
 		{
 			std::string str = entries[i].file();
 
-			bits[i] = Utils::startsWith(str, input);
+			bits[i] = utils::startsWith(str, input);
 		}
 
 		if(auto it = std::find(bits.begin(), bits.end(), true); it != bits.end() )
@@ -202,7 +206,7 @@ void Browser::findPath()
 
 void Browser::createTerminal()
 {
-	Utils::createProcess([&]()
+	utils::createProcess([&]()
 	{
 		const char *term = globals->config.terminal.data();
 		execlp(term, term, nullptr);
@@ -213,14 +217,15 @@ void Browser::deleteEntry()
 {
 	if(!marks.empty() )
 	{
-		int prompt = Prompt::get("", "Delete " + std::to_string(marks.size() ) + " objects?(Y/N):");
+		int prompt = prompt::get("", "Delete " + std::to_string(marks.size() ) + " objects?(Y/N):");
 
 		if(prompt == 'y' || prompt == 'Y')
 		{
 			for(auto &mark : marks)
 			{
-				if(fs::is_directory(mark) ) fs::remove_all(mark);
-				else fs::remove(mark);
+				if(fs::is_directory(mark) ) { fs::remove_all(mark);
+				} else { fs::remove(mark);
+}
 			}
 
 			marks.clear();
@@ -228,9 +233,10 @@ void Browser::deleteEntry()
 		return;
 	}
 
-	int prompt = Prompt::get("", "Delete " + entries[index].file().string() +  "?(Y/N):");
+	int prompt = prompt::get("", "Delete " + entries[index].file().string() +  "?(Y/N):");
 
-	if(prompt != 'y' && prompt != 'Y') return;
+	if(prompt != 'y' && prompt != 'Y') { return;
+}
 
 	if(fs::is_directory(entries[index].name) )
 	{
@@ -261,7 +267,7 @@ void Browser::onActivate()
 					waitpid(pid, &status, 0);
 				};
 
-				Utils::createProcess([&](){
+				utils::createProcess([&](){
 					execlp("sh", "sh", "-c", cmd.c_str(), nullptr);
 				}, hold);
 
@@ -339,24 +345,28 @@ void Browser::update(int input)
 		case KEY_DOWN:	/* Down */
 		case 'j':
 			++index;
-			if(index >= static_cast<int>(entries.size() ) )  index = 0;
+			if(index >= static_cast<int>(entries.size() ) ) {  index = 0;
+}
 			break;
 		case KEY_UP:	/* Up */
 		case 'k':
 			--index;
-			if(index < 0) index = entries.size() - 1;
+			if(index < 0) { index = static_cast<int>(entries.size()) - 1;
+}
 			break;
 		case 'c':
-			prompt = Prompt::getString("Name of file:");
-			if(prompt.empty() || fs::exists(prompt.c_str() ) ) return;
+			prompt = prompt::getString("Name of file:");
+			if(prompt.empty() || fs::exists(prompt.c_str() ) ) { return;
+}
 			file.open(prompt.c_str() );
 			fillList();
 			printHeader();
 			printDirs();
 			break;
 		case 'C':
-			prompt = Prompt::getString("Name of directory:");
-			if(prompt.empty() || fs::exists(prompt.c_str() ) ) return;
+			prompt = prompt::getString("Name of directory:");
+			if(prompt.empty() || fs::exists(prompt.c_str() ) ) { return;
+}
 			fs::create_directory(prompt.c_str() );
 			fillList();
 			printHeader();
@@ -377,17 +387,21 @@ void Browser::update(int input)
 			{
 				marks.erase(mark);
 			}
-			else marks.insert(entries[index].name);
-			if(index < static_cast<int>(entries.size() ) - 1) ++index;
+			else { marks.insert(entries[index].name);
+}
+			if(index < static_cast<int>(entries.size() ) - 1) { ++index;
+}
 			printDirs();
 			break;
 		case 'R':
-			prompt = Prompt::getString("New name:");
-			if(prompt.empty() ) return;
+			prompt = prompt::getString("New name:");
+			if(prompt.empty() ) { return;
+}
 			if(fs::exists(prompt.c_str() ) && prompt.find("..") != 0 && prompt != ".") 
 			{
-				c = Prompt::get("", "Warning: " + prompt + " already exists. Overwrite?(Y/N):");
-				if(c != 'Y' && c != 'y') return;
+				c = prompt::get("", "Warning: " + prompt + " already exists. Overwrite?(Y/N):");
+				if(c != 'Y' && c != 'y') { return;
+}
 			}
 			fs::rename(entries[index].name, prompt, ec);
 			fillList();
@@ -404,13 +418,13 @@ void Browser::update(int input)
 			break;
 		case 'a':
 			prompt = magic_file(globals->cookie, entries[index].name.c_str() );
-			c = Prompt::get(prompt, "MIME type: ");
+			prompt::get(prompt, "MIME type: ");
 			break;
 		case 'p':
 			for(auto &mark : marks)
 			{
 				fs::copy(mark, 
-						globals->current_path / Utils::file(mark),
+						globals->current_path / utils::file(mark),
 						fs::copy_options::recursive, 
 						ec);
 			}
@@ -422,7 +436,7 @@ void Browser::update(int input)
 			for(auto &mark : marks)
 			{
 				fs::rename(mark,
-						globals->current_path / Utils::file(mark),
+						globals->current_path / utils::file(mark),
 						ec);
 			}
 			marks.clear();
@@ -453,14 +467,15 @@ void Browser::update(int input)
 
 	if(ec)
 	{
-		Prompt::get(ec.message(), "Operation failed: ");
+		prompt::get(ec.message(), "Operation failed: ");
 	}
 }
 
 void Browser::loadBookmarks()
 {
 	std::ifstream file((globals->config.home + bookmarkPath).c_str() );
-	if(!file.is_open() ) return;
+	if(!file.is_open() ) { return;
+}
 
 	std::string line;
 
@@ -473,7 +488,8 @@ void Browser::loadBookmarks()
 void Browser::saveBookmarks()
 {
 	std::ofstream file((globals->config.home + bookmarkPath).c_str() );
-	if(!file.is_open() ) return;
+	if(!file.is_open() ) { return;
+}
 
 	std::string line;
 

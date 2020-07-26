@@ -1,6 +1,8 @@
 #include "utils.hpp"
 
-namespace Utils
+#include <cmath>
+
+namespace utils
 {
 
 std::string file(const std::string &str)
@@ -19,10 +21,11 @@ bool caseInsensitiveComparison(const std::string &lhs, const std::string &rhs)
 
 	while(lit != lhs.end() && rit != rhs.end() )
 	{
-		char a = toupper(*lit), b = toupper(*rit);
+		int a = toupper(*lit), b = toupper(*rit);
 
-		if(a < b) return true;
-		else if(a > b) return false;
+		if(a < b) { return true;
+		} else if(a > b) { return false;
+}
 
 		++lit, ++rit;
 	}
@@ -32,13 +35,15 @@ bool caseInsensitiveComparison(const std::string &lhs, const std::string &rhs)
 
 bool startsWith(const std::string &origin, const std::string &match)
 {
-	if(origin.size() < match.size() ) return false;
+	if(origin.size() < match.size() ) { return false;
+}
 
 	auto originIt = origin.begin(), matchIt = match.begin();
 
 	while(matchIt != match.end() )
 	{
-		if(*originIt != *matchIt) return false;
+		if(*originIt != *matchIt) { return false;
+}
 
 		++originIt, ++matchIt;
 	}
@@ -71,7 +76,7 @@ std::string bytesToString(std::uintmax_t bytes)
 	right /= 1024.f;	//normalize
 	right *= 10.f;		//Scale so that 0 < right < 10
 
-	right = static_cast<float>(static_cast<int>(right + 0.5f) );
+	right = lround(right);
 
 	std::string str(10, '\0');
 

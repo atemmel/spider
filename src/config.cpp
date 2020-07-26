@@ -33,18 +33,22 @@ Config::Config()
 		{
 			//Expect string
 			++i;
-			if(i == tokens.size() ) return;
+			if(i == tokens.size() ) { return;
+}
 			if(tokens[i].type != Token::Type::String
 					|| tokens[i].value.empty() 
-					|| tokens[i].value.size() != 1) continue;
+					|| tokens[i].value.size() != 1) { continue;
+}
 			
-			int ch = tokens[i].value.front();
+			int ch = static_cast<unsigned char>(tokens[i].value.front());
 
 			//Expect string
 			++i;
-			if(i == tokens.size() ) return;
+			if(i == tokens.size() ) { return;
+}
 			if(tokens[i].type != Token::Type::String
-					|| tokens[i].value.empty() ) continue;
+					|| tokens[i].value.empty() ) { continue;
+}
 
 			Bind bind;
 			bind.description = tokens[i].value;
@@ -53,14 +57,17 @@ Config::Config()
 		}
 		else if(tokens[i].type > Token::Type::ConfigOffset)
 		{
-			if(expected != Token::Type::ConfigOffset) continue;
+			if(expected != Token::Type::ConfigOffset) { continue;
+}
 
 			expected = tokens[i].type;
 			++i;
-			if(i == tokens.size() ) return;
+			if(i == tokens.size() ) { return;
+}
 
 			if(tokens[i].type != Token::Type::String
-					|| tokens[i].value.empty() ) continue;
+					|| tokens[i].value.empty() ) { continue;
+}
 
 			switch(expected)
 			{

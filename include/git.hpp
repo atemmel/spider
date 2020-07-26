@@ -17,8 +17,8 @@ public:
 	~Repository();
 
 private:
-	git_repository* m_repo;
-	int m_error;
+	git_repository* repo;
+	int error;
 };
 
 class Git : public Plugin

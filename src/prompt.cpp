@@ -19,10 +19,10 @@ static void exit(int x, int y)
 {
 	clear(x, y);
 	noecho();
-	timeout(Global::tick);
+	timeout(Global::TICK);
 }
 
-std::string Prompt::getString(const std::string &message)
+std::string prompt::getString(const std::string &message)
 {
 	int x, y, c = 0;
 	std::string in = "";
@@ -42,7 +42,8 @@ std::string Prompt::getString(const std::string &message)
 			case '\t':
 				continue;
 			case KEY_BACKSPACE:
-				if(!in.empty() ) in.pop_back();
+				if(!in.empty() ) { in.pop_back();
+}
 				break;
 			case 27:	//ESC
 				exit(x, y);
@@ -61,7 +62,7 @@ std::string Prompt::getString(const std::string &message)
 	return "";	//Only here so that all paths return a value
 }
 
-int Prompt::get(const std::string &value, const std::string &message)
+int prompt::get(const std::string &value, const std::string &message)
 {
 	int x, y, c = 0;
 	std::string in;

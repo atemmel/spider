@@ -13,7 +13,7 @@ Global::Global()
 	getmaxyx(stdscr, windowHeight, windowWidth);
 	noecho();
 	keypad(stdscr, TRUE);
-	timeout(Global::tick);
+	timeout(TICK);
 	curs_set(0);
 	start_color();	//TODO: Check for return
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);	//TODO: Move into config

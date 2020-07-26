@@ -4,7 +4,7 @@
     
 #include <string>
 
-namespace Prompt
+namespace prompt
 {
 
 std::string getString(const std::string &message);

@@ -9,7 +9,8 @@ std::vector<Token> Lexer::open(const char* path)
 	std::ifstream file;
 	file.open(path, std::ios::in | std::ios::binary | std::ios::ate);
 
-	if(!file.is_open() ) return std::vector<Token>();
+	if(!file.is_open() ) { return std::vector<Token>();
+}
 
 	std::string str = read(file);
 	
@@ -38,11 +39,13 @@ std::vector<Token> Lexer::parse(const std::string &str)
 	}
 
 Next:
-	if(it == end) goto Done;
+	if(it == end) { goto Done;
+}
 	while(std::isspace(*it) )
 	{
 		++it, ++wordstart;
-		if(it == end) goto Done;
+		if(it == end) { goto Done;
+}
 	}
 	LOG << "Token starts at: " << std::distance(str.begin(), it) << '\n';
 
@@ -70,11 +73,13 @@ Next:
 			return std::isspace(c);
 		});
 
-		if(it + 1 == end) goto Done;
+		if(it + 1 == end) { goto Done;
+}
 
 		Token token;
 		word.assign(wordstart, it);
-		if(word.empty() ) goto Next;
+		if(word.empty() ) { goto Next;
+}
 
 		//Replace this once more tokens are added
 

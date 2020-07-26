@@ -2,22 +2,22 @@
 
 Repository::Repository(const char* path)
 {
-	m_error = git_repository_open(&m_repo, path);
+	error = git_repository_open(&repo, path);
 }
 
 Repository::operator git_repository* ()
 {
-	return m_repo;
+	return repo;
 }
 
 Repository::operator int ()
 {
-	return m_error;
+	return error;
 }
 
 Repository::~Repository()
 {
-	git_repository_free(m_repo);
+	git_repository_free(repo);
 }
 
 void Git::onActivate()
@@ -26,15 +26,16 @@ void Git::onActivate()
 
 	if(repo != 0) 
 	{
-		Prompt::get(giterr_last()->message, "Could not enter git mode, error: ");
+		prompt::get(giterr_last()->message, "Could not enter git mode, error: ");
 		return;
 	}
 
-	auto callback = [](const char* file, unsigned int status_flags, void* payload)
+	auto callback = [](const char* file, unsigned int statusFlags, void* payload)
 	{
-		if(payload) return 1;
+		if(payload) { return 1;
+}
 
-		switch(status_flags)
+		switch(statusFlags)
 		{
 			case GIT_STATUS_INDEX_NEW:
 			case GIT_STATUS_WT_NEW:
@@ -63,7 +64,7 @@ void Git::onActivate()
 			printw("X");
 			break;
 			default:
-			printw("%d", status_flags);
+			printw("%d", statusFlags);
 			break;
 		}
 

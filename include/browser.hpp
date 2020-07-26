@@ -53,7 +53,7 @@ private:
 
 		std::string dir() const
 		{
-			return Utils::dir(name);
+			return utils::dir(name);
 		}
 
 		std::string name;
@@ -73,12 +73,14 @@ private:
 		{
 			if(fs::is_directory(rhs.name) )
 			{
-				if(fs::is_directory(lhs.name) ) return Utils::caseInsensitiveComparison(lhs.name, rhs.name);
-				else return false;
+				if(fs::is_directory(lhs.name) ) { return utils::caseInsensitiveComparison(lhs.name, rhs.name);
+				} else { return false;
+}
 			}
-			else if(fs::is_directory(lhs.name) ) return true;
+			else if(fs::is_directory(lhs.name) ) { return true;
+}
 
-			return Utils::caseInsensitiveComparison(lhs.name, rhs.name); 
+			return utils::caseInsensitiveComparison(lhs.name, rhs.name); 
 		}
 	};
 

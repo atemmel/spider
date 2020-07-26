@@ -7,12 +7,12 @@
 #endif
 #endif
 
-namespace Debug {
+namespace debug {
 
 class DummyStream {
 public:
 	template<typename T>
-	constexpr DummyStream &operator<<(T rhs) {
+	constexpr DummyStream &operator<<(T  /*rhs*/) {
 		return *this;
 	}
 };

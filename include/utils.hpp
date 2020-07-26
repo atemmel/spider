@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <string>
 
-namespace Utils
+namespace utils
 {
 
 std::string file(const std::string &str);
