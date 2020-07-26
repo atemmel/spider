@@ -1,10 +1,10 @@
 #include "config.hpp"
-#include "lexer.hpp"
 
 #include <iostream>
 
-Config::Config()
-{
+#include "lexer.hpp"
+
+Config::Config() {
 	char* editorEnv = getenv("VISUAL");
 	char* terminalEnv = getenv("TERMCMD");
 	char* openerEnv = getenv("SPIDER-OPENER");
@@ -18,59 +18,59 @@ Config::Config()
 
 	Lexer lexer;
 
-	auto tokens = lexer.open((home + "/.config/spider/spider.conf").c_str() );
+	auto tokens = lexer.open((home + "/.config/spider/spider.conf").c_str());
 
 	Token::Type expected = Token::Type::String;
 	size_t i = 0;
 
-	for(; i < tokens.size(); i++)
-	{
-		if(tokens[i].type == Token::Type::Set)
-		{
+	for (; i < tokens.size(); i++) {
+		if (tokens[i].type == Token::Type::Set) {
 			expected = Token::Type::ConfigOffset;
 		}
-		if(tokens[i].type == Token::Type::Bind)
-		{
-			//Expect string
+		if (tokens[i].type == Token::Type::Bind) {
+			// Expect string
 			++i;
-			if(i == tokens.size() ) { return;
-}
-			if(tokens[i].type != Token::Type::String
-					|| tokens[i].value.empty() 
-					|| tokens[i].value.size() != 1) { continue;
-}
-			
+			if (i == tokens.size()) {
+				return;
+			}
+			if (tokens[i].type != Token::Type::String ||
+			    tokens[i].value.empty() || tokens[i].value.size() != 1) {
+				continue;
+			}
+
 			int ch = static_cast<unsigned char>(tokens[i].value.front());
 
-			//Expect string
+			// Expect string
 			++i;
-			if(i == tokens.size() ) { return;
-}
-			if(tokens[i].type != Token::Type::String
-					|| tokens[i].value.empty() ) { continue;
-}
+			if (i == tokens.size()) {
+				return;
+			}
+			if (tokens[i].type != Token::Type::String ||
+			    tokens[i].value.empty()) {
+				continue;
+			}
 
 			Bind bind;
 			bind.description = tokens[i].value;
 
-			bindings.insert(std::make_pair(ch, bind) );
-		}
-		else if(tokens[i].type > Token::Type::ConfigOffset)
-		{
-			if(expected != Token::Type::ConfigOffset) { continue;
-}
+			bindings.insert(std::make_pair(ch, bind));
+		} else if (tokens[i].type > Token::Type::ConfigOffset) {
+			if (expected != Token::Type::ConfigOffset) {
+				continue;
+			}
 
 			expected = tokens[i].type;
 			++i;
-			if(i == tokens.size() ) { return;
-}
+			if (i == tokens.size()) {
+				return;
+			}
 
-			if(tokens[i].type != Token::Type::String
-					|| tokens[i].value.empty() ) { continue;
-}
+			if (tokens[i].type != Token::Type::String ||
+			    tokens[i].value.empty()) {
+				continue;
+			}
 
-			switch(expected)
-			{
+			switch (expected) {
 				case Token::Type::Terminal:
 					terminal = tokens[i].value;
 					break;

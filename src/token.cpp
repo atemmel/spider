@@ -2,20 +2,12 @@
 
 #include <iostream>
 
-std::vector<std::string> validTokens = 
-{
-	"bind", "exec", "set"
-};
+std::vector<std::string> validTokens = {"bind", "exec", "set"};
 
-std::vector<std::string> validConfig =
-{
-	"terminal", "visual"
-};
+std::vector<std::string> validConfig = {"terminal", "visual"};
 
-std::ostream &operator<<(std::ostream &os, const Token& token)
-{
-	switch(token.type)
-	{
+std::ostream &operator<<(std::ostream &os, const Token &token) {
+	switch (token.type) {
 		case Token::Type::Bind:
 			os << "Bind:     ";
 			break;

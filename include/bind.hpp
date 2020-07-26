@@ -2,8 +2,7 @@
 #include <functional>
 #include <string>
 
-struct Bind
-{
+struct Bind {
 	std::function<void()> action;
 	std::string description;
 };

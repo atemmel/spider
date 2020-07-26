@@ -1,15 +1,14 @@
 #pragma once
 
 #include <ncurses.h>
-
 #include <sys/types.h>
-#include <algorithm>
 #include <unistd.h>
+
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 
-namespace utils
-{
+namespace utils {
 
 std::string file(const std::string &str);
 
@@ -23,38 +22,33 @@ void toUpper(std::string &str);
 
 std::string bytesToString(std::uintmax_t bytes);
 
-template<typename T>
-void createProcess(T function)
-{
+template <typename T>
+void createProcess(T function) {
 	endwin();
 	pid_t pid = fork();
 
-	if(pid == 0)	//Child process
+	if (pid == 0)  // Child process
 	{
 		function();
 		std::exit(EXIT_SUCCESS);
-	}
-	else //Parent process (Original)
+	} else  // Parent process (Original)
 	{
 		initscr();
 	}
-
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 void createProcess(T child, U parent) {
 	endwin();
 	pid_t pid = fork();
 
-	if(pid == 0) {	//Child process
+	if (pid == 0) {  // Child process
 		child();
 		std::exit(EXIT_SUCCESS);
-	}
-	else { //Parent process (Original)
+	} else {  // Parent process (Original)
 		parent(pid);
 		initscr();
 	}
-
 }
 
-}
+}  // namespace utils

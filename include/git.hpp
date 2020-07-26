@@ -1,18 +1,17 @@
 #pragma once
 
-#include "prompt.hpp"
-#include "plugin.hpp"
-
 #include <git2.h>
 
-class Repository
-{
+#include "plugin.hpp"
+#include "prompt.hpp"
+
+class Repository {
 public:
 	Repository(const char* path);
 
-	operator git_repository* ();
+	operator git_repository*();
 
-	operator int ();
+	operator int();
 
 	~Repository();
 
@@ -21,8 +20,6 @@ private:
 	int error;
 };
 
-class Git : public Plugin
-{
+class Git : public Plugin {
 	void onActivate() override;
-
 };

@@ -1,25 +1,24 @@
 #pragma once
 
+#include <magic.h>
+
+#include <filesystem>
+#include <memory>
+#include <string>
+
 #include "config.hpp"
 #include "debug.hpp"
 
-#include <filesystem>
-#include <magic.h>
-#include <string>
-#include <memory>
-
-struct Global
-{
+struct Global {
 	friend std::unique_ptr<Global> makeGlobal();
- 	~Global();
+	~Global();
 
-	constexpr static unsigned TICK = 1000; //ms
+	constexpr static unsigned TICK = 1000;  // ms
 	Config config;
 	magic_t cookie;
 	int windowWidth;
 	int windowHeight;
 	std::filesystem::path current_path;
-
 
 private:
 	Global();

@@ -1,71 +1,60 @@
 #include "git.hpp"
 
-Repository::Repository(const char* path)
-{
+Repository::Repository(const char* path) {
 	error = git_repository_open(&repo, path);
 }
 
-Repository::operator git_repository* ()
-{
-	return repo;
-}
+Repository::operator git_repository*() { return repo; }
 
-Repository::operator int ()
-{
-	return error;
-}
+Repository::operator int() { return error; }
 
-Repository::~Repository()
-{
-	git_repository_free(repo);
-}
+Repository::~Repository() { git_repository_free(repo); }
 
-void Git::onActivate()
-{
-	Repository repo(globals->current_path.c_str() );
+void Git::onActivate() {
+	Repository repo(globals->current_path.c_str());
 
-	if(repo != 0) 
-	{
-		prompt::get(giterr_last()->message, "Could not enter git mode, error: ");
+	if (repo != 0) {
+		prompt::get(giterr_last()->message,
+		            "Could not enter git mode, error: ");
 		return;
 	}
 
-	auto callback = [](const char* file, unsigned int statusFlags, void* payload)
-	{
-		if(payload) { return 1;
-}
+	auto callback = [](const char* file, unsigned int statusFlags,
+	                   void* payload) {
+		if (payload) {
+			return 1;
+		}
 
-		switch(statusFlags)
-		{
+		switch (statusFlags) {
 			case GIT_STATUS_INDEX_NEW:
 			case GIT_STATUS_WT_NEW:
-			printw("A");
-			break;
+				printw("A");
+				break;
 			case GIT_STATUS_INDEX_MODIFIED:
 			case GIT_STATUS_WT_MODIFIED:
-			printw("M");
-			break;
+				printw("M");
+				break;
 			case GIT_STATUS_INDEX_DELETED:
 			case GIT_STATUS_WT_DELETED:
-			printw("D");
-			break;
+				printw("D");
+				break;
 			case GIT_STATUS_IGNORED:
-			return 0;
-			break;
+				return 0;
+				break;
 			case GIT_STATUS_INDEX_TYPECHANGE:
 			case GIT_STATUS_WT_TYPECHANGE:
-			printw("T");
-			break;
+				printw("T");
+				break;
 			case GIT_STATUS_INDEX_RENAMED:
 			case GIT_STATUS_WT_RENAMED:
-			printw("R");
-			break;
+				printw("R");
+				break;
 			case GIT_STATUS_WT_UNREADABLE:
-			printw("X");
-			break;
+				printw("X");
+				break;
 			default:
-			printw("%d", statusFlags);
-			break;
+				printw("%d", statusFlags);
+				break;
 		}
 
 		printw("\t%s", file);
@@ -79,8 +68,7 @@ void Git::onActivate()
 	git_status_foreach(repo, callback, nullptr);
 
 	int c = 0;
-	while(c != 'q')
-	{
+	while (c != 'q') {
 		c = getch();
 	}
 }

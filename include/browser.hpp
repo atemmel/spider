@@ -1,22 +1,21 @@
 #pragma once
-#include "plugin.hpp"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <string_view>
+#include <unordered_set>
+#include <vector>
+
+#include "git.hpp"
 #include "global.hpp"
+#include "plugin.hpp"
 #include "prompt.hpp"
 #include "utils.hpp"
-#include "git.hpp"
-
-#include <unordered_set>
-#include <string_view>
-#include <filesystem>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <limits>
 
 namespace fs = std::filesystem;
 
-class Browser : public Plugin
-{
+class Browser : public Plugin {
 public:
 	void draw() override;
 
@@ -39,22 +38,14 @@ private:
 	void loadBookmarks();
 	void saveBookmarks();
 
-	struct FileEntry
-	{
-		bool hasSize() const
-		{
+	struct FileEntry {
+		bool hasSize() const {
 			return size != std::numeric_limits<std::uintmax_t>::max();
 		}
 
-		fs::path file() const
-		{
-			return fs::path(name).filename();
-		}
+		fs::path file() const { return fs::path(name).filename(); }
 
-		std::string dir() const
-		{
-			return utils::dir(name);
-		}
+		std::string dir() const { return utils::dir(name); }
 
 		std::string name;
 		fs::file_status status;
@@ -62,30 +53,28 @@ private:
 		std::string sizeStr;
 	};
 
-
-	//TODO: Move to separate header/impl
+	// TODO: Move to separate header/impl
 	/**
 	 *	Implements less-than comparison between two file entries
 	 */
-	struct FileEntryComp
-	{
-		bool operator()(const FileEntry &lhs, const FileEntry &rhs)
-		{
-			if(fs::is_directory(rhs.name) )
-			{
-				if(fs::is_directory(lhs.name) ) { return utils::caseInsensitiveComparison(lhs.name, rhs.name);
-				} else { return false;
-}
+	struct FileEntryComp {
+		bool operator()(const FileEntry &lhs, const FileEntry &rhs) {
+			if (fs::is_directory(rhs.name)) {
+				if (fs::is_directory(lhs.name)) {
+					return utils::caseInsensitiveComparison(lhs.name, rhs.name);
+				} else {
+					return false;
+				}
+			} else if (fs::is_directory(lhs.name)) {
+				return true;
 			}
-			else if(fs::is_directory(lhs.name) ) { return true;
-}
 
-			return utils::caseInsensitiveComparison(lhs.name, rhs.name); 
+			return utils::caseInsensitiveComparison(lhs.name, rhs.name);
 		}
 	};
 
 	using FileEntries = std::vector<FileEntry>;
-	FileEntries entries;	
+	FileEntries entries;
 	std::unordered_set<std::string> marks;
 	std::unordered_set<std::string> bookmarks;
 	int index = 0;

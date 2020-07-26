@@ -2,19 +2,17 @@
 
 #include "global.hpp"
 
-class Plugin
-{
+class Plugin {
 public:
-	virtual ~Plugin() {};
+	virtual ~Plugin(){};
 
-	virtual void update(int keypress) {};
+	virtual void update(int keypress){};
 
-	virtual void draw() {};
+	virtual void draw(){};
 
-	virtual void onActivate() {};
+	virtual void onActivate(){};
 
-	virtual void onDeactivate() {};
+	virtual void onDeactivate(){};
 
 	Global* globals;
 };
-

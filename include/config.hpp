@@ -1,11 +1,10 @@
 #pragma once
-#include <string>
 #include <map>
+#include <string>
 
 #include "bind.hpp"
 
-struct Config
-{
+struct Config {
 	Config();
 
 	std::string shell;

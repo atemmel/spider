@@ -1,29 +1,25 @@
 #include "prompt.hpp"
+
 #include "global.hpp"
 
-static void clear(int x, int y)
-{
+static void clear(int x, int y) {
 	move(y - 1, 0);
-	for(int i = 0; i < x; i++)
-	{
+	for (int i = 0; i < x; i++) {
 		addch(' ');
 	}
 }
 
-static void print(int y, const char* value, const char* message)
-{
+static void print(int y, const char *value, const char *message) {
 	mvprintw(y - 1, 0, "%s%s", message, value);
 }
 
-static void exit(int x, int y)
-{
+static void exit(int x, int y) {
 	clear(x, y);
 	noecho();
 	timeout(Global::TICK);
 }
 
-std::string prompt::getString(const std::string &message)
-{
+std::string prompt::getString(const std::string &message) {
 	int x, y, c = 0;
 	std::string in = "";
 
@@ -31,21 +27,20 @@ std::string prompt::getString(const std::string &message)
 	timeout(-1);
 
 	clear(x, y);
-	print(y, in.c_str(), message.c_str() );
+	print(y, in.c_str(), message.c_str());
 
-	while(true)
-	{
+	while (true) {
 		c = getch();
 
-		switch(c)
-		{
+		switch (c) {
 			case '\t':
 				continue;
 			case KEY_BACKSPACE:
-				if(!in.empty() ) { in.pop_back();
-}
+				if (!in.empty()) {
+					in.pop_back();
+				}
 				break;
-			case 27:	//ESC
+			case 27:  // ESC
 				exit(x, y);
 				return "";
 			case '\n':
@@ -56,14 +51,13 @@ std::string prompt::getString(const std::string &message)
 		}
 
 		clear(x, y);
-		print(y, in.c_str(), message.c_str() );
+		print(y, in.c_str(), message.c_str());
 	}
 
-	return "";	//Only here so that all paths return a value
+	return "";  // Only here so that all paths return a value
 }
 
-int prompt::get(const std::string &value, const std::string &message)
-{
+int prompt::get(const std::string &value, const std::string &message) {
 	int x, y, c = 0;
 	std::string in;
 
@@ -71,7 +65,7 @@ int prompt::get(const std::string &value, const std::string &message)
 	echo();
 	timeout(-1);
 
-	print(y, value.c_str(), message.c_str() );
+	print(y, value.c_str(), message.c_str());
 
 	c = getch();
 

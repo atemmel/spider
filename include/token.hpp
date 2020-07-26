@@ -3,10 +3,8 @@
 #include <string>
 #include <vector>
 
-struct Token
-{
-	enum Type
-	{
+struct Token {
+	enum Type {
 		Bind = 0,
 		Exec,
 		Set,
@@ -22,7 +20,7 @@ struct Token
 	std::string value;
 };
 
-std::ostream &operator<<(std::ostream &os, const Token& token);
+std::ostream &operator<<(std::ostream &os, const Token &token);
 
 extern std::vector<std::string> validTokens;
 extern std::vector<std::string> validConfig;
