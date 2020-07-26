@@ -84,7 +84,6 @@ void Browser::enterDir()
 		{
 			//TODO: This entire situation should be generalized
 			Utils::createProcess([&]() {
-				perror("yes");
 				execlp(path.c_str(), path.c_str(), nullptr);
 			}, hold);
 

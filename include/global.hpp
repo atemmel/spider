@@ -18,7 +18,6 @@ struct Global
 	magic_t cookie;
 	int windowWidth;
 	int windowHeight;
-	std::string pluginDir;
 	std::filesystem::path current_path;
 
 

@@ -1,23 +1,22 @@
 #include "browser.hpp"
-#include "loader.hpp"
 #include "global.hpp"
 
 #include <ncurses.h>
+#include <signal.h>
 #include <iostream>
+
+std::unique_ptr<Global> globals;
+
+void resizeHandler(int sig) {
+	getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
+}
 
 int main(int argc, char** argv)
 {
-	constexpr std::string_view pluginFlag = "-l";
-	auto globals = makeGlobal();
+	globals = makeGlobal();
 	getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
 
-	if(argc > 2)
-	{
-		if(pluginFlag == argv[1]) 
-		{
-			globals->pluginDir = argv[2];
-		}
-	}
+	signal(SIGWINCH,  resizeHandler);
 
 	auto browser = std::make_unique<Browser>();
 	browser->globals = globals.get();
