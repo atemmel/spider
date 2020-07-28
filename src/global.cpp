@@ -6,10 +6,13 @@
 #include <cassert>
 #include <clocale>
 
-std::unique_ptr<Global> globals;
 
-Global::Global() {
-	LOG << "Global created\n";
+Config Global::config;
+magic_t Global::cookie;
+std::filesystem::path Global::current_path;
+
+void Global::init() {
+	LOG << "Global initialized\n";
 	std::setlocale(LC_ALL, "");
 	initscr();
 	noecho();
@@ -23,15 +26,9 @@ Global::Global() {
 	git_libgit2_init();                       // TODO: Check for return
 }
 
-Global::~Global() {
+void Global::cleanup() {
 	endwin();
 	magic_close(cookie);
 	git_libgit2_shutdown();
-	LOG << "Global destroyed\n";
-}
-
-void makeGlobal() {
-	static bool created = false;
-	assert(!created);  // Assert that only one global is ever instantiated
-	globals = std::unique_ptr<Global>(new Global());
+	LOG << "Global cleaned up\n";
 }

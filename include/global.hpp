@@ -9,19 +9,12 @@
 #include "config.hpp"
 #include "debug.hpp"
 
-struct Global {
-	friend void makeGlobal();
-	~Global();
+namespace Global {
+	void init();
+	void cleanup();
 
 	constexpr static unsigned TICK = 1000;  // ms
-	Config config;
-	magic_t cookie;
-	std::filesystem::path current_path;
-
-private:
-	Global();
+	extern Config config;
+	extern magic_t cookie;
+	extern std::filesystem::path current_path;
 };
-
-extern std::unique_ptr<Global> globals;
-
-void makeGlobal();

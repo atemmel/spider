@@ -24,8 +24,8 @@ void Browser::showBookmarks() {
 
 	it = bookmarks.begin();
 	std::advance(it, c - 'a');
-	globals->current_path = *it;
-	fs::current_path(globals->current_path);
+	Global::current_path = *it;
+	fs::current_path(Global::current_path);
 	index = 0;
 	fillList();
 }
@@ -34,7 +34,7 @@ void Browser::fillList() {
 	entries.clear();
 	FileEntry entry;
 
-	for (auto &it : fs::directory_iterator(globals->current_path)) {
+	for (auto &it : fs::directory_iterator(Global::current_path)) {
 		entry.name = std::move(it.path().string());
 		entry.status = it.status();
 
@@ -56,12 +56,12 @@ void Browser::enterDir() {
 	fs::path path(entries[index].name);
 
 	if (fs::is_directory(path)) {
-		globals->current_path /= path;
-		fs::current_path(globals->current_path);
+		Global::current_path /= path;
+		fs::current_path(Global::current_path);
 		fillList();
 		index = 0;
 	} else {
-		std::string mime = magic_file(globals->cookie, path.c_str());
+		std::string mime = magic_file(Global::cookie, path.c_str());
 
 		auto hold = [&](pid_t pid) {
 			int status;
@@ -71,8 +71,8 @@ void Browser::enterDir() {
 		if (mime.find("text") == 0 || mime.find("inode/x-empty") == 0) {
 			utils::createProcess(
 			    [&]() {
-				    execlp(globals->config.editor.c_str(),
-				           globals->config.editor.c_str(), path.c_str(),
+				    execlp(Global::config.editor.c_str(),
+				           Global::config.editor.c_str(), path.c_str(),
 				           nullptr);
 			    },
 			    hold);
@@ -97,8 +97,8 @@ void Browser::enterDir() {
 		} else {
 			utils::createProcess(
 			    [&]() {
-				    execlp(globals->config.opener.c_str(),
-				           globals->config.opener.c_str(), path.c_str(),
+				    execlp(Global::config.opener.c_str(),
+				           Global::config.opener.c_str(), path.c_str(),
 				           nullptr);
 			    },
 			    hold);
@@ -112,7 +112,7 @@ void Browser::printHeader() {
 	attron(A_BOLD | COLOR_PAIR(1));
 	mvprintw(
 	    0, 0,
-	    globals->current_path.string().substr(0, x).c_str());
+	    Global::current_path.string().substr(0, x).c_str());
 	attroff(A_BOLD | COLOR_PAIR(1));
 }
 
@@ -208,7 +208,7 @@ void Browser::findPath() {
 
 void Browser::createTerminal() {
 	utils::createProcess([&]() {
-		const char *term = globals->config.terminal.data();
+		const char *term = Global::config.terminal.data();
 		execlp(term, term, nullptr);
 	});
 }
@@ -247,14 +247,14 @@ void Browser::deleteEntry() {
 }
 
 void Browser::onActivate() {
-	globals->current_path = fs::current_path();
+	Global::current_path = fs::current_path();
 
-	for (auto &bind : globals->config.bindings) {
+	for (auto &bind : Global::config.bindings) {
 		if (!bind.second.action) {
 			bind.second.action = [&]() {
 				std::string cmd = std::regex_replace(
 				    bind.second.description, std::regex("\\%F"),
-				    std::string(" ") + globals->current_path.c_str() + ' ');
+				    std::string(" ") + Global::current_path.c_str() + ' ');
 
 				// TODO: Violation of DRY
 				auto hold = [&](pid_t pid) {
@@ -315,7 +315,7 @@ void Browser::update(int input) {
 			break;
 		case 's':
 			endwin();
-			system(globals->config.shell.c_str());
+			system(Global::config.shell.c_str());
 			initscr();
 			fillList();
 			printDirs();
@@ -325,8 +325,8 @@ void Browser::update(int input) {
 			break;
 		case KEY_LEFT: /* Left */
 		case 'h':
-			globals->current_path = globals->current_path.parent_path();
-			fs::current_path(globals->current_path);
+			Global::current_path = Global::current_path.parent_path();
+			fs::current_path(Global::current_path);
 			index = 0;
 			fillList();
 			break;
@@ -417,12 +417,12 @@ void Browser::update(int input) {
 			marks.clear();
 			break;
 		case 'a':
-			prompt = magic_file(globals->cookie, entries[index].name.c_str());
+			prompt = magic_file(Global::cookie, entries[index].name.c_str());
 			prompt::get(prompt, "MIME type: ");
 			break;
 		case 'p':
 			for (auto &mark : marks) {
-				fs::copy(mark, globals->current_path / utils::file(mark),
+				fs::copy(mark, Global::current_path / utils::file(mark),
 				         fs::copy_options::recursive, ec);
 			}
 			marks.clear();
@@ -431,7 +431,7 @@ void Browser::update(int input) {
 			break;
 		case 'v':
 			for (auto &mark : marks) {
-				fs::rename(mark, globals->current_path / utils::file(mark), ec);
+				fs::rename(mark, Global::current_path / utils::file(mark), ec);
 			}
 			marks.clear();
 			fillList();
@@ -439,11 +439,11 @@ void Browser::update(int input) {
 			break;
 		case 'b':
 			loadBookmarks();
-			if (auto mark = bookmarks.find(globals->current_path);
+			if (auto mark = bookmarks.find(Global::current_path);
 			    mark != bookmarks.end()) {
 				bookmarks.erase(mark);
 			} else if (static_cast<char>(bookmarks.size()) < 'z' - 'a') {
-				bookmarks.insert(globals->current_path);
+				bookmarks.insert(Global::current_path);
 				saveBookmarks();
 			}
 			printDirs();
@@ -452,8 +452,8 @@ void Browser::update(int input) {
 			showBookmarks();
 			break;
 		default:
-			if (auto it = globals->config.bindings.find(input);
-			    it != globals->config.bindings.end()) {
+			if (auto it = Global::config.bindings.find(input);
+			    it != Global::config.bindings.end()) {
 				it->second.action();
 			}
 	}
@@ -464,7 +464,7 @@ void Browser::update(int input) {
 }
 
 void Browser::loadBookmarks() {
-	std::ifstream file((globals->config.home + bookmarkPath).c_str());
+	std::ifstream file((Global::config.home + bookmarkPath).c_str());
 	if (!file.is_open()) {
 		return;
 	}
@@ -477,7 +477,7 @@ void Browser::loadBookmarks() {
 }
 
 void Browser::saveBookmarks() {
-	std::ofstream file((globals->config.home + bookmarkPath).c_str());
+	std::ofstream file((Global::config.home + bookmarkPath).c_str());
 	if (!file.is_open()) {
 		return;
 	}

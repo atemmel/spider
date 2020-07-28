@@ -11,7 +11,7 @@ Repository::operator int() { return error; }
 Repository::~Repository() { git_repository_free(repo); }
 
 void Git::onActivate() {
-	Repository repo(globals->current_path.c_str());
+	Repository repo(Global::current_path.c_str());
 
 	if (repo != 0) {
 		prompt::get(giterr_last()->message,

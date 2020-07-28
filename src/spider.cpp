@@ -7,7 +7,7 @@
 #include "global.hpp"
 
 int main(int /*argc*/, char** /*argv*/) {
-	makeGlobal();
+	Global::init();
 
 	PluginPtr plugin = std::make_unique<Browser>();
 
@@ -27,6 +27,8 @@ int main(int /*argc*/, char** /*argv*/) {
 		endwin();
 		std::cerr << "Unexpected execption caught\n";
 	}
+
+	Global::cleanup();
 
 	return EXIT_SUCCESS;
 }
