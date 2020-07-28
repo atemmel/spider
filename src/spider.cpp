@@ -15,7 +15,6 @@ int main(int /*argc*/, char** /*argv*/) {
 	try {
 		plugin->onActivate();
 		while (c != 'q' && c != 4) {
-			getmaxyx(stdscr, globals->windowHeight, globals->windowWidth);
 			plugin->draw();
 			c = getch();
 			plugin->update(c);

@@ -16,8 +16,6 @@ struct Global {
 	constexpr static unsigned TICK = 1000;  // ms
 	Config config;
 	magic_t cookie;
-	int windowWidth;
-	int windowHeight;
 	std::filesystem::path current_path;
 
 private:

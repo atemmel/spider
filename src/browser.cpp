@@ -107,19 +107,22 @@ void Browser::enterDir() {
 }
 
 void Browser::printHeader() {
-	mvprintw(0, 0, std::string(globals->windowWidth, ' ').c_str());
+	int x = getmaxx(stdscr);
+	mvprintw(0, 0, std::string(x, ' ').c_str());
 	attron(A_BOLD | COLOR_PAIR(1));
 	mvprintw(
 	    0, 0,
-	    globals->current_path.string().substr(0, globals->windowWidth).c_str());
+	    globals->current_path.string().substr(0, x).c_str());
 	attroff(A_BOLD | COLOR_PAIR(1));
 }
 
 void Browser::printDirs() {
 	constexpr int ox = 0, oy = 1;
+	int height, width;
+	getmaxyx(stdscr, height, width);
 	int upperLimit =
-	    std::abs(static_cast<int>(entries.size()) - globals->windowHeight + oy);
-	int limit = oy + static_cast<int>(index) - (globals->windowHeight >> 1);
+	    std::abs(static_cast<int>(entries.size()) - height + oy);
+	int limit = oy + static_cast<int>(index) - (height >> 1);
 	auto it = entries.begin();
 
 	constexpr std::string_view dirStr = "/  ";
@@ -130,7 +133,7 @@ void Browser::printDirs() {
 	    + 10  // Length of filesize/dirdef string
 	    + 4;  // Sum of individual padding between each column
 
-	if (static_cast<int>(entries.size()) < globals->windowHeight - oy) {
+	if (static_cast<int>(entries.size()) < height - oy) {
 		upperLimit = 0;
 	}
 
@@ -152,7 +155,7 @@ void Browser::printDirs() {
 		    marks.find(it->name) != marks.end() ? " " : "",  // Filename
 		    it->name
 		        .substr(lastSep + 1,
-		                globals->windowWidth - ox - padBeforeFileName)
+		                width - ox - padBeforeFileName)
 		        .c_str());
 	}
 

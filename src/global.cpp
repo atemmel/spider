@@ -12,7 +12,6 @@ Global::Global() {
 	LOG << "Global created\n";
 	std::setlocale(LC_ALL, "");
 	initscr();
-	getmaxyx(stdscr, windowHeight, windowWidth);
 	noecho();
 	keypad(stdscr, TRUE);
 	timeout(TICK);
