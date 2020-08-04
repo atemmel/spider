@@ -16,7 +16,7 @@ static void print(int y, const char *value, const char *message) {
 static void exit(int x, int y) {
 	clear(x, y);
 	noecho();
-	timeout(Global::TICK);
+	timeout(global::TICK);
 }
 
 std::string prompt::getString(const std::string &message) {

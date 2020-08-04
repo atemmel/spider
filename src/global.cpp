@@ -6,12 +6,12 @@
 #include <cassert>
 #include <clocale>
 
-Config Global::config;
-magic_t Global::cookie;
-std::filesystem::path Global::currentPath;
-std::stack<PluginPtr> Global::state;
+Config global::config;
+magic_t global::cookie;
+std::filesystem::path global::currentPath;
+std::stack<PluginPtr> global::state;
 
-void Global::init() {
+void global::init() {
 	LOG << "Global initialized\n";
 	std::setlocale(LC_ALL, "");
 	initscr();
@@ -22,11 +22,11 @@ void Global::init() {
 	start_color();                            // TODO: Check for return
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);  // TODO: Move into config
 	cookie = magic_open(MAGIC_MIME);          // TODO: Check for return
-	magic_load(Global::cookie, nullptr);      // TODO: Check for return
+	magic_load(global::cookie, nullptr);      // TODO: Check for return
 	git_libgit2_init();                       // TODO: Check for return
 }
 
-void Global::cleanup() {
+void global::cleanup() {
 	endwin();
 	magic_close(cookie);
 	git_libgit2_shutdown();

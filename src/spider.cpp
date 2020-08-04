@@ -7,18 +7,18 @@
 #include "global.hpp"
 
 int main(int /*argc*/, char** /*argv*/) {
-	Global::init();
-	Global::state.push(std::make_unique<Browser>());
+	global::init();
+	global::state.push(std::make_unique<Browser>());
 
 	int c = 0;
 	try {
-		Global::state.top()->onActivate();
+		global::state.top()->onActivate();
 		while (c != 'q' && c != 4) {
-			Global::state.top()->draw();
+			global::state.top()->draw();
 			c = getch();
-			Global::state.top()->update(c);
+			global::state.top()->update(c);
 		}
-		Global::state.top()->onDeactivate();
+		global::state.top()->onDeactivate();
 	} catch (const std::filesystem::filesystem_error& err) {
 		endwin();
 		std::cerr << "Filesystem error: " << err.what() << '\n';
@@ -27,7 +27,7 @@ int main(int /*argc*/, char** /*argv*/) {
 		std::cerr << "Unexpected execption caught\n";
 	}
 
-	Global::cleanup();
+	global::cleanup();
 
 	return EXIT_SUCCESS;
 }
