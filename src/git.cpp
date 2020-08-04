@@ -1,4 +1,5 @@
 #include "git.hpp"
+#include "global.hpp"
 
 Repository::Repository(const char* path) {
 	error = git_repository_open(&repo, path);
@@ -71,4 +72,6 @@ void Git::onActivate() {
 	while (c != 'q') {
 		c = getch();
 	}
+
+	Global::state.pop();
 }

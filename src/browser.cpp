@@ -1,4 +1,5 @@
 #include "browser.hpp"
+#include "git.hpp"
 
 #include <sys/wait.h>
 
@@ -413,6 +414,9 @@ void Browser::update(int input) {
 			Git::activate(current_path.c_str() );
 			break;
 			*/
+		case 'G':
+			clear();
+			Global::state.push(std::make_unique<Git>());
 		case 'm':
 			marks.clear();
 			break;

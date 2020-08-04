@@ -4,10 +4,12 @@
 
 #include <filesystem>
 #include <memory>
+#include <stack>
 #include <string>
 
 #include "config.hpp"
 #include "debug.hpp"
+#include "plugin.hpp"
 
 namespace Global {
 	void init();
@@ -17,4 +19,5 @@ namespace Global {
 	extern Config config;
 	extern magic_t cookie;
 	extern std::filesystem::path current_path;
+	extern std::stack<PluginPtr> state;
 };

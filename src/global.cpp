@@ -10,6 +10,7 @@
 Config Global::config;
 magic_t Global::cookie;
 std::filesystem::path Global::current_path;
+std::stack<PluginPtr> Global::state;
 
 void Global::init() {
 	LOG << "Global initialized\n";

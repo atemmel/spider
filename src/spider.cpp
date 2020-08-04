@@ -8,18 +8,17 @@
 
 int main(int /*argc*/, char** /*argv*/) {
 	Global::init();
-
-	PluginPtr plugin = std::make_unique<Browser>();
+	Global::state.push(std::make_unique<Browser>() );
 
 	int c = 0;
 	try {
-		plugin->onActivate();
+		Global::state.top()->onActivate();
 		while (c != 'q' && c != 4) {
-			plugin->draw();
+			Global::state.top()->draw();
 			c = getch();
-			plugin->update(c);
+			Global::state.top()->update(c);
 		}
-		plugin->onDeactivate();
+		Global::state.top()->onDeactivate();
 	} catch (const std::filesystem::filesystem_error& err) {
 		endwin();
 		std::cerr << "Filesystem error: " << err.what() << '\n';

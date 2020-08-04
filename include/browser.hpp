@@ -15,7 +15,7 @@
 
 namespace fs = std::filesystem;
 
-class Browser : public Plugin {
+class Browser final : public Plugin {
 public:
 	void draw() override;
 
