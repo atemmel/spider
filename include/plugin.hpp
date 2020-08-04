@@ -4,7 +4,7 @@
 
 class Plugin {
 public:
-	virtual ~Plugin() {};
+	virtual ~Plugin(){};
 
 	virtual void update(int keypress) = 0;
 

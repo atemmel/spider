@@ -1,4 +1,5 @@
 #include "git.hpp"
+
 #include "global.hpp"
 
 Repository::Repository(const char* path) {
@@ -12,7 +13,7 @@ Repository::operator int() { return error; }
 Repository::~Repository() { git_repository_free(repo); }
 
 void Git::onActivate() {
-	Repository repo(Global::current_path.c_str());
+	Repository repo(global::current_path.c_str());
 
 	if (repo != 0) {
 		prompt::get(giterr_last()->message,
@@ -73,5 +74,5 @@ void Git::onActivate() {
 		c = getch();
 	}
 
-	Global::state.pop();
+	global::state.pop();
 }

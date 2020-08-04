@@ -1,9 +1,10 @@
 #include "browser.hpp"
-#include "git.hpp"
 
 #include <sys/wait.h>
 
 #include <regex>
+
+#include "git.hpp"
 
 namespace fs = std::filesystem;
 
@@ -25,8 +26,8 @@ void Browser::showBookmarks() {
 
 	it = bookmarks.begin();
 	std::advance(it, c - 'a');
-	Global::current_path = *it;
-	fs::current_path(Global::current_path);
+	Global::currentPath = *it;
+	fs::current_path(Global::currentPath);
 	index = 0;
 	fillList();
 }
@@ -35,7 +36,7 @@ void Browser::fillList() {
 	entries.clear();
 	FileEntry entry;
 
-	for (auto &it : fs::directory_iterator(Global::current_path)) {
+	for (auto &it : fs::directory_iterator(Global::currentPath)) {
 		entry.name = std::move(it.path().string());
 		entry.status = it.status();
 
@@ -57,8 +58,8 @@ void Browser::enterDir() {
 	fs::path path(entries[index].name);
 
 	if (fs::is_directory(path)) {
-		Global::current_path /= path;
-		fs::current_path(Global::current_path);
+		Global::currentPath /= path;
+		fs::current_path(Global::currentPath);
 		fillList();
 		index = 0;
 	} else {
@@ -111,9 +112,7 @@ void Browser::printHeader() {
 	int x = getmaxx(stdscr);
 	mvprintw(0, 0, std::string(x, ' ').c_str());
 	attron(A_BOLD | COLOR_PAIR(1));
-	mvprintw(
-	    0, 0,
-	    Global::current_path.string().substr(0, x).c_str());
+	mvprintw(0, 0, Global::currentPath.string().substr(0, x).c_str());
 	attroff(A_BOLD | COLOR_PAIR(1));
 }
 
@@ -121,8 +120,7 @@ void Browser::printDirs() {
 	constexpr int ox = 0, oy = 1;
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	int upperLimit =
-	    std::abs(static_cast<int>(entries.size()) - height + oy);
+	int upperLimit = std::abs(static_cast<int>(entries.size()) - height + oy);
 	int limit = oy + static_cast<int>(index) - (height >> 1);
 	auto it = entries.begin();
 
@@ -154,9 +152,7 @@ void Browser::printDirs() {
 		    fs::is_symlink(it->name) ? lnStr.data() :  // Filesize/dirdef
 		        it->hasSize() ? it->sizeStr.c_str() : dirStr.data(),
 		    marks.find(it->name) != marks.end() ? " " : "",  // Filename
-		    it->name
-		        .substr(lastSep + 1,
-		                width - ox - padBeforeFileName)
+		    it->name.substr(lastSep + 1, width - ox - padBeforeFileName)
 		        .c_str());
 	}
 
@@ -248,14 +244,14 @@ void Browser::deleteEntry() {
 }
 
 void Browser::onActivate() {
-	Global::current_path = fs::current_path();
+	Global::currentPath = fs::current_path();
 
 	for (auto &bind : Global::config.bindings) {
 		if (!bind.second.action) {
 			bind.second.action = [&]() {
 				std::string cmd = std::regex_replace(
 				    bind.second.description, std::regex("\\%F"),
-				    std::string(" ") + Global::current_path.c_str() + ' ');
+				    std::string(" ") + Global::currentPath.c_str() + ' ');
 
 				// TODO: Violation of DRY
 				auto hold = [&](pid_t pid) {
@@ -326,8 +322,8 @@ void Browser::update(int input) {
 			break;
 		case KEY_LEFT: /* Left */
 		case 'h':
-			Global::current_path = Global::current_path.parent_path();
-			fs::current_path(Global::current_path);
+			Global::currentPath = Global::currentPath.parent_path();
+			fs::current_path(Global::currentPath);
 			index = 0;
 			fillList();
 			break;
@@ -426,7 +422,7 @@ void Browser::update(int input) {
 			break;
 		case 'p':
 			for (auto &mark : marks) {
-				fs::copy(mark, Global::current_path / utils::file(mark),
+				fs::copy(mark, Global::currentPath / utils::file(mark),
 				         fs::copy_options::recursive, ec);
 			}
 			marks.clear();
@@ -435,7 +431,7 @@ void Browser::update(int input) {
 			break;
 		case 'v':
 			for (auto &mark : marks) {
-				fs::rename(mark, Global::current_path / utils::file(mark), ec);
+				fs::rename(mark, Global::currentPath / utils::file(mark), ec);
 			}
 			marks.clear();
 			fillList();
@@ -443,11 +439,11 @@ void Browser::update(int input) {
 			break;
 		case 'b':
 			loadBookmarks();
-			if (auto mark = bookmarks.find(Global::current_path);
+			if (auto mark = bookmarks.find(Global::currentPath);
 			    mark != bookmarks.end()) {
 				bookmarks.erase(mark);
 			} else if (static_cast<char>(bookmarks.size()) < 'z' - 'a') {
-				bookmarks.insert(Global::current_path);
+				bookmarks.insert(Global::currentPath);
 				saveBookmarks();
 			}
 			printDirs();

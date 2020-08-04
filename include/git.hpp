@@ -22,8 +22,8 @@ private:
 
 // TODO Plan out this a bit more
 class Git final : public Plugin {
-	void update(int keypress) override {};
+	void update(int keypress) override{};
 	void draw() override{};
 	void onActivate() override;
-	void onDeactivate() override {};
+	void onDeactivate() override{};
 };

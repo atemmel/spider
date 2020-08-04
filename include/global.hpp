@@ -11,13 +11,13 @@
 #include "debug.hpp"
 #include "plugin.hpp"
 
-namespace Global {
-	void init();
-	void cleanup();
+namespace global {
+void init();
+void cleanup();
 
-	constexpr static unsigned TICK = 1000;  // ms
-	extern Config config;
-	extern magic_t cookie;
-	extern std::filesystem::path current_path;
-	extern std::stack<PluginPtr> state;
-};
+constexpr static unsigned TICK = 1000;  // ms
+extern Config config;
+extern magic_t cookie;
+extern std::filesystem::path currentPath;
+extern std::stack<PluginPtr> state;
+};  // namespace Global

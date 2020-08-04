@@ -6,10 +6,9 @@
 #include <cassert>
 #include <clocale>
 
-
 Config Global::config;
 magic_t Global::cookie;
-std::filesystem::path Global::current_path;
+std::filesystem::path Global::currentPath;
 std::stack<PluginPtr> Global::state;
 
 void Global::init() {

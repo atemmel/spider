@@ -8,7 +8,7 @@
 
 int main(int /*argc*/, char** /*argv*/) {
 	Global::init();
-	Global::state.push(std::make_unique<Browser>() );
+	Global::state.push(std::make_unique<Browser>());
 
 	int c = 0;
 	try {
