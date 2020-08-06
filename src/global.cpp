@@ -32,3 +32,21 @@ void global::cleanup() {
 	git_libgit2_shutdown();
 	LOG << "Global cleaned up\n";
 }
+
+void global::pushState(PluginPtr&& ptr) {
+	state.top()->onDeactivate();
+	state.push(std::move(ptr));
+	state.top()->onActivate();
+}
+
+void global::popState() {
+	endwin();
+	LOG << "Popping state...\n";
+	LOG << "State size " << state.size() << '\n';
+	initscr();
+	state.top()->onDeactivate();
+	state.pop();
+	if(!state.empty()) {
+		state.top()->onActivate();
+	}
+}

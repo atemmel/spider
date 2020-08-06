@@ -12,8 +12,10 @@
 #include "plugin.hpp"
 
 namespace global {
-void init();
-void cleanup();
+	void init();
+	void cleanup();
+	void pushState(PluginPtr&& ptr);
+	void popState();
 
 constexpr static unsigned TICK = 1000;  // ms
 extern Config config;

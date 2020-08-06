@@ -273,7 +273,6 @@ void Browser::onActivate() {
 }
 
 void Browser::onDeactivate() {
-	// saveBookmarks();
 }
 
 void Browser::draw() {
@@ -404,15 +403,9 @@ void Browser::update(int input) {
 			fillList();
 			printDirs();
 			break;
-			/*
 		case 'G':
 			clear();
-			Git::activate(current_path.c_str() );
-			break;
-			*/
-		case 'G':
-			clear();
-			global::state.push(std::make_unique<Git>());
+			global::pushState(std::make_unique<Git>());
 		case 'm':
 			marks.clear();
 			break;
@@ -450,6 +443,11 @@ void Browser::update(int input) {
 			break;
 		case 'g':
 			showBookmarks();
+			break;
+		case 4:
+		case 'q':
+			global::popState();
+			return;
 			break;
 		default:
 			if (auto it = global::config.bindings.find(input);

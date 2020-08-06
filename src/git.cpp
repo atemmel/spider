@@ -12,6 +12,17 @@ Repository::operator int() { return error; }
 
 Repository::~Repository() { git_repository_free(repo); }
 
+void Git::update(int keypress) {
+	switch(keypress) {
+		case 'q':
+			global::popState();
+			break;
+	}
+}
+
+void Git::draw() {	//TODO: Draw calls should appear here, not in onActivate
+}
+
 void Git::onActivate() {
 	Repository repo(global::currentPath.c_str());
 
@@ -68,11 +79,7 @@ void Git::onActivate() {
 
 	move(0, 0);
 	git_status_foreach(repo, callback, nullptr);
+}
 
-	int c = 0;
-	while (c != 'q') {
-		c = getch();
-	}
-
-	global::state.pop();
+void Git::onDeactivate() {
 }
