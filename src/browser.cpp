@@ -272,8 +272,7 @@ void Browser::onActivate() {
 	fillList();
 }
 
-void Browser::onDeactivate() {
-}
+void Browser::onDeactivate() {}
 
 void Browser::draw() {
 	erase();

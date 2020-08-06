@@ -11,12 +11,12 @@ int main(int argc, char** argv) {
 	(void)argv;
 
 	global::init();
-	global::state.push(std::make_unique<Browser>() );
+	global::state.push(std::make_unique<Browser>());
 
 	int c = 0;
 	try {
 		global::state.top()->onActivate();
-		while(!global::state.empty()) {
+		while (!global::state.empty()) {
 			global::state.top()->draw();
 			c = getch();
 			global::state.top()->update(c);

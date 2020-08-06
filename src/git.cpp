@@ -13,14 +13,14 @@ Repository::operator int() { return error; }
 Repository::~Repository() { git_repository_free(repo); }
 
 void Git::update(int keypress) {
-	switch(keypress) {
+	switch (keypress) {
 		case 'q':
 			global::popState();
 			break;
 	}
 }
 
-void Git::draw() {	//TODO: Draw calls should appear here, not in onActivate
+void Git::draw() {  // TODO: Draw calls should appear here, not in onActivate
 }
 
 void Git::onActivate() {
@@ -81,5 +81,4 @@ void Git::onActivate() {
 	git_status_foreach(repo, callback, nullptr);
 }
 
-void Git::onDeactivate() {
-}
+void Git::onDeactivate() {}

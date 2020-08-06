@@ -46,7 +46,7 @@ void global::popState() {
 	initscr();
 	state.top()->onDeactivate();
 	state.pop();
-	if(!state.empty()) {
+	if (!state.empty()) {
 		state.top()->onActivate();
 	}
 }
