@@ -449,8 +449,10 @@ void Browser::update(int input) {
 			return;
 			break;
 		default:
+			LOG << "Found weird input\n";
 			if (auto it = global::config.bindings.find(input);
 			    it != global::config.bindings.end()) {
+				LOG << "Doing werid thing\n";
 				it->second.action();
 			}
 	}

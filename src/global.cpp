@@ -13,6 +13,7 @@ std::stack<PluginPtr> global::state;
 
 void global::init() {
 	LOG << "Global initialized\n";
+	config.load();
 	std::setlocale(LC_ALL, "");
 	initscr();
 	noecho();

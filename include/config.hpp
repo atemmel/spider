@@ -5,7 +5,7 @@
 #include "bind.hpp"
 
 struct Config {
-	Config();
+	void load();
 
 	std::string shell;
 	std::string editor;

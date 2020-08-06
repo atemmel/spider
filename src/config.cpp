@@ -2,9 +2,10 @@
 
 #include <iostream>
 
+#include "debug.hpp"
 #include "lexer.hpp"
 
-Config::Config() {
+void Config::load() {
 	char* editorEnv = getenv("VISUAL");
 	char* terminalEnv = getenv("TERMCMD");
 	char* openerEnv = getenv("SPIDER-OPENER");
@@ -53,6 +54,7 @@ Config::Config() {
 			Bind bind;
 			bind.description = tokens[i].value;
 
+			LOG << "Inserted funny thing at " << ch << '\n';
 			bindings.insert(std::make_pair(ch, bind));
 		} else if (tokens[i].type > Token::Type::ConfigOffset) {
 			if (expected != Token::Type::ConfigOffset) {
