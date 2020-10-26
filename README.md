@@ -20,6 +20,16 @@ Use at your own risk :^)
 'v': Move marked files
 ```
 
+## How to install
+
+```sh
+# Clone the repository and cd into the directory
+mkdir build && cd build
+cmake ..
+make
+sudo make install
+```
+
 ## Dependencies
 
 * ncurses
