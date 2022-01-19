@@ -13,20 +13,20 @@ pub const Browser = struct {
     const Entries = std.ArrayList(FileEntry);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
-        if(lhs.kind == .Directory) {
-            if(rhs.kind == .Directory) {
+        if(rhs.kind == .Directory) {
+            if(lhs.kind == .Directory) {
                 return utils.caseInsensitiveComparison(lhs.name, rhs.name);
             } else {
                 return false;
             }
-        } else if(rhs.kind == .Directory) {
+        } else if(lhs.kind == .Directory) {
             return true;
         }
         return utils.caseInsensitiveComparison(lhs.name, rhs.name);
     }
 
-    index: usize = 0,
-    cwdBuf: [std.fs.MAX_PATH_BYTES]u8 = undefined,
+    index: usize = 1,
+    cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
     cwd: []u8 = undefined,
     ally: *std.mem.Allocator,
     entries: Entries = undefined,
@@ -38,12 +38,16 @@ pub const Browser = struct {
         };
 
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
+        browser.cwd.ptr[browser.cwd.len] = 0;
         try browser.fillEntries();
         return browser;
     }
 
     pub fn deinit(self: *Browser) void {
-        for (self.entries.items) |e| self.ally.free(e.name);
+        for (self.entries.items) |e| {
+            self.ally.free(e.name);
+            self.ally.free(e.sizeStr);
+        }
         self.entries.deinit();
     }
 
@@ -70,6 +74,7 @@ pub const Browser = struct {
 
             const st = try std.os.fstat(fd);
             newEntry.size = st.size;
+            newEntry.sizeStr = try utils.sizeToString(self.ally, st.size);
             newEntry.mode = st.mode;
 
             try self.entries.append(newEntry);
@@ -118,15 +123,14 @@ pub const Browser = struct {
         var i: usize = 0;
         while(i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
-            const entry = self.entries.items[current];
+            const entry = &self.entries.items[current];
             const printedName = entry.name[0..dirStr.len];
             const printedNamePtr = @ptrCast([*c]const u8, printedName);
+
             _ = ncurses.attroff(ncurses.A_REVERSE);
             if(self.index == current) {
                 _ = ncurses.attron(ncurses.A_REVERSE);
-            } else {
-                _ = ncurses.attroff(ncurses.A_REVERSE);
-            }
+            } 
 
             _ = ncurses.attroff(ncurses.A_BOLD);
             if(entry.kind == .Directory) {
@@ -141,17 +145,21 @@ pub const Browser = struct {
                         lnStr,
                         printedNamePtr);
             } else {
+                const sizeStr = @ptrCast([*c]const u8, entry.sizeStr);
                 _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
                         entry.mode & 0o0777,
-                        "",
+                        sizeStr,
                         printedNamePtr);
             }
 
                     
         }
+
+        _ = ncurses.attroff(ncurses.A_REVERSE);
+        _ = ncurses.attroff(ncurses.A_BOLD);
     }
 
-    pub fn update(_: *Browser, key: i32) bool {
+    pub fn update(self: *Browser, key: i32) bool {
         switch(key) {
             // die
             4, 'q' => {
@@ -164,10 +172,18 @@ pub const Browser = struct {
                 _ = ncurses.printw("left");
             },
             ncurses.KEY_UP, 'k' => {
-                _ = ncurses.printw("up");
+                if(self.index <= 0) {
+                    self.index = self.entries.items.len - 1;
+                } else {
+                    self.index -= 1;
+                }
             },
             ncurses.KEY_DOWN, 'j' => {
-                _ = ncurses.printw("down");
+                if(self.index >= self.entries.items.len - 1) {
+                    self.index = 0;
+                } else {
+                    self.index += 1;
+                }
             },
             else => {},
         }
