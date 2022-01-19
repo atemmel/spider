@@ -1,18 +1,72 @@
 const std = @import("std");
 const ncurses = @cImport(@cInclude("ncurses.h"));
+const utils = @import("utils.zig");
 
 pub const Browser = struct {
-    index: i32 = 0,
+    const FileEntry = struct {
+        kind: std.fs.File.Kind,
+        mode: std.fs.File.Mode,
+        name: []u8,
+        size: i64,
+        sizeStr: []u8,
+    };
+    const Entries = std.ArrayList(FileEntry);
+
+    index: usize = 0,
     cwdBuf: [std.fs.MAX_PATH_BYTES]u8 = undefined,
     cwd: []u8 = undefined,
+    ally: *std.mem.Allocator,
+    entries: Entries = undefined,
 
-    pub fn init(self: *Browser) !void {
-        self.cwd = try std.os.getcwd(&self.cwdBuf);
+    pub fn init(ally: *std.mem.Allocator) !Browser {
+        var browser = Browser{
+            .ally = ally,
+            .entries = Entries.init(ally.*),
+        };
+
+        browser.cwd = try std.os.getcwd(&browser.cwdBuf);
+        try browser.fillEntries();
+        return browser;
     }
 
-    pub fn draw(self: *Browser) void {
+    pub fn deinit(self: *Browser) void {
+        for (self.entries.items) |e| self.ally.free(e.name);
+        self.entries.deinit();
+    }
+
+    fn fillEntries(self: *Browser) !void {
+        self.entries.clearRetainingCapacity();
+
+        const dir = try std.fs.cwd().openDir(
+            ".",
+            .{.iterate = true},
+        );
+
+        var it = dir.iterate();
+        while (try it.next()) |entry| {
+            var newEntry = FileEntry{
+                .kind = entry.kind,
+                .mode = undefined,
+                .name = try self.ally.dupe(u8, entry.name),
+                .size = undefined,
+                .sizeStr = undefined,
+            };
+
+            var fd = try std.os.openZ(@ptrCast([*:0]const u8, entry.name), std.os.O.RDONLY | std.os.O.CLOEXEC, 0);
+            defer std.os.close(fd);
+
+            const st = try std.os.fstat(fd);
+            newEntry.size = st.size;
+
+            try self.entries.append(newEntry);
+        }
+    }
+
+    pub fn draw(self: *Browser) !void {
         self.printHeader();
-        _ = ncurses.mvprintw(5, 5, "Toof");
+
+        // TODO: This segfaults
+        //try self.printDirs();
     }
 
     fn printHeader(self: *Browser) void {
@@ -26,6 +80,58 @@ pub const Browser = struct {
         _ = ncurses.attron(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
         _ = ncurses.mvprintw(0, 0, cwd);
         _ = ncurses.attroff(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
+    }
+
+    fn printDirs(self: *Browser) !void {
+        const dirStr = "/  ";
+        const lnStr = "~> ";
+        const ox = 0;
+        const oy = 1;
+        //const width = @intCast(i32, ncurses.getmaxx(ncurses.stdscr));
+        const height = @intCast(i32, ncurses.getmaxy(ncurses.stdscr));
+
+        var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divTrunc(height, 2))));
+        var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divTrunc(height, 2)));
+
+        if(self.entries.items.len < height - oy) {
+            upperLimit = 0;
+        }
+
+        limit = utils.clamp(limit, 0, upperLimit);
+        //it += limit
+
+
+        var i: usize = 0;
+        while(i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
+            const current = i + @intCast(usize, limit);
+            const entry = self.entries.items[current];
+            const printedName = entry.name[0..dirStr.len];
+            const printedNamePtr = @ptrCast([*c]const u8, printedName);
+            _ = ncurses.attroff(ncurses.A_REVERSE);
+            if(self.index == current) {
+                _ = ncurses.attron(ncurses.A_REVERSE);
+            } else {
+                _ = ncurses.attroff(ncurses.A_REVERSE);
+            }
+            if(entry.kind == .Directory) {
+                _ = ncurses.attron(ncurses.A_BOLD);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s%s ",
+                        entry.mode,
+                        dirStr,
+                        printedNamePtr);
+            } else if(entry.kind == .SymLink) {
+                _ = ncurses.attroff(ncurses.A_BOLD);
+                _ = ncurses.attron(ncurses.A_BOLD);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s%s ",
+                        entry.mode,
+                        lnStr,
+                        printedNamePtr);
+            } else {
+                _ = ncurses.attroff(ncurses.A_BOLD);
+            }
+
+                    
+        }
     }
 
     pub fn update(_: *Browser, key: i32) bool {

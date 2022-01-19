@@ -13,11 +13,13 @@ pub fn main() anyerror!void {
     _ = ncurses.start_color();                            // TODO: Check for return
     _ = ncurses.init_pair(1, ncurses.COLOR_YELLOW, ncurses.COLOR_BLACK);
 
-    var browser = Browser{};
-    try browser.init();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var ally = gpa.allocator();
+    var browser = try Browser.init(&ally);
+    defer browser.deinit();
 
     while(true) {
-        browser.draw();
+        try browser.draw();
         const ch = ncurses.getch();
         if(!browser.update(ch)) {
             break;
