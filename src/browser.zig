@@ -12,6 +12,19 @@ pub const Browser = struct {
     };
     const Entries = std.ArrayList(FileEntry);
 
+    fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
+        if(lhs.kind == .Directory) {
+            if(rhs.kind == .Directory) {
+                return utils.caseInsensitiveComparison(lhs.name, rhs.name);
+            } else {
+                return false;
+            }
+        } else if(rhs.kind == .Directory) {
+            return true;
+        }
+        return utils.caseInsensitiveComparison(lhs.name, rhs.name);
+    }
+
     index: usize = 0,
     cwdBuf: [std.fs.MAX_PATH_BYTES]u8 = undefined,
     cwd: []u8 = undefined,
@@ -47,7 +60,7 @@ pub const Browser = struct {
             var newEntry = FileEntry{
                 .kind = entry.kind,
                 .mode = undefined,
-                .name = try self.ally.dupe(u8, entry.name),
+                .name = try self.ally.dupeZ(u8, entry.name),
                 .size = undefined,
                 .sizeStr = undefined,
             };
@@ -57,16 +70,19 @@ pub const Browser = struct {
 
             const st = try std.os.fstat(fd);
             newEntry.size = st.size;
+            newEntry.mode = st.mode;
 
             try self.entries.append(newEntry);
         }
+
+        std.sort.sort(FileEntry, self.entries.items, {}, compByEntryKind);
+
+        _= ncurses.erase();
     }
 
     pub fn draw(self: *Browser) !void {
         self.printHeader();
-
-        // TODO: This segfaults
-        //try self.printDirs();
+        try self.printDirs();
     }
 
     fn printHeader(self: *Browser) void {
@@ -98,8 +114,6 @@ pub const Browser = struct {
         }
 
         limit = utils.clamp(limit, 0, upperLimit);
-        //it += limit
-
 
         var i: usize = 0;
         while(i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
@@ -113,21 +127,24 @@ pub const Browser = struct {
             } else {
                 _ = ncurses.attroff(ncurses.A_REVERSE);
             }
+
+            _ = ncurses.attroff(ncurses.A_BOLD);
             if(entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s%s ",
-                        entry.mode,
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
+                        entry.mode & 0o0777,
                         dirStr,
                         printedNamePtr);
             } else if(entry.kind == .SymLink) {
-                _ = ncurses.attroff(ncurses.A_BOLD);
-                _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s%s ",
-                        entry.mode,
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
+                        entry.mode & 0o0777,
                         lnStr,
                         printedNamePtr);
             } else {
-                _ = ncurses.attroff(ncurses.A_BOLD);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
+                        entry.mode & 0o0777,
+                        "",
+                        printedNamePtr);
             }
 
                     

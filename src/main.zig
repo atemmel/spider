@@ -15,6 +15,7 @@ pub fn main() anyerror!void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
+    defer std.debug.assert(!gpa.deinit());
     var browser = try Browser.init(&ally);
     defer browser.deinit();
 
