@@ -1,2 +1,0 @@
-#!/bin/sh
-clang-tidy -fix src/*.cpp -- -Iinclude/ -std=c++17

@@ -1,4 +1,4 @@
-# spider
+# spider (zig branch)
 
 Use at your own risk :^)
 
@@ -23,11 +23,7 @@ Use at your own risk :^)
 ## How to install
 
 ```sh
-# Clone the repository and cd into the directory
-mkdir build && cd build
-cmake ..
-make
-sudo make install
+# to be continued...
 ```
 
 ## Dependencies
@@ -35,10 +31,11 @@ sudo make install
 * ncurses
 * libmagic
 * libgit2
-* c++17
+* c++17(???)
 
 ## Todo:
 
+* Everything...
 * ~~cmake~~
 * ~~clang-tidy~~
 * Plugins (git, debug)
