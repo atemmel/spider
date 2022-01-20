@@ -12,10 +12,7 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) nore
 }
 
 pub fn main() anyerror!void {
-    const window = ncurses.initscr();
-    if (window == null) {
-        std.log.info("Aww man: {*}\n", .{window});
-    }
+    _ = ncurses.initscr();
     _ = ncurses.noecho();
     _ = ncurses.curs_set(0);
     _ = ncurses.start_color(); // TODO: Check for return
@@ -23,7 +20,7 @@ pub fn main() anyerror!void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
-    //defer std.debug.assert(!gpa.deinit());
+    defer std.debug.assert(!gpa.deinit());
     var browser = try Browser.init(&ally);
     defer browser.deinit();
 
@@ -35,8 +32,5 @@ pub fn main() anyerror!void {
         }
     }
 
-    const result = ncurses.endwin();
-    if (result != 0) {
-        std.log.info("Aww man 2: {d}\n", .{result});
-    }
+    _ = ncurses.endwin();
 }

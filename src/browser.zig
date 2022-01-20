@@ -8,7 +8,7 @@ pub const Browser = struct {
         mode: std.fs.File.Mode,
         name: [:0]u8,
         size: u64,
-        sizeStr: [:0]u8,
+        sizeStr: ?[:0]u8,
     };
 
     const Entries = std.ArrayList(FileEntry);
@@ -52,7 +52,10 @@ pub const Browser = struct {
     fn clearEntries(self: *Browser) void {
         for (self.entries.items) |e| {
             self.ally.free(e.name);
-            self.ally.free(std.mem.span(e.sizeStr));
+            if (e.sizeStr != null) {
+                const ptr = e.sizeStr.?;
+                self.ally.free(std.mem.span(ptr));
+            }
         }
         self.entries.clearRetainingCapacity();
     }
@@ -77,9 +80,11 @@ pub const Browser = struct {
             };
             errdefer self.ally.free(newEntry.name);
 
-            _ = ncurses.endwin();
-            std.debug.print("at: {s}\n\r", .{entry.name});
-            const st = try dir.statFile(entry.name);
+            const st = dir.statFile(entry.name) catch {
+                //TODO: handle responsibly
+                try self.entries.append(newEntry);
+                continue;
+            };
             newEntry.size = st.size;
             newEntry.sizeStr = try utils.sizeToString(self.ally, st.size);
             newEntry.mode = st.mode;
@@ -117,8 +122,8 @@ pub const Browser = struct {
         const oy = 1;
         const height = @intCast(i32, ncurses.getmaxy(ncurses.stdscr));
 
-        var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divTrunc(height, 2))));
-        var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divTrunc(height, 2)));
+        var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divFloor(height, 2))));
+        var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divFloor(height, 2)));
 
         if (self.entries.items.len < height - oy) {
             upperLimit = 0;
@@ -130,7 +135,8 @@ pub const Browser = struct {
         while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
-            const printedName = entry.name[0..dirStr.len];
+            // shorten name here if appropriate
+            const printedName = entry.name[0..];
             const printedNamePtr = @ptrCast([*c]const u8, printedName);
 
             _ = ncurses.attroff(ncurses.A_REVERSE);
@@ -145,7 +151,7 @@ pub const Browser = struct {
             } else if (entry.kind == .SymLink) {
                 _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, lnStr, printedNamePtr);
             } else {
-                const sizeStr = @ptrCast([*c]const u8, entry.sizeStr);
+                const sizeStr = @ptrCast([*c]const u8, entry.sizeStr.?);
                 _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, sizeStr, printedNamePtr);
             }
         }
