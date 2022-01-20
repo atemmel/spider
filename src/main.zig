@@ -28,7 +28,7 @@ pub fn main() anyerror!void {
     defer browser.deinit();
 
     while (true) {
-        try browser.draw();
+        browser.draw();
         const ch = ncurses.getch();
         if (!try browser.update(ch)) {
             break;

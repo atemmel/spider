@@ -62,7 +62,7 @@ pub const Browser = struct {
 
         var dir = try std.fs.openDirAbsolute(
             self.cwd,
-            .{ .iterate = true },
+            .{ .iterate = true, .no_follow = true },
         );
         defer dir.close();
 
@@ -77,6 +77,8 @@ pub const Browser = struct {
             };
             errdefer self.ally.free(newEntry.name);
 
+            _ = ncurses.endwin();
+            std.debug.print("at: {s}\n\r", .{entry.name});
             const st = try dir.statFile(entry.name);
             newEntry.size = st.size;
             newEntry.sizeStr = try utils.sizeToString(self.ally, st.size);
@@ -89,10 +91,10 @@ pub const Browser = struct {
         _ = ncurses.erase();
     }
 
-    pub fn draw(self: *Browser) !void {
+    pub fn draw(self: *Browser) void {
         _ = ncurses.erase();
         self.printHeader();
-        try self.printDirs();
+        self.printDirs() catch unreachable;
     }
 
     fn printHeader(self: *Browser) void {
