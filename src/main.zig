@@ -11,13 +11,16 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) nore
     std.os.exit(0);
 }
 
-pub fn main() anyerror!void {
+pub fn initCurses() void {
     _ = ncurses.initscr();
     _ = ncurses.noecho();
     _ = ncurses.curs_set(0);
     _ = ncurses.start_color(); // TODO: Check for return
     _ = ncurses.init_pair(1, ncurses.COLOR_YELLOW, ncurses.COLOR_BLACK);
+}
 
+pub fn main() anyerror!void {
+    initCurses();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
     defer std.debug.assert(!gpa.deinit());
