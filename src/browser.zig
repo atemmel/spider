@@ -152,7 +152,7 @@ pub const Browser = struct {
         _ = ncurses.attroff(ncurses.A_BOLD);
     }
 
-    fn exitDir(self: *Browser) void {
+    fn exitDir(self: *Browser) !void {
         const lastIndex = std.mem.lastIndexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
         const firstIndex = std.mem.indexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
         if (lastIndex == null or firstIndex == null) {
@@ -160,18 +160,19 @@ pub const Browser = struct {
         }
 
         if (lastIndex.? == firstIndex.?) {
-            self.cwd = self.cwd[0 .. lastIndex.? + 1];
+            self.cwd = self.cwdBuf[0 .. lastIndex.? + 1];
         } else {
-            self.cwd = self.cwd[0..lastIndex.?];
+            self.cwd = self.cwdBuf[0..lastIndex.?];
         }
-        self.cwd.ptr[self.cwd.len] = 0;
+        self.cwdBuf[self.cwd.len] = 0;
         self.index = 0;
-        self.fillEntries() catch |err| {
-            std.log.info("{}", .{err});
-        };
+        try self.fillEntries();
+        //self.fillEntries() catch {
+        //TODO: Be responsible
+        //};
     }
 
-    pub fn update(self: *Browser, key: i32) bool {
+    pub fn update(self: *Browser, key: i32) !bool {
         switch (key) {
             // die
             4, 'q' => {
@@ -199,7 +200,7 @@ pub const Browser = struct {
                 _ = ncurses.printw("right");
             },
             68, 'h' => {
-                self.exitDir();
+                try self.exitDir();
             },
             else => {},
         }

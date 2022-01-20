@@ -30,7 +30,7 @@ pub fn main() anyerror!void {
     while (true) {
         try browser.draw();
         const ch = ncurses.getch();
-        if (!browser.update(ch)) {
+        if (!try browser.update(ch)) {
             break;
         }
     }
