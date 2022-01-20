@@ -81,7 +81,9 @@ pub const Browser = struct {
             errdefer self.ally.free(newEntry.name);
 
             const st = dir.statFile(entry.name) catch {
-                //TODO: handle responsibly
+                newEntry.sizeStr = null;
+                newEntry.size = 0;
+                newEntry.mode = 0;
                 try self.entries.append(newEntry);
                 continue;
             };
@@ -135,7 +137,7 @@ pub const Browser = struct {
         while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
-            // shorten name here if appropriate
+            //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
             const printedNamePtr = @ptrCast([*c]const u8, printedName);
 
@@ -147,12 +149,16 @@ pub const Browser = struct {
             _ = ncurses.attroff(ncurses.A_BOLD);
             if (entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, dirStr, printedNamePtr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, dirStr, printedNamePtr);
             } else if (entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, lnStr, printedNamePtr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, lnStr, printedNamePtr);
             } else {
-                const sizeStr = @ptrCast([*c]const u8, entry.sizeStr.?);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, sizeStr, printedNamePtr);
+                if(entry.sizeStr) |size| {
+                    const sizeStr = @ptrCast([*c]const u8, size);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, sizeStr, printedNamePtr);
+                } else {
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s ", "?  ", printedNamePtr);
+                }
             }
         }
 

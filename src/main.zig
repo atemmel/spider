@@ -7,6 +7,8 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) nore
     std.debug.print("{s}\n", .{msg});
     if (error_return_trace) |trace| {
         std.debug.dumpStackTrace(trace.*);
+    } else {
+        std.debug.print("No trace lmao\n", .{});
     }
     std.os.exit(0);
 }
