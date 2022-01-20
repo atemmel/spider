@@ -6,10 +6,11 @@ pub const Browser = struct {
     const FileEntry = struct {
         kind: std.fs.File.Kind,
         mode: std.fs.File.Mode,
-        name: []u8,
+        name: [:0]u8,
         size: i64,
-        sizeStr: []u8,
+        sizeStr: [:0]u8,
     };
+
     const Entries = std.ArrayList(FileEntry);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
@@ -25,7 +26,7 @@ pub const Browser = struct {
         return utils.caseInsensitiveComparison(lhs.name, rhs.name);
     }
 
-    index: usize = 1,
+    index: usize = 0,
     cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
     cwd: []u8 = undefined,
     ally: *std.mem.Allocator,
@@ -38,26 +39,41 @@ pub const Browser = struct {
         };
 
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
-        browser.cwd.ptr[browser.cwd.len] = 0;
+        browser.cwdBuf[browser.cwd.len] = 0;
         try browser.fillEntries();
         return browser;
     }
 
     pub fn deinit(self: *Browser) void {
-        for (self.entries.items) |e| {
-            self.ally.free(e.name);
-            self.ally.free(e.sizeStr);
-        }
+        self.clearEntries();
         self.entries.deinit();
     }
 
-    fn fillEntries(self: *Browser) !void {
+    fn clearEntries(self: *Browser) void {
+        for (self.entries.items) |e| {
+            self.ally.free(e.name);
+            self.ally.free(std.mem.span(e.sizeStr));
+        }
         self.entries.clearRetainingCapacity();
+    }
 
-        const dir = try std.fs.cwd().openDir(
-            ".",
+    fn fillEntries(self: *Browser) !void {
+        self.clearEntries();
+
+        var dir = try std.fs.openDirAbsolute(
+            self.cwd,
             .{.iterate = true},
         );
+        defer dir.close();
+
+        var fileBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined;
+        std.mem.copy(u8, fileBuf[0..], self.cwd);
+        var path: []u8 = fileBuf[0..self.cwd.len];
+
+        if(path[path.len - 1] != std.fs.path.sep) {
+            fileBuf[path.len] = std.fs.path.sep;
+            path = fileBuf[0..path.len + 1];
+        }
 
         var it = dir.iterate();
         while (try it.next()) |entry| {
@@ -68,8 +84,20 @@ pub const Browser = struct {
                 .size = undefined,
                 .sizeStr = undefined,
             };
+            errdefer self.ally.free(newEntry.name);
 
-            var fd = try std.os.openZ(@ptrCast([*:0]const u8, entry.name), std.os.O.RDONLY | std.os.O.CLOEXEC, 0);
+            var dest = fileBuf[path.len..];
+            std.mem.copy(u8, dest, newEntry.name);
+
+            const pathToOpen = fileBuf[0..path.len + newEntry.name.len];
+            _ = ncurses.endwin();
+            var fd = std.os.open(pathToOpen, std.os.O.RDONLY | std.os.O.CLOEXEC, 0) catch {
+                newEntry.size = 0;
+                newEntry.sizeStr = try utils.sizeToString(self.ally, 0);
+                newEntry.mode = 0;
+                try self.entries.append(newEntry);
+                continue;
+            };
             defer std.os.close(fd);
 
             const st = try std.os.fstat(fd);
@@ -81,11 +109,16 @@ pub const Browser = struct {
         }
 
         std.sort.sort(FileEntry, self.entries.items, {}, compByEntryKind);
+        //for(self.entries.items) |entry| {
+        //std.log.info("Here: {s}", .{entry.name});
+        //}
+        //std.log.info("cwd is now: {s}", .{self.cwd});
 
         _= ncurses.erase();
     }
 
     pub fn draw(self: *Browser) !void {
+        _ = ncurses.erase();
         self.printHeader();
         try self.printDirs();
     }
@@ -108,7 +141,6 @@ pub const Browser = struct {
         const lnStr = "~> ";
         const ox = 0;
         const oy = 1;
-        //const width = @intCast(i32, ncurses.getmaxx(ncurses.stdscr));
         const height = @intCast(i32, ncurses.getmaxy(ncurses.stdscr));
 
         var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divTrunc(height, 2))));
@@ -150,7 +182,7 @@ pub const Browser = struct {
                         entry.mode & 0o0777,
                         sizeStr,
                         printedNamePtr);
-            }
+        }
 
                     
         }
@@ -159,31 +191,55 @@ pub const Browser = struct {
         _ = ncurses.attroff(ncurses.A_BOLD);
     }
 
+    fn exitDir(self: *Browser) void {
+        const lastIndex = std.mem.lastIndexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
+        const firstIndex = std.mem.indexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
+        if(lastIndex == null or firstIndex == null) {
+            return;
+        }
+
+        if(lastIndex.? == firstIndex.?) {
+            self.cwd = self.cwd[0..lastIndex.? + 1];
+        } else {
+            self.cwd = self.cwd[0..lastIndex.?];
+        }
+        self.cwd.ptr[self.cwd.len] = 0;
+        self.index = 0;
+        _ = ncurses.endwin();
+        self.fillEntries() catch |err| {
+            std.log.info("{}", .{err});
+        };
+    }
+
     pub fn update(self: *Browser, key: i32) bool {
         switch(key) {
             // die
             4, 'q' => {
                 return false;
             },
-            ncurses.KEY_RIGHT, 'l' => {
+            65, 'k' => {
+                if(self.entries.items.len > 0) {
+                    if(self.index <= 0) {
+                        self.index = self.entries.items.len - 1;
+                    } else {
+                        self.index -= 1;
+                    }
+                }
+            },
+            66, 'j' => {
+                if(self.entries.items.len > 0) {
+                    if(self.index >= self.entries.items.len - 1) {
+                        self.index = 0;
+                    } else {
+                        self.index += 1;
+                    }
+                }
+            },
+            67, 'l' => {
                 _ = ncurses.printw("right");
             },
-            ncurses.KEY_LEFT, 'h' => {
-                _ = ncurses.printw("left");
-            },
-            ncurses.KEY_UP, 'k' => {
-                if(self.index <= 0) {
-                    self.index = self.entries.items.len - 1;
-                } else {
-                    self.index -= 1;
-                }
-            },
-            ncurses.KEY_DOWN, 'j' => {
-                if(self.index >= self.entries.items.len - 1) {
-                    self.index = 0;
-                } else {
-                    self.index += 1;
-                }
+            68, 'h' => {
+                self.exitDir();
             },
             else => {},
         }

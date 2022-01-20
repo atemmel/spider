@@ -3,7 +3,6 @@ const ncurses = @cImport(@cInclude("ncurses.h"));
 const Browser = @import("browser.zig").Browser;
 
 pub fn main() anyerror!void {
-    //std.log.info("All your codebase are belong to us.", .{});
     const window = ncurses.initscr();
     if(window == null) {
         std.log.info("Aww man: {*}\n", .{window});
