@@ -7,20 +7,20 @@ pub const Browser = struct {
         kind: std.fs.File.Kind,
         mode: std.fs.File.Mode,
         name: [:0]u8,
-        size: i64,
+        size: u64,
         sizeStr: [:0]u8,
     };
 
     const Entries = std.ArrayList(FileEntry);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
-        if(rhs.kind == .Directory) {
-            if(lhs.kind == .Directory) {
+        if (rhs.kind == .Directory) {
+            if (lhs.kind == .Directory) {
                 return utils.caseInsensitiveComparison(lhs.name, rhs.name);
             } else {
                 return false;
             }
-        } else if(lhs.kind == .Directory) {
+        } else if (lhs.kind == .Directory) {
             return true;
         }
         return utils.caseInsensitiveComparison(lhs.name, rhs.name);
@@ -62,18 +62,9 @@ pub const Browser = struct {
 
         var dir = try std.fs.openDirAbsolute(
             self.cwd,
-            .{.iterate = true},
+            .{ .iterate = true },
         );
         defer dir.close();
-
-        var fileBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined;
-        std.mem.copy(u8, fileBuf[0..], self.cwd);
-        var path: []u8 = fileBuf[0..self.cwd.len];
-
-        if(path[path.len - 1] != std.fs.path.sep) {
-            fileBuf[path.len] = std.fs.path.sep;
-            path = fileBuf[0..path.len + 1];
-        }
 
         var it = dir.iterate();
         while (try it.next()) |entry| {
@@ -86,21 +77,7 @@ pub const Browser = struct {
             };
             errdefer self.ally.free(newEntry.name);
 
-            var dest = fileBuf[path.len..];
-            std.mem.copy(u8, dest, newEntry.name);
-
-            const pathToOpen = fileBuf[0..path.len + newEntry.name.len];
-            _ = ncurses.endwin();
-            var fd = std.os.open(pathToOpen, std.os.O.RDONLY | std.os.O.CLOEXEC, 0) catch {
-                newEntry.size = 0;
-                newEntry.sizeStr = try utils.sizeToString(self.ally, 0);
-                newEntry.mode = 0;
-                try self.entries.append(newEntry);
-                continue;
-            };
-            defer std.os.close(fd);
-
-            const st = try std.os.fstat(fd);
+            const st = try dir.statFile(entry.name);
             newEntry.size = st.size;
             newEntry.sizeStr = try utils.sizeToString(self.ally, st.size);
             newEntry.mode = st.mode;
@@ -109,12 +86,7 @@ pub const Browser = struct {
         }
 
         std.sort.sort(FileEntry, self.entries.items, {}, compByEntryKind);
-        //for(self.entries.items) |entry| {
-        //std.log.info("Here: {s}", .{entry.name});
-        //}
-        //std.log.info("cwd is now: {s}", .{self.cwd});
-
-        _= ncurses.erase();
+        _ = ncurses.erase();
     }
 
     pub fn draw(self: *Browser) !void {
@@ -126,8 +98,8 @@ pub const Browser = struct {
     fn printHeader(self: *Browser) void {
         var x = ncurses.getmaxx(ncurses.stdscr);
         var i: i32 = 0;
-        while(i < x) : (i += 1) {
-            _= ncurses.mvprintw(0, i, " ");
+        while (i < x) : (i += 1) {
+            _ = ncurses.mvprintw(0, i, " ");
         }
 
         const cwd = @ptrCast([*c]const u8, self.cwd);
@@ -146,45 +118,34 @@ pub const Browser = struct {
         var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divTrunc(height, 2))));
         var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divTrunc(height, 2)));
 
-        if(self.entries.items.len < height - oy) {
+        if (self.entries.items.len < height - oy) {
             upperLimit = 0;
         }
 
         limit = utils.clamp(limit, 0, upperLimit);
 
         var i: usize = 0;
-        while(i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
+        while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
             const printedName = entry.name[0..dirStr.len];
             const printedNamePtr = @ptrCast([*c]const u8, printedName);
 
             _ = ncurses.attroff(ncurses.A_REVERSE);
-            if(self.index == current) {
+            if (self.index == current) {
                 _ = ncurses.attron(ncurses.A_REVERSE);
-            } 
+            }
 
             _ = ncurses.attroff(ncurses.A_BOLD);
-            if(entry.kind == .Directory) {
+            if (entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
-                        entry.mode & 0o0777,
-                        dirStr,
-                        printedNamePtr);
-            } else if(entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
-                        entry.mode & 0o0777,
-                        lnStr,
-                        printedNamePtr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, dirStr, printedNamePtr);
+            } else if (entry.kind == .SymLink) {
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, lnStr, printedNamePtr);
             } else {
                 const sizeStr = @ptrCast([*c]const u8, entry.sizeStr);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ",
-                        entry.mode & 0o0777,
-                        sizeStr,
-                        printedNamePtr);
-        }
-
-                    
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %o %10s %s ", entry.mode & 0o0777, sizeStr, printedNamePtr);
+            }
         }
 
         _ = ncurses.attroff(ncurses.A_REVERSE);
@@ -194,32 +155,31 @@ pub const Browser = struct {
     fn exitDir(self: *Browser) void {
         const lastIndex = std.mem.lastIndexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
         const firstIndex = std.mem.indexOf(u8, self.cwd, &[1]u8{std.fs.path.sep});
-        if(lastIndex == null or firstIndex == null) {
+        if (lastIndex == null or firstIndex == null) {
             return;
         }
 
-        if(lastIndex.? == firstIndex.?) {
-            self.cwd = self.cwd[0..lastIndex.? + 1];
+        if (lastIndex.? == firstIndex.?) {
+            self.cwd = self.cwd[0 .. lastIndex.? + 1];
         } else {
             self.cwd = self.cwd[0..lastIndex.?];
         }
         self.cwd.ptr[self.cwd.len] = 0;
         self.index = 0;
-        _ = ncurses.endwin();
         self.fillEntries() catch |err| {
             std.log.info("{}", .{err});
         };
     }
 
     pub fn update(self: *Browser, key: i32) bool {
-        switch(key) {
+        switch (key) {
             // die
             4, 'q' => {
                 return false;
             },
             65, 'k' => {
-                if(self.entries.items.len > 0) {
-                    if(self.index <= 0) {
+                if (self.entries.items.len > 0) {
+                    if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
                     } else {
                         self.index -= 1;
@@ -227,8 +187,8 @@ pub const Browser = struct {
                 }
             },
             66, 'j' => {
-                if(self.entries.items.len > 0) {
-                    if(self.index >= self.entries.items.len - 1) {
+                if (self.entries.items.len > 0) {
+                    if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
                     } else {
                         self.index += 1;
