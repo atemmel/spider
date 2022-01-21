@@ -208,6 +208,11 @@ pub const Browser = struct {
             4, 'q' => {
                 return false;
             },
+            's' => {
+                _ = ncurses.endwin();
+                utils.spawn("bash") catch {};   //TODO: Repsonsible, yes
+                _ = ncurses.initscr();
+            },
             65, 'k' => {
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {

@@ -63,3 +63,19 @@ pub fn sizeToString(ally: *std.mem.Allocator, sizeInBytes: u64) ![:0]u8 {
 
     return buffer;
 }
+
+pub fn spawn(what: [:0]const u8) !void {
+    const pid = try std.os.fork();
+    if(pid == 0) {  // offspring
+        const env = [_:null]?[*:0]u8{null};
+        const envSlice = env[0..];
+        const args = [_:null]?[*:0]const u8{what, null};
+        const argsSlice = args[0..];
+        //TODO: handle this
+        std.os.execvpeZ(what, argsSlice, envSlice) catch {};
+        return;
+    } else {    // parent
+        //TODO: handle that
+        _ = std.os.waitpid(pid, 0);
+    }
+}
