@@ -27,6 +27,7 @@ pub const Browser = struct {
     }
 
     index: usize = 0,
+    //TODO: These should be marked 0-terminated
     cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
     cwd: []u8 = undefined,
     ally: *std.mem.Allocator,
@@ -180,6 +181,8 @@ pub const Browser = struct {
         }
         self.cwdBuf[self.cwd.len] = 0;
         self.index = 0;
+        
+        try std.os.chdir(self.cwd);
         try self.fillEntries();
     }
 
@@ -195,6 +198,12 @@ pub const Browser = struct {
         std.mem.copy(u8, remainder, entry.name);
         self.cwdBuf[newLen] = 0;
         self.cwd = self.cwdBuf[0..newLen];
+
+        std.os.chdir(self.cwd) catch {
+            self.cwdBuf[oldLen] = 0;
+            self.cwd = self.cwdBuf[0..oldLen];
+            return;
+        };
 
         self.fillEntries() catch {
             self.cwdBuf[oldLen] = 0;
