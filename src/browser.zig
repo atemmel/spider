@@ -246,6 +246,19 @@ pub const Browser = struct {
             68, 'h' => {
                 try self.exitDir();
             },
+            'c' => {},  //TODO: Create file
+            'C' => {},  //TODO: Create folder
+            'D' => {},  //TODO: Delete file
+            'f' => {},  //TODO: Find file
+            ' ' => {},  //TODO: Mark file
+            'R' => {},  //TODO: Rename file
+            'G' => {},  //TODO: Git mode(?)
+            'm' => {},  //TODO: Clear marks
+            'a' => {},  //TODO: File info
+            'p' => {},  //TODO: Paste marks
+            'v' => {},  //TODO: Move marks
+            'b' => {},  //TODO: Add to bookmarks
+            'g' => {},  //TODO: Show bookmarks
             else => {},
         }
         return true;
