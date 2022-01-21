@@ -181,9 +181,25 @@ pub const Browser = struct {
         self.cwdBuf[self.cwd.len] = 0;
         self.index = 0;
         try self.fillEntries();
-        //self.fillEntries() catch {
-        //TODO: Be responsible
-        //};
+    }
+
+    fn enterDir(self: *Browser) void {
+        const entry = &self.entries.items[self.index];
+        const oldLen = self.cwd.len;
+        var newLen = self.cwd.len + entry.name.len;
+        if(self.cwdBuf[self.cwd.len] != std.fs.path.sep) {
+            self.cwdBuf[self.cwd.len] = std.fs.path.sep;
+            newLen += 1;
+        }
+        var remainder = self.cwdBuf[self.cwd.len + 1..];
+        std.mem.copy(u8, remainder, entry.name);
+        self.cwdBuf[newLen] = 0;
+        self.cwd = self.cwdBuf[0..newLen];
+
+        self.fillEntries() catch {
+            self.cwdBuf[oldLen] = 0;
+            self.cwd = self.cwdBuf[0..oldLen];
+        };
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -211,7 +227,7 @@ pub const Browser = struct {
                 }
             },
             67, 'l' => {
-                _ = ncurses.printw("right");
+                self.enterDir();
             },
             68, 'h' => {
                 try self.exitDir();
