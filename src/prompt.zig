@@ -14,15 +14,13 @@ fn clear(x: i32, y: i32) void {
 }
 
 fn print(y: i32, value: []const u8, message: []const u8) void {
-    const valueC = @ptrCast([*c]const u8, value);
-    const messageC = @ptrCast([*c]const u8, message);
-    _ = ncurses.mvprintw(y - 1, 0, "%s%s", messageC, valueC);
+    _ = ncurses.mvprintw(y - 1, 0, "%s%s", message.ptr, value.ptr);
 }
 
 fn exit(x: i32, y: i32) void {
     clear(x, y);
     _ = ncurses.noecho();
-    _ = ncurses.timeout(10);
+    _ = ncurses.timeout(1000);
 }
 
 pub fn getString(message: [:0]const u8) ?[]u8 {
@@ -78,4 +76,25 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
     }
 
     unreachable;
+}
+
+pub fn get(message: [:0]const u8) ?i32 {
+    var x: i32 = undefined;
+    var y: i32 = undefined;
+    var c: i32 = undefined;
+
+    x = ncurses.getmaxx(ncurses.stdscr);
+    y = ncurses.getmaxy(ncurses.stdscr);
+    _ = ncurses.echo();
+    _ = ncurses.timeout(-1);
+
+    print(y, "", message);
+    c = ncurses.getch();
+    exit(x, y);
+
+    if(c > 127 or !std.ascii.isPrint(@intCast(u8, c)) or c == ' ') {
+        return null;
+    }
+
+    return c;
 }

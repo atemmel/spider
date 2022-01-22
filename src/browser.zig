@@ -151,8 +151,7 @@ pub const Browser = struct {
                 _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, lnStr, printedName.ptr);
             } else {
                 if(entry.sizeStr) |size| {
-                    const sizeStr = @ptrCast([*c]const u8, size);
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, sizeStr, printedName.ptr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, size.ptr, printedName.ptr);
                 } else {
                     _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s ", "?  ", printedName.ptr);
                 }
@@ -212,7 +211,7 @@ pub const Browser = struct {
         self.index = 0;
     }
 
-    pub fn createFile(self: *Browser) !void {
+    fn createFile(self: *Browser) !void {
         const str = prompt.getString("Name of file:");
         if(str == null) {
             return;
@@ -226,7 +225,7 @@ pub const Browser = struct {
         defer file.close();
     }
 
-    pub fn createFolder(self: *Browser) !void {
+    fn createFolder(self: *Browser) !void {
         const str = prompt.getString("Name of folder:");
         if(str == null) {
             return;
@@ -235,6 +234,23 @@ pub const Browser = struct {
         var dir = try std.fs.openDirAbsolute(self.cwd, .{});
         defer dir.close();
         std.os.mkdirat(dir.fd, str.?, 0o755) catch {};  //TODO: Be responsible
+    }
+
+    fn deleteEntry(self: *Browser) !void {
+        const char = prompt.get("Delete entry? Y/N:");
+        if(char == null or (char.? != 'y' and char.? != 'Y')) {
+            return;
+        }
+
+        var dir = try std.fs.openDirAbsolute(self.cwd, .{});
+        defer dir.close();
+
+        const entry = self.entries.items[self.index];
+        if(entry.kind == .File) {
+            try dir.deleteFile(entry.name);
+        } else if(entry.kind == .Directory) {
+            try dir.deleteDir(entry.name);
+        }
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -280,7 +296,10 @@ pub const Browser = struct {
                 try self.createFolder();
                 try self.fillEntries();
             },
-            'D' => {},  //TODO: Delete file
+            'D' => {
+                try self.deleteEntry();
+                try self.fillEntries();
+            },  //TODO: Delete file
             'f' => {},  //TODO: Find file
             ' ' => {},  //TODO: Mark file
             'R' => {},  //TODO: Rename file
