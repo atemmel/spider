@@ -237,7 +237,7 @@ pub const Browser = struct {
     }
 
     fn deleteEntry(self: *Browser) !void {
-        const char = prompt.get("Delete entry? Y/N:");
+        const char = prompt.get("", "Delete entry? Y/N:");
         if(char == null or (char.? != 'y' and char.? != 'Y')) {
             return;
         }
@@ -251,6 +251,60 @@ pub const Browser = struct {
         } else if(entry.kind == .Directory) {
             try dir.deleteDir(entry.name);
         }
+    }
+
+    fn findFile(self: *Browser) !void {
+        var input: [128:0]u8 = undefined;
+        var i: usize = 0;
+
+        input[0] = 0;
+
+        while(true) {
+            var c = prompt.get(input[0..i:0], "Go:");
+
+            if(c == null) {
+                continue;
+            }
+
+            if(c.? == 127 and i > 0) {    // backspace
+                i -= 1;
+                input[i] = 0;
+            } else if(c.? == 27) {    // escape
+                break;
+            } else if(std.ascii.isPrint(@intCast(u8, c.?))) {
+                input[i] = @intCast(u8, c.?);
+                i += 1;
+                input[i] = 0;
+            }
+
+            for(self.entries.items) |_, index| {
+                if(!self.entryStartsWith(index, input[0..i])) {
+                    continue;
+                }
+
+                // if no more matching entries
+                if(index + 1 >= self.entries.items.len or !self.entryStartsWith(index + 1, input[0..i])) {
+                    self.index = index;
+                    self.enterDir();
+                    return;
+                }
+                break;
+            }
+
+            self.printHeader();
+            try self.printDirs();
+        }
+    }
+
+    fn entryStartsWith(self: *Browser, entryIndex: usize, value: []const u8) bool {
+        const entry = &self.entries.items[entryIndex];
+
+        for(value) |char, index| {
+            if(entry.name.len >= index or entry.name[index] != char) {
+                return false;
+            }
+        }
+        return true;
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -299,8 +353,10 @@ pub const Browser = struct {
             'D' => {
                 try self.deleteEntry();
                 try self.fillEntries();
-            },  //TODO: Delete file
-            'f' => {},  //TODO: Find file
+            },
+            'f' => {
+                try self.findFile();
+            },  //TODO: Find file
             ' ' => {},  //TODO: Mark file
             'R' => {},  //TODO: Rename file
             'G' => {},  //TODO: Git mode(?)
