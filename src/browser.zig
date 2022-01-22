@@ -214,7 +214,7 @@ pub const Browser = struct {
 
     pub fn createFile(self: *Browser) !void {
         const str = prompt.getString("Name of file:");
-        if(str == null) {
+        if(str == null or str.?.len == 0) {
             return;
         }
 
