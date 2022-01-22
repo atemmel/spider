@@ -307,6 +307,19 @@ pub const Browser = struct {
         return true;
     }
 
+    fn renameEntry(self: *Browser) !void {
+        const str = prompt.getString("New name:");
+        if(str == null) {
+            return;
+        }
+
+        const entry = &self.entries.items[self.index];
+        var dir = try std.fs.openDirAbsolute(self.cwd, .{});
+        defer dir.close();
+        dir.rename(entry.name, str.?) catch {
+        };
+    }
+
     pub fn update(self: *Browser, key: i32) !bool {
         switch (key) {
             // die
@@ -356,9 +369,12 @@ pub const Browser = struct {
             },
             'f' => {
                 try self.findFile();
-            },  //TODO: Find file
+            },
             ' ' => {},  //TODO: Mark file
-            'R' => {},  //TODO: Rename file
+            'R' => {
+                try self.renameEntry();
+                try self.fillEntries();
+            },
             'G' => {},  //TODO: Git mode(?)
             'm' => {},  //TODO: Clear marks
             'a' => {},  //TODO: File info
