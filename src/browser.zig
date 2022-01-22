@@ -144,6 +144,7 @@ pub const Browser = struct {
         limit = utils.clamp(limit, 0, upperLimit);
 
         var i: usize = 0;
+        self.cwdBuf[self.cwd.len] = std.fs.path.sep;
         while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
@@ -155,13 +156,11 @@ pub const Browser = struct {
                 _ = ncurses.attron(ncurses.A_REVERSE);
             }
 
-            std.mem.copy(u8, self.cwdBuf[self.cwd.len..], entry.name);
-            const key = self.cwdBuf[0..self.cwd.len + entry.name.len];
+            std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1..], entry.name);
+            const key = self.cwdBuf[0..self.cwd.len + 1 + entry.name.len];
 
             const mark = self.marks.get(key);
             const markStr = if(mark == null) "" else " ";
-
-            self.cwdBuf[self.cwd.len] = 0;
 
             _ = ncurses.attroff(ncurses.A_BOLD);
             if (entry.kind == .Directory) {
@@ -192,6 +191,7 @@ pub const Browser = struct {
                 }
             }
         }
+        self.cwdBuf[self.cwd.len] = 0;
 
         _ = ncurses.attroff(ncurses.A_REVERSE);
         _ = ncurses.attroff(ncurses.A_BOLD);
@@ -356,12 +356,13 @@ pub const Browser = struct {
 
     fn addMark(self: *Browser) !void {
         var entry = &self.entries.items[self.index];
-        const totalLen = self.cwd.len + entry.name.len;
+        const totalLen = self.cwd.len + 1 + entry.name.len;
 
         // create mark
         var mark: []u8 = try self.ally.alloc(u8, totalLen);
         std.mem.copy(u8, mark, self.cwd);
-        std.mem.copy(u8, mark[self.cwd.len..], entry.name);
+        std.mem.copy(u8, mark[self.cwd.len+1..], entry.name);
+        mark[self.cwd.len] = std.fs.path.sep;
 
         // try to put mark
         var existing = self.marks.getKey(mark);
@@ -372,6 +373,33 @@ pub const Browser = struct {
             self.ally.free(existing.?);
             self.ally.free(mark);
         }
+    }
+
+    fn copyMarks(self: *Browser) !void {
+        var it = self.marks.keyIterator();
+        self.cwdBuf[self.cwd.len] = std.fs.path.sep;
+        while(it.next()) |markPtr| {
+            const mark = markPtr.*;
+            var i: usize = mark.len - 1;
+            // find last sep
+            while(mark[i] != std.fs.path.sep) : (i -= 1) {}
+            const dirName = mark[i..];
+            std.mem.copy(u8, self.cwdBuf[self.cwd.len..], dirName);
+
+            const from = mark;
+            const to = self.cwdBuf[0..self.cwd.len + dirName.len];
+
+            
+            std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
+                var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
+                    mark,
+                    @errorName(err),
+                });
+                _ = prompt.get(errStr, "Could not copy file: ");
+                self.ally.free(errStr);
+            };
+        }
+        self.cwdBuf[self.cwd.len] = 0;
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -440,7 +468,10 @@ pub const Browser = struct {
                 self.clearMarks();
             },
             'a' => {},  //TODO: File info
-            'p' => {},  //TODO: Paste marks
+            'p' => {
+                try self.copyMarks();
+                self.clearMarks();
+            },
             'v' => {},  //TODO: Move marks
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks

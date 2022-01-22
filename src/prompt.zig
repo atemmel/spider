@@ -3,7 +3,7 @@ const ncurses = @cImport(@cInclude("ncurses.h"));
 
 const maxPromptSize = 128;
 var promptBuf: [maxPromptSize]u8 = undefined;
-var prompt: []u8 = undefined;
+var prompt: [:0]u8 = undefined;
 
 fn clear(x: i32, y: i32) void {
     _ = ncurses.move(y - 1, 0);
@@ -13,7 +13,7 @@ fn clear(x: i32, y: i32) void {
     }
 }
 
-fn print(y: i32, value: []const u8, message: []const u8) void {
+fn print(y: i32, value: [:0]const u8, message: [:0]const u8) void {
     _ = ncurses.mvprintw(y - 1, 0, "%s%s", message.ptr, value.ptr);
 }
 
@@ -33,7 +33,7 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
 
     clear(x, y);
     promptBuf[0] = 0;
-    prompt = promptBuf[0..0];
+    prompt = promptBuf[0..0:0];
 
     print(y, prompt, message);
 
@@ -46,7 +46,7 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             },
             127 => {  // backspce
                 if(prompt.len > 0) {
-                    prompt = promptBuf[0..prompt.len - 1];
+                    prompt = promptBuf[0..prompt.len - 1:0];
                     promptBuf[prompt.len] = 0;
                 }
             },
@@ -64,7 +64,7 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             else => {
                 if(prompt.len < maxPromptSize) {
                     promptBuf[prompt.len] = @intCast(u8, c);
-                    prompt = promptBuf[0..prompt.len + 1];
+                    prompt = promptBuf[0..prompt.len + 1:0];
                     promptBuf[prompt.len] = 0;
                 }
             },
