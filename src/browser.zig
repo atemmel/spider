@@ -436,7 +436,9 @@ pub const Browser = struct {
                 try self.fillEntries();
             },
             'G' => {},  //TODO: Git mode(?)
-            'm' => {},  //TODO: Clear marks
+            'm' => {
+                self.clearMarks();
+            },
             'a' => {},  //TODO: File info
             'p' => {},  //TODO: Paste marks
             'v' => {},  //TODO: Move marks
