@@ -19,6 +19,7 @@ pub fn initCurses() void {
     _ = ncurses.curs_set(0);
     _ = ncurses.start_color(); // TODO: Check for return
     _ = ncurses.init_pair(1, ncurses.COLOR_YELLOW, ncurses.COLOR_BLACK);
+    _ = ncurses.keypad(ncurses.stdscr, true);
 }
 
 pub fn main() anyerror!void {
@@ -26,12 +27,13 @@ pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
     defer std.debug.assert(!gpa.deinit());
-    var browser = try Browser.init(&ally);
+    var browser: Browser = .{};
+    try browser.init(&ally);
     defer browser.deinit();
 
     while (true) {
         browser.draw();
-        const ch = ncurses.getch();
+        const ch: i32 = ncurses.getch();
         if (!try browser.update(ch)) {
             break;
         }

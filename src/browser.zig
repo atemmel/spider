@@ -1,6 +1,7 @@
 const std = @import("std");
 const ncurses = @cImport(@cInclude("ncurses.h"));
 const utils = @import("utils.zig");
+const prompt = @import("prompt.zig");
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -30,19 +31,16 @@ pub const Browser = struct {
     //TODO: These should be marked 0-terminated
     cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
     cwd: []u8 = undefined,
-    ally: *std.mem.Allocator,
+    ally: *std.mem.Allocator = undefined,
     entries: Entries = undefined,
 
-    pub fn init(ally: *std.mem.Allocator) !Browser {
-        var browser = Browser{
-            .ally = ally,
-            .entries = Entries.init(ally.*),
-        };
+    pub fn init(browser: *Browser, ally: *std.mem.Allocator) !void {
+        browser.ally = ally;
+        browser.entries = Entries.init(ally.*);
 
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
         try browser.fillEntries();
-        return browser;
     }
 
     pub fn deinit(self: *Browser) void {
@@ -112,9 +110,8 @@ pub const Browser = struct {
             _ = ncurses.mvprintw(0, i, " ");
         }
 
-        const cwd = @ptrCast([*c]const u8, self.cwd);
         _ = ncurses.attron(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
-        _ = ncurses.mvprintw(0, 0, cwd);
+        _ = ncurses.mvprintw(0, 0, self.cwd.ptr);
         _ = ncurses.attroff(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
     }
 
@@ -140,7 +137,6 @@ pub const Browser = struct {
             const entry = &self.entries.items[current];
             //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
-            const printedNamePtr = @ptrCast([*c]const u8, printedName);
 
             _ = ncurses.attroff(ncurses.A_REVERSE);
             if (self.index == current) {
@@ -150,15 +146,15 @@ pub const Browser = struct {
             _ = ncurses.attroff(ncurses.A_BOLD);
             if (entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, dirStr, printedNamePtr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, dirStr, printedName.ptr);
             } else if (entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, lnStr, printedNamePtr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, lnStr, printedName.ptr);
             } else {
                 if(entry.sizeStr) |size| {
                     const sizeStr = @ptrCast([*c]const u8, size);
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, sizeStr, printedNamePtr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, sizeStr, printedName.ptr);
                 } else {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s ", "?  ", printedNamePtr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s ", "?  ", printedName.ptr);
                 }
             }
         }
@@ -209,6 +205,25 @@ pub const Browser = struct {
             self.cwdBuf[oldLen] = 0;
             self.cwd = self.cwdBuf[0..oldLen];
         };
+
+        //if(self.index >= self.entries.items.len) {
+            //self.index = self.entries.items.len - 1;
+        //}
+        self.index = 0;
+    }
+
+    pub fn createFile(self: *Browser) !void {
+        const str = prompt.getString("Name of file:");
+        if(str == null) {
+            return;
+        }
+
+        var dir = try std.fs.openDirAbsolute(self.cwd, .{});
+        errdefer dir.close();
+        var file = dir.createFile(str.?, .{.exclusive = true}) catch {
+            return;
+        };
+        defer file.close();
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -222,7 +237,7 @@ pub const Browser = struct {
                 utils.spawn("bash") catch {};   //TODO: Repsonsible, yes
                 _ = ncurses.initscr();
             },
-            65, 'k' => {
+            259, 'k' => {
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
@@ -231,7 +246,7 @@ pub const Browser = struct {
                     }
                 }
             },
-            66, 'j' => {
+            258, 'j' => {
                 if (self.entries.items.len > 0) {
                     if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
@@ -240,13 +255,16 @@ pub const Browser = struct {
                     }
                 }
             },
-            67, 'l' => {
+            261, 'l' => {
                 self.enterDir();
             },
-            68, 'h' => {
+            260, 'h' => {
                 try self.exitDir();
             },
-            'c' => {},  //TODO: Create file
+            'c' => {
+                try self.createFile();
+                try self.fillEntries();
+            },  //TODO: Create file
             'C' => {},  //TODO: Create folder
             'D' => {},  //TODO: Delete file
             'f' => {},  //TODO: Find file
@@ -259,7 +277,10 @@ pub const Browser = struct {
             'v' => {},  //TODO: Move marks
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks
-            else => {},
+            else => {
+                //_ = ncurses.mvprintw(20, 10, "%d", key);
+                //_ = ncurses.getch();
+            },
         }
         return true;
     }
