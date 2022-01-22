@@ -13,6 +13,7 @@ pub const Browser = struct {
     };
 
     const Entries = std.ArrayList(FileEntry);
+    const Marks = std.StringHashMap(void);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
         if (rhs.kind == .Directory) {
@@ -33,11 +34,12 @@ pub const Browser = struct {
     cwd: []u8 = undefined,
     ally: *std.mem.Allocator = undefined,
     entries: Entries = undefined,
+    marks: Marks = undefined,
 
     pub fn init(browser: *Browser, ally: *std.mem.Allocator) !void {
         browser.ally = ally;
         browser.entries = Entries.init(ally.*);
-
+        browser.marks = Marks.init(ally.*);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
         try browser.fillEntries();
@@ -46,6 +48,8 @@ pub const Browser = struct {
     pub fn deinit(self: *Browser) void {
         self.clearEntries();
         self.entries.deinit();
+        self.clearMarks();
+        self.marks.deinit();
     }
 
     fn clearEntries(self: *Browser) void {
@@ -57,6 +61,14 @@ pub const Browser = struct {
             }
         }
         self.entries.clearRetainingCapacity();
+    }
+
+    fn clearMarks(self: *Browser) void {
+        var it = self.marks.keyIterator();
+        while(it.next()) |mark| {
+            self.ally.free(mark.*);
+        }
+        self.marks.clearRetainingCapacity();
     }
 
     fn fillEntries(self: *Browser) !void {
@@ -143,17 +155,40 @@ pub const Browser = struct {
                 _ = ncurses.attron(ncurses.A_REVERSE);
             }
 
+            std.mem.copy(u8, self.cwdBuf[self.cwd.len..], entry.name);
+            const key = self.cwdBuf[0..self.cwd.len + entry.name.len];
+
+            const mark = self.marks.get(key);
+            const markStr = if(mark == null) "" else " ";
+
+            self.cwdBuf[self.cwd.len] = 0;
+
             _ = ncurses.attroff(ncurses.A_BOLD);
             if (entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, dirStr, printedName.ptr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
+                        entry.mode & 0o0777,
+                        dirStr, 
+                        markStr.ptr,
+                        printedName.ptr);
             } else if (entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, lnStr, printedName.ptr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
+                        entry.mode & 0o0777,
+                        lnStr, 
+                        markStr.ptr,
+                        printedName.ptr);
             } else {
                 if(entry.sizeStr) |size| {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s ", entry.mode & 0o0777, size.ptr, printedName.ptr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
+                            entry.mode & 0o0777,
+                            size.ptr,
+                            markStr.ptr,
+                            printedName.ptr);
                 } else {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s ", "?  ", printedName.ptr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s%s ", 
+                            "?  ", 
+                            markStr.ptr, 
+                            printedName.ptr);
                 }
             }
         }
@@ -316,8 +351,27 @@ pub const Browser = struct {
         const entry = &self.entries.items[self.index];
         var dir = try std.fs.openDirAbsolute(self.cwd, .{});
         defer dir.close();
-        dir.rename(entry.name, str.?) catch {
-        };
+        dir.rename(entry.name, str.?) catch {};
+    }
+
+    fn addMark(self: *Browser) !void {
+        var entry = &self.entries.items[self.index];
+        const totalLen = self.cwd.len + entry.name.len;
+
+        // create mark
+        var mark: []u8 = try self.ally.alloc(u8, totalLen);
+        std.mem.copy(u8, mark, self.cwd);
+        std.mem.copy(u8, mark[self.cwd.len..], entry.name);
+
+        // try to put mark
+        var existing = self.marks.getKey(mark);
+        if(existing == null) {
+            try self.marks.put(mark, .{});
+        } else { // remove mark
+            _ = self.marks.remove(mark);
+            self.ally.free(existing.?);
+            self.ally.free(mark);
+        }
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -370,7 +424,13 @@ pub const Browser = struct {
             'f' => {
                 try self.findFile();
             },
-            ' ' => {},  //TODO: Mark file
+            ' ' => {
+                try self.addMark();
+                if(self.index < self.entries.items.len - 1) {
+                    self.index += 1;
+                }
+                try self.printDirs();
+            },
             'R' => {
                 try self.renameEntry();
                 try self.fillEntries();
@@ -383,8 +443,8 @@ pub const Browser = struct {
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks
             else => {
-                //_ = ncurses.mvprintw(20, 10, "%d", key);
-                //_ = ncurses.getch();
+                _ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
+                _ = ncurses.getch();
             },
         }
         return true;
