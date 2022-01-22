@@ -300,7 +300,7 @@ pub const Browser = struct {
         const entry = &self.entries.items[entryIndex];
 
         for(value) |char, index| {
-            if(entry.name.len >= index or entry.name[index] != char) {
+            if(entry.name.len <= index or entry.name[index] != char) {
                 return false;
             }
         }
