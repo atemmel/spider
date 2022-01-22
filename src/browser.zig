@@ -214,7 +214,7 @@ pub const Browser = struct {
 
     pub fn createFile(self: *Browser) !void {
         const str = prompt.getString("Name of file:");
-        if(str == null or str.?.len == 0) {
+        if(str == null) {
             return;
         }
 
@@ -224,6 +224,17 @@ pub const Browser = struct {
             return;
         };
         defer file.close();
+    }
+
+    pub fn createFolder(self: *Browser) !void {
+        const str = prompt.getString("Name of folder:");
+        if(str == null) {
+            return;
+        }
+
+        var dir = try std.fs.openDirAbsolute(self.cwd, .{});
+        defer dir.close();
+        std.os.mkdirat(dir.fd, str.?, 0o755) catch {};  //TODO: Be responsible
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -264,8 +275,11 @@ pub const Browser = struct {
             'c' => {
                 try self.createFile();
                 try self.fillEntries();
-            },  //TODO: Create file
-            'C' => {},  //TODO: Create folder
+            },
+            'C' => {
+                try self.createFolder();
+                try self.fillEntries();
+            },
             'D' => {},  //TODO: Delete file
             'f' => {},  //TODO: Find file
             ' ' => {},  //TODO: Mark file

@@ -59,6 +59,9 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             },
             '\n' => {   // return
                 exit(x, y);
+                if(prompt.len == 0) {
+                    return null;
+                }
                 return prompt;
             },
             else => {
