@@ -272,6 +272,14 @@ pub const Browser = struct {
     }
 
     fn deleteEntry(self: *Browser) !void {
+        if(self.marks.count() == 0) {
+            try self.deleteEntryImpl();
+        } else {
+            try self.deleteEntriesMarked();
+        }
+    }
+
+    fn deleteEntryImpl(self: *Browser) !void {
         const char = prompt.get("", "Delete entry? Y/N:");
         if(char == null or (char.? != 'y' and char.? != 'Y')) {
             return;
@@ -286,6 +294,26 @@ pub const Browser = struct {
         } else if(entry.kind == .Directory) {
             try dir.deleteTree(entry.name);
         }
+    }
+
+    fn deleteEntriesMarked(self: *Browser) !void {
+        var promptStr = try std.fmt.allocPrintZ(self.ally.*,
+            "Delete ({d}) marked entries? Y/N", .{
+                self.marks.count(),
+        });
+        defer self.ally.free(promptStr);
+        const char = prompt.get("", promptStr);
+
+        if(char == null or (char.? != 'y' and char.? != 'Y')) {
+            return;
+        }
+
+        var it = self.marks.keyIterator();
+        while(it.next()) |markPtr| {
+            const mark = markPtr.*;
+            try std.fs.deleteTreeAbsolute(mark);
+        }
+        self.clearMarks();
     }
 
     fn findFile(self: *Browser) !void {
