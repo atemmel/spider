@@ -14,6 +14,7 @@ pub const Browser = struct {
 
     const Entries = std.ArrayList(FileEntry);
     const Marks = std.StringHashMap(void);
+    const Bookmarks = std.StringHashMap(void);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
         if (rhs.kind == .Directory) {
@@ -35,11 +36,13 @@ pub const Browser = struct {
     ally: *std.mem.Allocator = undefined,
     entries: Entries = undefined,
     marks: Marks = undefined,
+    bookmarks: Bookmarks = undefined,
 
     pub fn init(browser: *Browser, ally: *std.mem.Allocator) !void {
         browser.ally = ally;
         browser.entries = Entries.init(ally.*);
         browser.marks = Marks.init(ally.*);
+        browser.bookmarks = Bookmarks.init(ally.*);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
         try browser.fillEntries();
@@ -50,6 +53,8 @@ pub const Browser = struct {
         self.entries.deinit();
         self.clearMarks();
         self.marks.deinit();
+        self.clearBookmarks();
+        self.bookmarks.deinit();
     }
 
     fn clearEntries(self: *Browser) void {
@@ -69,6 +74,14 @@ pub const Browser = struct {
             self.ally.free(mark.*);
         }
         self.marks.clearRetainingCapacity();
+    }
+
+    fn clearBookmarks(self: *Browser) void {
+        var it = self.bookmarks.keyIterator();
+        while(it.next()) |mark| {
+            self.ally.free(mark.*);
+        }
+        self.bookmarks.clearRetainingCapacity();
     }
 
     fn fillEntries(self: *Browser) !void {
@@ -476,6 +489,52 @@ pub const Browser = struct {
         }
     }
 
+    //TODO: Const
+    //const bookmarkPath = "~/.spider-bookmarks";
+    const bookmarkPath = "/mnt/c/Users/tem/.spider-bookmarks";
+
+    fn loadBookmarks(self: *Browser) !void {
+        self.clearBookmarks();
+        var bookmarksStr = try utils.readFileOrCreateAlloc(bookmarkPath, self.ally.*);
+        defer self.ally.free(bookmarksStr);
+        var it = std.mem.tokenize(u8, bookmarksStr, "\n");
+        while(it.next()) |slice| {
+            var bookmark = try self.ally.dupeZ(u8, slice);
+            try self.bookmarks.put(bookmark, void{});
+        }
+    }
+
+    fn saveBookmarks(self: *Browser) !void {
+        var file = try std.fs.cwd().createFile(bookmarkPath, .{});
+        defer file.close();
+        var it = self.bookmarks.keyIterator();
+        while(it.next()) |slice| {
+            try file.writer().writeAll(slice.*);
+            try file.writer().writeByte('\n');
+        }
+    }
+
+    fn addBookmark(self: *Browser) !void {
+        try self.loadBookmarks();
+        {
+            var newBookmark = try self.ally.dupeZ(u8, self.cwd);
+            errdefer self.ally.free(newBookmark);
+
+            const existing = self.bookmarks.getKey(newBookmark);
+            if(existing == null) {
+                try self.bookmarks.put(newBookmark, void{});
+                _ = prompt.get("", "Added bookmark!");
+            } else {
+                _ = self.bookmarks.remove(newBookmark);
+                self.ally.free(existing.?);
+                self.ally.free(newBookmark);
+                _ = prompt.get("", "Removed bookmark!");
+            }
+
+        }
+        try self.saveBookmarks();
+    }
+
     pub fn update(self: *Browser, key: i32) !bool {
         switch (key) {
             4, 'q' => { // die
@@ -551,7 +610,9 @@ pub const Browser = struct {
                 self.clearMarks();
                 try self.fillEntries();
             },
-            'b' => {},  //TODO: Add to bookmarks
+            'b' => {    // add to bookmarks
+                try self.addBookmark();
+            },
             'g' => {},  //TODO: Show bookmarks
             else => {
                 // printf debugging :)))

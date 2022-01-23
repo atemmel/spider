@@ -165,3 +165,13 @@ pub fn entryKindAbsolute(path: []const u8) !std.fs.Dir.Entry.Kind {
     const stat = try dir.statFile(entryPath);
     return stat.kind;
 }
+
+pub fn readFileOrCreateAlloc(path: []const u8, ally: std.mem.Allocator) ![]u8 {
+    const file = try std.fs.cwd().createFile(path, .{
+        .read = true,
+        .truncate = false,
+    });
+    defer file.close();
+    const contents = try file.reader().readAllAlloc(ally, std.math.maxInt(usize));
+    return contents;
+}
