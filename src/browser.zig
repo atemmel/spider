@@ -2,6 +2,7 @@ const std = @import("std");
 const ncurses = @cImport(@cInclude("ncurses.h"));
 const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
+const config = @import("config.zig");
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -49,6 +50,11 @@ pub const Browser = struct {
         browser.bookmarks = Bookmarks.init(ally.*);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
+
+        config.init(ally.*);
+        try config.loadEnv();
+        try config.loadFile("/mnt/c/Users/tem/spider.conf");
+
         try browser.loadBookmarks();
         try browser.fillEntries();
     }
@@ -60,6 +66,7 @@ pub const Browser = struct {
         self.marks.deinit();
         self.clearBookmarks();
         self.bookmarks.deinit();
+        config.deinit();
     }
 
     fn clearEntries(self: *Browser) void {
@@ -592,7 +599,11 @@ pub const Browser = struct {
             },
             's' => {    // open shell
                 _ = ncurses.endwin();
-                utils.spawn("bash") catch {};   //TODO: Repsonsible, yes
+                if(config.shell) |shell| {
+                    utils.spawn(shell) catch {};   //TODO: Repsonsible, yes
+                } else if(config.shellEnv) |shell| {
+                    utils.spawn(shell) catch {};
+                }
                 _ = ncurses.initscr();
             },
             259, 'k' => {   // down

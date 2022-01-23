@@ -175,3 +175,19 @@ pub fn readFileOrCreateAlloc(path: []const u8, ally: std.mem.Allocator) ![]u8 {
     const contents = try file.reader().readAllAlloc(ally, std.math.maxInt(usize));
     return contents;
 }
+
+pub fn escapeHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Allocator) ![]u8 {
+    if(original[0] == '~') {
+        return prependHomeAlloc(original, home, ally);
+    }
+    return ally.dupe(original);
+}
+
+pub fn prependHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Allocator) ![]u8 {
+    var totalLen = home.len + original.len + 1;
+    var buf = try ally.alloc(u8, totalLen);
+    std.mem.copy(u8, buf[0..], home);
+    std.mem.copy(u8, buf[home.len + 1..], original);
+    buf[home.len] = std.fs.path.sep;
+    return buf;
+}
