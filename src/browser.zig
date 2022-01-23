@@ -592,12 +592,13 @@ pub const Browser = struct {
         const shell = config.shell orelse config.shellEnv orelse return;
 
         _ = ncurses.endwin();
-        utils.spawn(shell) catch {
-            _ = ncurses.initscr();
-            _ = prompt.get("", "Could not start shell!");
-            return;
-        };
+        const code = utils.spawn(shell) catch 128;
         _ = ncurses.initscr();
+        if(code == 128) {
+            _ = prompt.get("", "Unable to fork process!");
+        } else if(code != 0) {
+            _ = prompt.get("", "Unable to open shell!");
+        }
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
