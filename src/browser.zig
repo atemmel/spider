@@ -17,10 +17,6 @@ pub const Browser = struct {
     const Marks = std.StringHashMap(void);
     const Bookmarks = std.StringHashMap(void);
 
-    //TODO: Const
-    //const bookmarkPath = "~/.spider-bookmarks";
-    const bookmarkPath = "/mnt/c/Users/tem/.spider-bookmarks";
-
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
         if (rhs.kind == .Directory) {
             if (lhs.kind == .Directory) {
@@ -51,10 +47,6 @@ pub const Browser = struct {
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
 
-        config.init(ally.*);
-        try config.loadEnv();
-        try config.loadFile("/mnt/c/Users/tem/spider.conf");
-
         try browser.loadBookmarks();
         try browser.fillEntries();
     }
@@ -66,7 +58,6 @@ pub const Browser = struct {
         self.marks.deinit();
         self.clearBookmarks();
         self.bookmarks.deinit();
-        config.deinit();
     }
 
     fn clearEntries(self: *Browser) void {
@@ -138,6 +129,11 @@ pub const Browser = struct {
         _ = ncurses.erase();
         self.printHeader();
         self.printDirs() catch unreachable;
+
+        if(!config.goodParse) {
+            _ = prompt.get("", "Error: Could not parse config!");
+            config.goodParse = true;
+        }
     }
 
     fn printHeader(self: *Browser) void {
@@ -380,7 +376,7 @@ pub const Browser = struct {
             }
 
             self.printHeader();
-            try self.printDirs();
+            self.printDirs() catch unreachable;
         }
     }
 
@@ -503,7 +499,7 @@ pub const Browser = struct {
 
     fn loadBookmarks(self: *Browser) !void {
         self.clearBookmarks();
-        var bookmarksStr = try utils.readFileOrCreateAlloc(bookmarkPath, self.ally.*);
+        var bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally.*);
         defer self.ally.free(bookmarksStr);
         var it = std.mem.tokenize(u8, bookmarksStr, "\n");
         while(it.next()) |slice| {
@@ -513,7 +509,7 @@ pub const Browser = struct {
     }
 
     fn saveBookmarks(self: *Browser) !void {
-        var file = try std.fs.cwd().createFile(bookmarkPath, .{});
+        var file = try std.fs.cwd().createFile(config.bookmarkPath, .{});
         defer file.close();
         var it = self.bookmarks.keyIterator();
         while(it.next()) |slice| {
@@ -592,19 +588,26 @@ pub const Browser = struct {
         self.index = 0;
     }
 
+    fn startShell() void {
+        const shell = config.shell orelse config.shellEnv orelse return;
+
+        _ = ncurses.endwin();
+        utils.spawn(shell) catch {
+            _ = ncurses.initscr();
+            _ = prompt.get("", "Could not start shell!");
+            return;
+        };
+        _ = ncurses.initscr();
+    }
+
     pub fn update(self: *Browser, key: i32) !bool {
+
         switch (key) {
             4, 'q' => { // die
                 return false;
             },
             's' => {    // open shell
-                _ = ncurses.endwin();
-                if(config.shell) |shell| {
-                    utils.spawn(shell) catch {};   //TODO: Repsonsible, yes
-                } else if(config.shellEnv) |shell| {
-                    utils.spawn(shell) catch {};
-                }
-                _ = ncurses.initscr();
+                startShell();
             },
             259, 'k' => {   // down
                 if (self.entries.items.len > 0) {
@@ -650,7 +653,7 @@ pub const Browser = struct {
                 if(self.index < self.entries.items.len - 1) {
                     self.index += 1;
                 }
-                try self.printDirs();
+                self.printDirs() catch unreachable;
             },
             'R' => {    // rename
                 try self.renameEntry();

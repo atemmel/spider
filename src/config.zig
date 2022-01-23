@@ -7,7 +7,9 @@ pub var shell: ?[:0]const u8 = null;
 pub var openerEnv: ?[:0]const u8 = null;
 pub var shellEnv: ?[:0]const u8 = null;
 pub var home: []const u8 = "" ;
+
 pub var ally: std.mem.Allocator = undefined;
+pub var goodParse = true;
 
 //TODO: Port this
 //pub var editor: ?[:0]u8 = undefined;
@@ -44,7 +46,10 @@ pub fn loadFile(path: []const u8) !void {
     defer ally.free(str);
     var jsonStream = std.json.TokenStream.init(str);
     var dummy: File = .{};
-    dummy = try std.json.parse(File, &jsonStream, .{ .allocator = ally});
+    dummy = std.json.parse(File, &jsonStream, .{ .allocator = ally}) catch {
+        goodParse = false;
+        return;
+    };
     defer std.json.parseFree(File, dummy, .{ .allocator = ally});
 
     if(dummy.opener) |set| {
