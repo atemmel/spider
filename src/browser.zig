@@ -284,7 +284,7 @@ pub const Browser = struct {
         if(entry.kind == .File) {
             try dir.deleteFile(entry.name);
         } else if(entry.kind == .Directory) {
-            try dir.deleteDir(entry.name);
+            try dir.deleteTree(entry.name);
         }
     }
 
