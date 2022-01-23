@@ -159,8 +159,9 @@ pub fn entryKindAbsolute(path: []const u8) !std.fs.Dir.Entry.Kind {
         return error.BadPathName;
     }
     const basePath = path[0..lastSep.?];
+    const entryPath = path[lastSep.? + 1..];
     var dir = try std.fs.openDirAbsolute(basePath, .{});
     defer dir.close();
-    const stat = try dir.stat();
+    const stat = try dir.statFile(entryPath);
     return stat.kind;
 }

@@ -388,9 +388,8 @@ pub const Browser = struct {
 
             const from = mark;
             const to = self.cwdBuf[0..self.cwd.len + dirName.len];
-
-
             const kind = try utils.entryKindAbsolute(from);
+
             switch(kind) {
                 .File => {
                     try self.copyFileMark(from, to);
@@ -429,6 +428,24 @@ pub const Browser = struct {
             _ = prompt.get(errStr, "Could not copy directory: ");
             self.ally.free(errStr);
         };
+    }
+
+    fn moveMarks(self: *Browser) !void {
+        var to = std.fs.cwd();
+        var it = self.marks.keyIterator();
+        while(it.next()) |markPtr| {
+            const mark = markPtr.*;
+            const sep = utils.findLastSep(mark);
+            if(sep == null) {
+                continue;
+            }
+
+            const basePath = mark[0..sep.?];
+            const filePath = mark[sep.? + 1..];
+            var from = try std.fs.openDirAbsolute(basePath, .{});
+            defer from.close();
+            try std.fs.rename(from, filePath, to, filePath);
+        }
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -501,7 +518,11 @@ pub const Browser = struct {
                 self.clearMarks();
                 try self.fillEntries();
             },
-            'v' => {},  //TODO: Move marks
+            'v' => {    // move marks
+                try self.moveMarks();
+                self.clearMarks();
+                try self.fillEntries();
+            },
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks
             else => {
