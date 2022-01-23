@@ -389,17 +389,46 @@ pub const Browser = struct {
             const from = mark;
             const to = self.cwdBuf[0..self.cwd.len + dirName.len];
 
-            
-            std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
-                var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
-                    mark,
-                    @errorName(err),
-                });
-                _ = prompt.get(errStr, "Could not copy file: ");
-                self.ally.free(errStr);
-            };
+
+            const kind = try utils.entryKindAbsolute(from);
+            switch(kind) {
+                .File => {
+                    try self.copyFileMark(from, to);
+                },
+                .Directory => {
+                    try self.copyDirMark(from, to);
+                },
+                .SymLink => {
+                    try self.copyFileMark(from, to);
+                },
+                else => {
+                    //TODO: Present error message (responsible)
+                }
+            }
         }
         self.cwdBuf[self.cwd.len] = 0;
+    }
+
+    fn copyFileMark(self: *Browser, from: []const u8, to: []const u8) !void {
+        std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
+            var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
+                from,
+                @errorName(err),
+            });
+            _ = prompt.get(errStr, "Could not copy file: ");
+            self.ally.free(errStr);
+        };
+    }
+
+    fn copyDirMark(self: *Browser, from: []const u8, to: []const u8) !void {
+        utils.copyDirAbsolute(from, to) catch |err| {
+            var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
+                from,
+                @errorName(err),
+            });
+            _ = prompt.get(errStr, "Could not copy directory: ");
+            self.ally.free(errStr);
+        };
     }
 
     pub fn update(self: *Browser, key: i32) !bool {

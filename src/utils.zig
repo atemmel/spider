@@ -79,3 +79,88 @@ pub fn spawn(what: [:0]const u8) !void {
         _ = std.os.waitpid(pid, 0);
     }
 }
+
+pub const CopyDirError = std.fs.Dir.StatError || std.fs.File.OpenError || std.os.MakeDirError || error{SystemResources} || std.os.CopyFileRangeError || std.os.SendFileError || error{RenameAcrossMountPoints};
+
+pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
+    const lastSep = findLastSep(to);
+    if(lastSep == null) {
+        return error.BadPathName;    // Not absolute
+    }
+    const toBase = to[0..lastSep.?];
+    const toName = to[lastSep.? + 1..];
+
+    // create target dir
+    {
+        var toBaseDir = try std.fs.openDirAbsolute(toBase, .{});
+        errdefer toBaseDir.close();
+        try std.os.mkdirat(toBaseDir.fd, toName, 0o755);
+    }
+
+    // open target dir
+    var toDir = try std.fs.openDirAbsolute(to, .{});
+    errdefer toDir.close();
+
+    // begin iterating from source
+    var fromDir = try std.fs.openDirAbsolute(
+        from, 
+        .{.iterate = true, .no_follow = true}
+    );
+    errdefer fromDir.close();
+    var it = fromDir.iterate();
+
+    while(try it.next()) |entry| {
+        try copyEntry(fromDir, entry, toDir);
+    }
+}
+
+fn copyEntry(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
+    switch(entry.kind) {
+        .File => {
+            try copyFileImpl(from, entry, to);
+        },
+        .Directory => {
+            try copyDirImpl(from, entry, to);
+        },
+        .SymLink => {
+            try copyFileImpl(from, entry, to);
+        },
+        else => {}
+    }
+}
+
+fn copyFileImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) !void {
+    try from.copyFile(entry.name, to, entry.name, .{});
+}
+
+fn copyDirImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
+    var fromDir = try from.openDir(entry.name, .{.iterate = true, .no_follow = true});
+    errdefer fromDir.close();
+
+    try std.os.mkdirat(to.fd, entry.name, 0o755);
+    var toDir = try to.openDir(entry.name, .{});
+    errdefer toDir.close();
+
+    var it = fromDir.iterate();
+    while(try it.next()) |subEntry| {
+        try copyEntry(fromDir, subEntry, toDir);
+    }
+}
+
+pub fn findLastSep(in: []const u8) ?usize {
+    var i: usize = in.len - 1;
+    while(i > 0 and in[i] != std.fs.path.sep) : (i -= 1) {}
+    return if(i >= 0) i else null;
+}
+
+pub fn entryKindAbsolute(path: []const u8) !std.fs.Dir.Entry.Kind {
+    const lastSep = findLastSep(path);
+    if(lastSep == null) {
+        return error.BadPathName;
+    }
+    const basePath = path[0..lastSep.?];
+    var dir = try std.fs.openDirAbsolute(basePath, .{});
+    defer dir.close();
+    const stat = try dir.stat();
+    return stat.kind;
+}
