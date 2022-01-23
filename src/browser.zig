@@ -260,7 +260,7 @@ pub const Browser = struct {
         defer file.close();
     }
 
-    fn createFolder(self: *Browser) !void {
+    fn createDir(self: *Browser) !void {
         const str = prompt.getString("Name of folder:");
         if(str == null) {
             return;
@@ -433,16 +433,15 @@ pub const Browser = struct {
 
     pub fn update(self: *Browser, key: i32) !bool {
         switch (key) {
-            // die
-            4, 'q' => {
+            4, 'q' => { // die
                 return false;
             },
-            's' => {
+            's' => {    // open shell
                 _ = ncurses.endwin();
                 utils.spawn("bash") catch {};   //TODO: Repsonsible, yes
                 _ = ncurses.initscr();
             },
-            259, 'k' => {
+            259, 'k' => {   // down
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
@@ -451,7 +450,7 @@ pub const Browser = struct {
                     }
                 }
             },
-            258, 'j' => {
+            258, 'j' => {   // up
                 if (self.entries.items.len > 0) {
                     if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
@@ -460,35 +459,35 @@ pub const Browser = struct {
                     }
                 }
             },
-            261, 'l' => {
+            261, 'l' => {   // right
                 self.enterDir();
             },
-            260, 'h' => {
+            260, 'h' => {   // left
                 try self.exitDir();
             },
-            'c' => {
+            'c' => {    // create file
                 try self.createFile();
                 try self.fillEntries();
             },
-            'C' => {
-                try self.createFolder();
+            'C' => {    // create dir
+                try self.createDir();
                 try self.fillEntries();
             },
-            'D' => {
+            'D' => {    // delete
                 try self.deleteEntry();
                 try self.fillEntries();
             },
-            'f' => {
+            'f' => {    // find
                 try self.findFile();
             },
-            ' ' => {
+            ' ' => {    // mark/unmark
                 try self.addMark();
                 if(self.index < self.entries.items.len - 1) {
                     self.index += 1;
                 }
                 try self.printDirs();
             },
-            'R' => {
+            'R' => {    // rename
                 try self.renameEntry();
                 try self.fillEntries();
             },
@@ -497,14 +496,16 @@ pub const Browser = struct {
                 self.clearMarks();
             },
             'a' => {},  //TODO: File info
-            'p' => {
+            'p' => {    // paste marks
                 try self.copyMarks();
                 self.clearMarks();
+                try self.fillEntries();
             },
             'v' => {},  //TODO: Move marks
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks
             else => {
+                // printf debugging :)))
                 //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
                 //_ = ncurses.getch();
             },
