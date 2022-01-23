@@ -16,6 +16,10 @@ pub const Browser = struct {
     const Marks = std.StringHashMap(void);
     const Bookmarks = std.StringHashMap(void);
 
+    //TODO: Const
+    //const bookmarkPath = "~/.spider-bookmarks";
+    const bookmarkPath = "/mnt/c/Users/tem/.spider-bookmarks";
+
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
         if (rhs.kind == .Directory) {
             if (lhs.kind == .Directory) {
@@ -45,6 +49,7 @@ pub const Browser = struct {
         browser.bookmarks = Bookmarks.init(ally.*);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
+        try browser.loadBookmarks();
         try browser.fillEntries();
     }
 
@@ -489,10 +494,6 @@ pub const Browser = struct {
         }
     }
 
-    //TODO: Const
-    //const bookmarkPath = "~/.spider-bookmarks";
-    const bookmarkPath = "/mnt/c/Users/tem/.spider-bookmarks";
-
     fn loadBookmarks(self: *Browser) !void {
         self.clearBookmarks();
         var bookmarksStr = try utils.readFileOrCreateAlloc(bookmarkPath, self.ally.*);
@@ -522,8 +523,13 @@ pub const Browser = struct {
 
             const existing = self.bookmarks.getKey(newBookmark);
             if(existing == null) {
-                try self.bookmarks.put(newBookmark, void{});
-                _ = prompt.get("", "Added bookmark!");
+                if(self.bookmarks.count() >= 'z' - 'a') {
+                    _ = prompt.get("", "Cannot add more bookmarks!");
+                    self.ally.free(newBookmark);
+                } else {
+                    try self.bookmarks.put(newBookmark, void{});
+                    _ = prompt.get("", "Added bookmark!");
+                }
             } else {
                 _ = self.bookmarks.remove(newBookmark);
                 self.ally.free(existing.?);
@@ -533,6 +539,50 @@ pub const Browser = struct {
 
         }
         try self.saveBookmarks();
+    }
+
+    fn showBookmarks(self: *Browser) !void {
+        var it = self.bookmarks.keyIterator();
+        var y: i32 = 0;
+
+        _ = ncurses.erase();
+
+        while(it.next()) |bookmark| {
+            _ = ncurses.mvprintw(y, 0, "%c %s", 'a' + y, bookmark.ptr);
+            y += 1;
+        }
+
+        var c = prompt.get("", "Select bookmark:");
+
+        if(c == null or c.? < 'a' or c.? > 'z') {
+            return;
+        }
+
+        const ch = c.? - 'a';
+
+        it = self.bookmarks.keyIterator();
+        var i: i32 = 0;
+        while(i < ch - 1) {
+            _ = it.next();
+            i += 1;
+        }
+
+        const key = it.next().?;
+        
+        self.setNewCwd(key.*) catch {
+            _ = prompt.get(key.*[0..:0], "Cannot go to ");
+            return;
+        };
+        try self.fillEntries();
+    }
+
+    fn setNewCwd(self: *Browser, newCwd: []const u8) !void {
+        self.cwdBuf[newCwd.len] = 0;
+        std.mem.copy(u8, self.cwdBuf[0..], newCwd);
+        self.cwd = self.cwdBuf[0..newCwd.len];
+        
+        try std.os.chdir(self.cwd);
+        self.index = 0;
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -613,7 +663,9 @@ pub const Browser = struct {
             'b' => {    // add to bookmarks
                 try self.addBookmark();
             },
-            'g' => {},  //TODO: Show bookmarks
+            'g' => {    // show all bookmarks
+                try self.showBookmarks();
+            },
             else => {
                 // printf debugging :)))
                 //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
