@@ -442,8 +442,8 @@ pub const Browser = struct {
                 from,
                 @errorName(err),
             });
+            defer self.ally.free(errStr);
             _ = prompt.get(errStr, "Could not copy file: ");
-            self.ally.free(errStr);
         };
     }
 
@@ -453,8 +453,8 @@ pub const Browser = struct {
                 from,
                 @errorName(err),
             });
+            defer self.ally.free(errStr);
             _ = prompt.get(errStr, "Could not copy directory: ");
-            self.ally.free(errStr);
         };
     }
 
