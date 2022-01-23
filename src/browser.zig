@@ -505,8 +505,8 @@ pub const Browser = struct {
             'b' => {},  //TODO: Add to bookmarks
             'g' => {},  //TODO: Show bookmarks
             else => {
-                _ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
-                _ = ncurses.getch();
+                //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
+                //_ = ncurses.getch();
             },
         }
         return true;

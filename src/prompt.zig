@@ -63,9 +63,9 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             },
             else => {
                 if(prompt.len < maxPromptSize) {
+                    promptBuf[prompt.len + 1] = 0;
                     promptBuf[prompt.len] = @intCast(u8, c);
                     prompt = promptBuf[0..prompt.len + 1:0];
-                    promptBuf[prompt.len] = 0;
                 }
             },
         }
