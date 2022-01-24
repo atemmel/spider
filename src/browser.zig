@@ -365,10 +365,10 @@ pub const Browser = struct {
                 if(!self.entryStartsWith(index, input[0..i])) {
                     continue;
                 }
+                self.index = index;
 
                 // if no more matching entries
                 if(index + 1 >= self.entries.items.len or !self.entryStartsWith(index + 1, input[0..i])) {
-                    self.index = index;
                     self.enterDir();
                     return;
                 }
