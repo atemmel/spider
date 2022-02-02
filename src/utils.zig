@@ -80,6 +80,22 @@ pub fn spawn(what: [:0]const u8) !u32 {
     unreachable;
 }
 
+pub fn spawnShCommand(command: [:0]const u8) !u32 {
+    const pid = try std.os.fork();
+    if(pid == 0) {
+        const env = [_:null]?[*:0]u8{null};
+        const envSlice = env[0..];
+        const args = [_:null]?[*:0]const u8{"sh", "-c", command, null};
+        const argsSlice = args[0..];
+        _ = std.os.execvpeZ("sh", argsSlice, envSlice) catch {};
+        std.os.exit(127);
+    } else {
+        const result = std.os.waitpid(pid, 0);
+        return result.status;
+    }
+    unreachable;
+}
+
 pub const CopyDirError = std.fs.Dir.StatError || std.fs.File.OpenError || std.os.MakeDirError || error{SystemResources} || std.os.CopyFileRangeError || std.os.SendFileError || error{RenameAcrossMountPoints};
 
 pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {

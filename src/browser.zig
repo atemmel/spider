@@ -594,11 +594,12 @@ pub const Browser = struct {
         _ = ncurses.endwin();
         const code = utils.spawn(shell) catch 128;
         _ = ncurses.initscr();
-        if(code == 128) {
-            _ = prompt.get("", "Unable to fork process!");
-        } else if(code != 0) {
-            _ = prompt.get("", "Unable to open shell!");
-        }
+        handleSpawnResult(code);
+        //if(code == 128) {
+        //_ = prompt.get("", "Unable to fork process!");
+        //} else if(code != 0) {
+        //_ = prompt.get("", "Unable to open shell!");
+        //}
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
@@ -682,11 +683,47 @@ pub const Browser = struct {
                 try self.showBookmarks();
             },
             else => {
+                try self.checkBindings(key);
                 // printf debugging :)))
                 //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
                 //_ = ncurses.getch();
             },
         }
         return true;
+    }
+
+    fn handleSpawnResult(code: u32) void {
+        if(code == 128) {
+            _ = prompt.get("", "Unable to fork process!");
+        } else if(code != 0) {
+            _ = prompt.get("", "Unable to open shell!");
+        }
+    }
+
+    fn checkBindings(self: *Browser, key: i32) !void {
+        for(config.binds.items) |bind| {
+            if(bind.key == key) {
+                try self.doBinding(bind);
+                break;
+            }
+        }
+    }
+
+    fn doBinding(self: *Browser, bind: config.Bind) !void {
+        const newSize = std.mem.replacementSize(u8, bind.command, "%F", self.cwd);
+        var code: u32 = undefined;
+        if(newSize == bind.command.len) {
+            _ = ncurses.endwin();
+            code = utils.spawnShCommand(bind.command) catch 128;
+            _ = ncurses.initscr();
+        } else {
+            var newCommand = try self.ally.alloc(u8, newSize);
+            defer self.ally.free(newCommand);
+            _ = std.mem.replace(u8, bind.command, "%F", self.cwd, newCommand);
+            _ = ncurses.endwin();
+            code = utils.spawnShCommand(newCommand[0..:0]) catch 128;
+            _ = ncurses.initscr();
+        }
+        handleSpawnResult(code);
     }
 };

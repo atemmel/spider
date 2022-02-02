@@ -10,17 +10,19 @@ pub var home: []const u8 = "" ;
 
 pub var ally: std.mem.Allocator = undefined;
 pub var goodParse = true;
+pub var binds: std.ArrayList(Bind) = undefined;
 
 //TODO: Port this
 //pub var editor: ?[:0]u8 = undefined;
 
-pub const File = struct {
-    opener: ?[]u8 = null,
-    shell: ?[]u8 = null,
+pub const Bind = struct {
+    key: i32,
+    command: [:0]const u8,
 };
 
 pub fn init(allyo: std.mem.Allocator) void {
     ally = allyo;
+    binds = std.ArrayList(Bind).init(ally);
 }
 
 pub fn deinit() void {
@@ -37,6 +39,16 @@ pub fn deinit() void {
         ally.free(env);
     }
     ally.free(bookmarkPath);
+
+    clearBinds();
+    binds.deinit();
+}
+
+pub fn clearBinds() void {
+    for(binds.items) |bind| {
+        ally.free(bind.command);
+    }
+    binds.clearRetainingCapacity();
 }
 
 pub fn loadFile(path: []const u8) !void {
@@ -44,19 +56,34 @@ pub fn loadFile(path: []const u8) !void {
         return;
     };
     defer ally.free(str);
-    var jsonStream = std.json.TokenStream.init(str);
-    var dummy: File = .{};
-    dummy = std.json.parse(File, &jsonStream, .{ .allocator = ally}) catch {
+    var parser = std.json.Parser.init(ally, false);
+    defer parser.deinit();
+    var tree = parser.parse(str) catch {
         goodParse = false;
         return;
     };
-    defer std.json.parseFree(File, dummy, .{ .allocator = ally});
-
-    if(dummy.opener) |set| {
-        opener = try ally.dupeZ(u8, set);
+    defer tree.deinit();
+    var root = tree.root;
+    if(root.Object.get("shell")) |myShell| {
+        shell = try ally.dupeZ(u8, myShell.String);
     }
-    if(dummy.shell) |set| {
-        shell = try ally.dupeZ(u8, set);
+    if(root.Object.get("opener")) |myOpener| {
+        opener = try ally.dupeZ(u8, myOpener.String);
+    }
+
+    if(root.Object.get("binds")) |myBinds| {
+        var it = myBinds.Object.iterator();
+        while(it.next()) |pair| {
+            if(pair.key_ptr.len == 0) {
+                continue;
+            }
+            const bind = Bind{
+                .key = pair.key_ptr.*[0],
+                .command = try ally.dupeZ(u8, pair.value_ptr.String),
+            };
+
+            try binds.append(bind);
+        }
     }
 }
 
