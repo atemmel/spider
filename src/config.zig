@@ -6,7 +6,7 @@ pub var opener: ?[:0]const u8 = null;
 pub var shell: ?[:0]const u8 = null;
 pub var openerEnv: ?[:0]const u8 = null;
 pub var shellEnv: ?[:0]const u8 = null;
-pub var home: []const u8 = "" ;
+pub var home: []const u8 = "";
 
 pub var ally: std.mem.Allocator = undefined;
 pub var goodParse = true;
@@ -26,16 +26,16 @@ pub fn init(allyo: std.mem.Allocator) void {
 }
 
 pub fn deinit() void {
-    if(openerEnv) |env| {
+    if (openerEnv) |env| {
         ally.free(env);
     }
-    if(shellEnv) |env| {
+    if (shellEnv) |env| {
         ally.free(env);
     }
-    if(opener) |env| {
+    if (opener) |env| {
         ally.free(env);
     }
-    if(shell) |env| {
+    if (shell) |env| {
         ally.free(env);
     }
     ally.free(bookmarkPath);
@@ -45,7 +45,7 @@ pub fn deinit() void {
 }
 
 pub fn clearBinds() void {
-    for(binds.items) |bind| {
+    for (binds.items) |bind| {
         ally.free(bind.command);
     }
     binds.clearRetainingCapacity();
@@ -64,17 +64,17 @@ pub fn loadFile(path: []const u8) !void {
     };
     defer tree.deinit();
     var root = tree.root;
-    if(root.Object.get("shell")) |myShell| {
+    if (root.Object.get("shell")) |myShell| {
         shell = try ally.dupeZ(u8, myShell.String);
     }
-    if(root.Object.get("opener")) |myOpener| {
+    if (root.Object.get("opener")) |myOpener| {
         opener = try ally.dupeZ(u8, myOpener.String);
     }
 
-    if(root.Object.get("binds")) |myBinds| {
+    if (root.Object.get("binds")) |myBinds| {
         var it = myBinds.Object.iterator();
-        while(it.next()) |pair| {
-            if(pair.key_ptr.len == 0) {
+        while (it.next()) |pair| {
+            if (pair.key_ptr.len == 0) {
                 continue;
             }
             const bind = Bind{
@@ -88,13 +88,13 @@ pub fn loadFile(path: []const u8) !void {
 }
 
 pub fn loadEnv() !void {
-    if(std.os.getenv("SPIDER-OPENER")) |env| {
+    if (std.os.getenv("SPIDER-OPENER")) |env| {
         openerEnv = try ally.dupeZ(u8, env);
     }
-    if(std.os.getenv("SHELL")) |env| {
+    if (std.os.getenv("SHELL")) |env| {
         shellEnv = try ally.dupeZ(u8, env);
     }
-    if(std.os.getenv("HOME")) |env| {
+    if (std.os.getenv("HOME")) |env| {
         home = env;
     }
     bookmarkPath = try utils.prependHomeAlloc(".spider-bookmarks", home, ally);
