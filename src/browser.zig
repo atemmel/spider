@@ -73,7 +73,7 @@ pub const Browser = struct {
 
     fn clearMarks(self: *Browser) void {
         var it = self.marks.keyIterator();
-        while(it.next()) |mark| {
+        while (it.next()) |mark| {
             self.ally.free(mark.*);
         }
         self.marks.clearRetainingCapacity();
@@ -81,7 +81,7 @@ pub const Browser = struct {
 
     fn clearBookmarks(self: *Browser) void {
         var it = self.bookmarks.keyIterator();
-        while(it.next()) |mark| {
+        while (it.next()) |mark| {
             self.ally.free(mark.*);
         }
         self.bookmarks.clearRetainingCapacity();
@@ -130,7 +130,7 @@ pub const Browser = struct {
         self.printHeader();
         self.printDirs() catch unreachable;
 
-        if(!config.goodParse) {
+        if (!config.goodParse) {
             _ = prompt.get("", "Error: Could not parse config!");
             config.goodParse = true;
         }
@@ -177,38 +177,23 @@ pub const Browser = struct {
                 _ = ncurses.attron(ncurses.A_REVERSE);
             }
 
-            std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1..], entry.name);
-            const key = self.cwdBuf[0..self.cwd.len + 1 + entry.name.len];
+            std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
+            const key = self.cwdBuf[0 .. self.cwd.len + 1 + entry.name.len];
 
             const mark = self.marks.get(key);
-            const markStr = if(mark == null) "" else " ";
+            const markStr = if (mark == null) "" else " ";
 
             _ = ncurses.attroff(ncurses.A_BOLD);
             if (entry.kind == .Directory) {
                 _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
-                        entry.mode & 0o0777,
-                        dirStr, 
-                        markStr.ptr,
-                        printedName.ptr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr);
             } else if (entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
-                        entry.mode & 0o0777,
-                        lnStr, 
-                        markStr.ptr,
-                        printedName.ptr);
+                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr);
             } else {
-                if(entry.sizeStr) |size| {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ",
-                            entry.mode & 0o0777,
-                            size.ptr,
-                            markStr.ptr,
-                            printedName.ptr);
+                if (entry.sizeStr) |size| {
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr);
                 } else {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s%s ", 
-                            "?  ", 
-                            markStr.ptr, 
-                            printedName.ptr);
+                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s%s ", "?  ", markStr.ptr, printedName.ptr);
                 }
             }
         }
@@ -232,7 +217,7 @@ pub const Browser = struct {
         }
         self.cwdBuf[self.cwd.len] = 0;
         self.index = 0;
-        
+
         try std.os.chdir(self.cwd);
         try self.fillEntries();
     }
@@ -241,11 +226,11 @@ pub const Browser = struct {
         const entry = &self.entries.items[self.index];
         const oldLen = self.cwd.len;
         var newLen = self.cwd.len + entry.name.len;
-        if(self.cwdBuf[self.cwd.len] != std.fs.path.sep) {
+        if (self.cwdBuf[self.cwd.len] != std.fs.path.sep) {
             self.cwdBuf[self.cwd.len] = std.fs.path.sep;
             newLen += 1;
         }
-        var remainder = self.cwdBuf[self.cwd.len + 1..];
+        var remainder = self.cwdBuf[self.cwd.len + 1 ..];
         std.mem.copy(u8, remainder, entry.name);
         self.cwdBuf[newLen] = 0;
         self.cwd = self.cwdBuf[0..newLen];
@@ -262,20 +247,20 @@ pub const Browser = struct {
         };
 
         //if(self.index >= self.entries.items.len) {
-            //self.index = self.entries.items.len - 1;
+        //self.index = self.entries.items.len - 1;
         //}
         self.index = 0;
     }
 
     fn createFile(self: *Browser) !void {
         const str = prompt.getString("Name of file:");
-        if(str == null) {
+        if (str == null) {
             return;
         }
 
         var dir = try std.fs.openDirAbsolute(self.cwd, .{});
         errdefer dir.close();
-        var file = dir.createFile(str.?, .{.exclusive = true}) catch {
+        var file = dir.createFile(str.?, .{ .exclusive = true }) catch {
             return;
         };
         defer file.close();
@@ -283,17 +268,17 @@ pub const Browser = struct {
 
     fn createDir(self: *Browser) !void {
         const str = prompt.getString("Name of folder:");
-        if(str == null) {
+        if (str == null) {
             return;
         }
 
         var dir = try std.fs.openDirAbsolute(self.cwd, .{});
         defer dir.close();
-        std.os.mkdirat(dir.fd, str.?, 0o755) catch {};  //TODO: Be responsible
+        std.os.mkdirat(dir.fd, str.?, 0o755) catch {}; //TODO: Be responsible
     }
 
     fn deleteEntry(self: *Browser) !void {
-        if(self.marks.count() == 0) {
+        if (self.marks.count() == 0) {
             try self.deleteEntryImpl();
         } else {
             try self.deleteEntriesMarked();
@@ -302,7 +287,7 @@ pub const Browser = struct {
 
     fn deleteEntryImpl(self: *Browser) !void {
         const char = prompt.get("", "Delete entry? Y/N:");
-        if(char == null or (char.? != 'y' and char.? != 'Y')) {
+        if (char == null or (char.? != 'y' and char.? != 'Y')) {
             return;
         }
 
@@ -310,27 +295,26 @@ pub const Browser = struct {
         defer dir.close();
 
         const entry = self.entries.items[self.index];
-        if(entry.kind == .File) {
+        if (entry.kind == .File) {
             try dir.deleteFile(entry.name);
-        } else if(entry.kind == .Directory) {
+        } else if (entry.kind == .Directory) {
             try dir.deleteTree(entry.name);
         }
     }
 
     fn deleteEntriesMarked(self: *Browser) !void {
-        var promptStr = try std.fmt.allocPrintZ(self.ally.*,
-            "Delete ({d}) marked entries? Y/N", .{
-                self.marks.count(),
+        var promptStr = try std.fmt.allocPrintZ(self.ally.*, "Delete ({d}) marked entries? Y/N", .{
+            self.marks.count(),
         });
         defer self.ally.free(promptStr);
         const char = prompt.get("", promptStr);
 
-        if(char == null or (char.? != 'y' and char.? != 'Y')) {
+        if (char == null or (char.? != 'y' and char.? != 'Y')) {
             return;
         }
 
         var it = self.marks.keyIterator();
-        while(it.next()) |markPtr| {
+        while (it.next()) |markPtr| {
             const mark = markPtr.*;
             try std.fs.deleteTreeAbsolute(mark);
         }
@@ -343,32 +327,32 @@ pub const Browser = struct {
 
         input[0] = 0;
 
-        while(true) {
-            var c = prompt.get(input[0..i:0], "Go:");
+        while (true) {
+            var c = prompt.get(input[0..i :0], "Go:");
 
-            if(c == null) {
+            if (c == null) {
                 continue;
             }
 
-            if(c.? == 127 and i > 0) {    // backspace
+            if (c.? == 127 and i > 0) { // backspace
                 i -= 1;
                 input[i] = 0;
-            } else if(c.? == 27) {    // escape
+            } else if (c.? == 27) { // escape
                 break;
-            } else if(std.ascii.isPrint(@intCast(u8, c.?))) {
+            } else if (std.ascii.isPrint(@intCast(u8, c.?))) {
                 input[i] = @intCast(u8, c.?);
                 i += 1;
                 input[i] = 0;
             }
 
-            for(self.entries.items) |_, index| {
-                if(!self.entryStartsWith(index, input[0..i])) {
+            for (self.entries.items) |_, index| {
+                if (!self.entryStartsWith(index, input[0..i])) {
                     continue;
                 }
                 self.index = index;
 
                 // if no more matching entries
-                if(index + 1 >= self.entries.items.len or !self.entryStartsWith(index + 1, input[0..i])) {
+                if (index + 1 >= self.entries.items.len or !self.entryStartsWith(index + 1, input[0..i])) {
                     self.enterDir();
                     return;
                 }
@@ -383,8 +367,8 @@ pub const Browser = struct {
     fn entryStartsWith(self: *Browser, entryIndex: usize, value: []const u8) bool {
         const entry = &self.entries.items[entryIndex];
 
-        for(value) |char, index| {
-            if(entry.name.len <= index or entry.name[index] != char) {
+        for (value) |char, index| {
+            if (entry.name.len <= index or entry.name[index] != char) {
                 return false;
             }
         }
@@ -393,7 +377,7 @@ pub const Browser = struct {
 
     fn renameEntry(self: *Browser) !void {
         const str = prompt.getString("New name:");
-        if(str == null) {
+        if (str == null) {
             return;
         }
 
@@ -410,12 +394,12 @@ pub const Browser = struct {
         // create mark
         var mark: []u8 = try self.ally.alloc(u8, totalLen);
         std.mem.copy(u8, mark, self.cwd);
-        std.mem.copy(u8, mark[self.cwd.len+1..], entry.name);
+        std.mem.copy(u8, mark[self.cwd.len + 1 ..], entry.name);
         mark[self.cwd.len] = std.fs.path.sep;
 
         // try to put mark
         var existing = self.marks.getKey(mark);
-        if(existing == null) {
+        if (existing == null) {
             try self.marks.put(mark, .{});
         } else { // remove mark
             _ = self.marks.remove(mark);
@@ -427,19 +411,19 @@ pub const Browser = struct {
     fn copyMarks(self: *Browser) !void {
         var it = self.marks.keyIterator();
         self.cwdBuf[self.cwd.len] = std.fs.path.sep;
-        while(it.next()) |markPtr| {
+        while (it.next()) |markPtr| {
             const mark = markPtr.*;
             var i: usize = mark.len - 1;
             // find last sep
-            while(mark[i] != std.fs.path.sep) : (i -= 1) {}
+            while (mark[i] != std.fs.path.sep) : (i -= 1) {}
             const dirName = mark[i..];
             std.mem.copy(u8, self.cwdBuf[self.cwd.len..], dirName);
 
             const from = mark;
-            const to = self.cwdBuf[0..self.cwd.len + dirName.len];
+            const to = self.cwdBuf[0 .. self.cwd.len + dirName.len];
             const kind = try utils.entryKindAbsolute(from);
 
-            switch(kind) {
+            switch (kind) {
                 .File => {
                     try self.copyFileMark(from, to);
                 },
@@ -451,7 +435,7 @@ pub const Browser = struct {
                 },
                 else => {
                     //TODO: Present error message (responsible)
-                }
+                },
             }
         }
         self.cwdBuf[self.cwd.len] = 0;
@@ -482,15 +466,15 @@ pub const Browser = struct {
     fn moveMarks(self: *Browser) !void {
         var to = std.fs.cwd();
         var it = self.marks.keyIterator();
-        while(it.next()) |markPtr| {
+        while (it.next()) |markPtr| {
             const mark = markPtr.*;
             const sep = utils.findLastSep(mark);
-            if(sep == null) {
+            if (sep == null) {
                 continue;
             }
 
             const basePath = mark[0..sep.?];
-            const filePath = mark[sep.? + 1..];
+            const filePath = mark[sep.? + 1 ..];
             var from = try std.fs.openDirAbsolute(basePath, .{});
             defer from.close();
             try std.fs.rename(from, filePath, to, filePath);
@@ -502,7 +486,7 @@ pub const Browser = struct {
         var bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally.*);
         defer self.ally.free(bookmarksStr);
         var it = std.mem.tokenize(u8, bookmarksStr, "\n");
-        while(it.next()) |slice| {
+        while (it.next()) |slice| {
             var bookmark = try self.ally.dupeZ(u8, slice);
             try self.bookmarks.put(bookmark, void{});
         }
@@ -512,7 +496,7 @@ pub const Browser = struct {
         var file = try std.fs.cwd().createFile(config.bookmarkPath, .{});
         defer file.close();
         var it = self.bookmarks.keyIterator();
-        while(it.next()) |slice| {
+        while (it.next()) |slice| {
             try file.writer().writeAll(slice.*);
             try file.writer().writeByte('\n');
         }
@@ -525,8 +509,8 @@ pub const Browser = struct {
             errdefer self.ally.free(newBookmark);
 
             const existing = self.bookmarks.getKey(newBookmark);
-            if(existing == null) {
-                if(self.bookmarks.count() >= 'z' - 'a') {
+            if (existing == null) {
+                if (self.bookmarks.count() >= 'z' - 'a') {
                     _ = prompt.get("", "Cannot add more bookmarks!");
                     self.ally.free(newBookmark);
                 } else {
@@ -539,7 +523,6 @@ pub const Browser = struct {
                 self.ally.free(newBookmark);
                 _ = prompt.get("", "Removed bookmark!");
             }
-
         }
         try self.saveBookmarks();
     }
@@ -550,14 +533,14 @@ pub const Browser = struct {
 
         _ = ncurses.erase();
 
-        while(it.next()) |bookmark| {
+        while (it.next()) |bookmark| {
             _ = ncurses.mvprintw(y, 0, "%c %s", 'a' + y, bookmark.ptr);
             y += 1;
         }
 
         var c = prompt.get("", "Select bookmark:");
 
-        if(c == null or c.? < 'a' or c.? > 'z') {
+        if (c == null or c.? < 'a' or c.? > 'z') {
             return;
         }
 
@@ -565,15 +548,15 @@ pub const Browser = struct {
 
         it = self.bookmarks.keyIterator();
         var i: i32 = 0;
-        while(i < ch - 1) {
+        while (i < ch - 1) {
             _ = it.next();
             i += 1;
         }
 
         const key = it.next().?;
-        
+
         self.setNewCwd(key.*) catch {
-            _ = prompt.get(key.*[0..:0], "Cannot go to ");
+            _ = prompt.get(key.*[0.. :0], "Cannot go to ");
             return;
         };
         try self.fillEntries();
@@ -583,7 +566,7 @@ pub const Browser = struct {
         self.cwdBuf[newCwd.len] = 0;
         std.mem.copy(u8, self.cwdBuf[0..], newCwd);
         self.cwd = self.cwdBuf[0..newCwd.len];
-        
+
         try std.os.chdir(self.cwd);
         self.index = 0;
     }
@@ -603,15 +586,14 @@ pub const Browser = struct {
     }
 
     pub fn update(self: *Browser, key: i32) !bool {
-
         switch (key) {
             4, 'q' => { // die
                 return false;
             },
-            's' => {    // open shell
+            's' => { // open shell
                 startShell();
             },
-            259, 'k' => {   // down
+            259, 'k' => { // down
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
@@ -620,7 +602,7 @@ pub const Browser = struct {
                     }
                 }
             },
-            258, 'j' => {   // up
+            258, 'j' => { // up
                 if (self.entries.items.len > 0) {
                     if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
@@ -629,57 +611,57 @@ pub const Browser = struct {
                     }
                 }
             },
-            261, 'l' => {   // right
+            261, 'l' => { // right
                 self.enterDir();
             },
-            260, 'h' => {   // left
+            260, 'h' => { // left
                 try self.exitDir();
             },
-            'c' => {    // create file
+            'c' => { // create file
                 try self.createFile();
                 try self.fillEntries();
             },
-            'C' => {    // create dir
+            'C' => { // create dir
                 try self.createDir();
                 try self.fillEntries();
             },
-            'D' => {    // delete
+            'D' => { // delete
                 try self.deleteEntry();
                 try self.fillEntries();
             },
-            'f' => {    // find
+            'f' => { // find
                 try self.findFile();
             },
-            ' ' => {    // mark/unmark
+            ' ' => { // mark/unmark
                 try self.addMark();
-                if(self.index < self.entries.items.len - 1) {
+                if (self.index < self.entries.items.len - 1) {
                     self.index += 1;
                 }
                 self.printDirs() catch unreachable;
             },
-            'R' => {    // rename
+            'R' => { // rename
                 try self.renameEntry();
                 try self.fillEntries();
             },
-            'G' => {},  //TODO: Git mode(?)
+            'G' => {}, //TODO: Git mode(?)
             'm' => {
                 self.clearMarks();
             },
-            'a' => {},  //TODO: File info
-            'p' => {    // paste marks
+            'a' => {}, //TODO: File info
+            'p' => { // paste marks
                 try self.copyMarks();
                 self.clearMarks();
                 try self.fillEntries();
             },
-            'v' => {    // move marks
+            'v' => { // move marks
                 try self.moveMarks();
                 self.clearMarks();
                 try self.fillEntries();
             },
-            'b' => {    // add to bookmarks
+            'b' => { // add to bookmarks
                 try self.addBookmark();
             },
-            'g' => {    // show all bookmarks
+            'g' => { // show all bookmarks
                 try self.showBookmarks();
             },
             else => {
@@ -693,16 +675,16 @@ pub const Browser = struct {
     }
 
     fn handleSpawnResult(code: u32) void {
-        if(code == 128) {
+        if (code == 128) {
             _ = prompt.get("", "Unable to fork process!");
-        } else if(code != 0) {
+        } else if (code != 0) {
             _ = prompt.get("", "Unable to open shell!");
         }
     }
 
     fn checkBindings(self: *Browser, key: i32) !void {
-        for(config.binds.items) |bind| {
-            if(bind.key == key) {
+        for (config.binds.items) |bind| {
+            if (bind.key == key) {
                 try self.doBinding(bind);
                 break;
             }
@@ -712,16 +694,18 @@ pub const Browser = struct {
     fn doBinding(self: *Browser, bind: config.Bind) !void {
         const newSize = std.mem.replacementSize(u8, bind.command, "%F", self.cwd);
         var code: u32 = undefined;
-        if(newSize == bind.command.len) {
+        if (newSize == bind.command.len) {
             _ = ncurses.endwin();
             code = utils.spawnShCommand(bind.command) catch 128;
             _ = ncurses.initscr();
         } else {
-            var newCommand = try self.ally.alloc(u8, newSize);
+            var newCommand = try self.ally.alloc(u8, newSize + 1);
             defer self.ally.free(newCommand);
             _ = std.mem.replace(u8, bind.command, "%F", self.cwd, newCommand);
+            newCommand[newSize] = 0;
             _ = ncurses.endwin();
-            code = utils.spawnShCommand(newCommand[0..:0]) catch 128;
+            const slice = newCommand[0..newSize :0];
+            code = utils.spawnShCommand(slice) catch 128;
             _ = ncurses.initscr();
         }
         handleSpawnResult(code);

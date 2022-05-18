@@ -66,28 +66,25 @@ pub fn sizeToString(ally: *std.mem.Allocator, sizeInBytes: u64) ![:0]u8 {
 
 pub fn spawn(what: [:0]const u8) !u32 {
     const pid = try std.os.fork();
-    if(pid == 0) {  // offspring
-        const env = [_:null]?[*:0]u8{null};
-        const envSlice = env[0..];
-        const args = [_:null]?[*:0]const u8{what, null};
+    if (pid == 0) { // offspring
+        const env = std.c.environ;
+        const args = [_:null]?[*:0]const u8{ what, null };
         const argsSlice = args[0..];
-        _ = std.os.execvpeZ(what, argsSlice, envSlice) catch {};
+        _ = std.os.execvpeZ(what, argsSlice, env) catch {};
         std.os.exit(127);
-    } else {    // parent
+    } else { // parent
         const result = std.os.waitpid(pid, 0);
         return result.status;
     }
     unreachable;
 }
 
-pub fn spawnShCommand(command: [:0]const u8) !u32 {
+pub fn spawnShCommand(what: [:0]const u8) !u32 {
     const pid = try std.os.fork();
-    if(pid == 0) {
-        const env = [_:null]?[*:0]u8{null};
-        const envSlice = env[0..];
-        const args = [_:null]?[*:0]const u8{"sh", "-c", command, null};
-        const argsSlice = args[0..];
-        _ = std.os.execvpeZ("sh", argsSlice, envSlice) catch {};
+    if (pid == 0) {
+        const env = std.c.environ;
+        const args = [_:null]?[*:0]const u8{ "sh", "-c", what, null };
+        _ = std.os.execvpeZ("sh", &args, env) catch {};
         std.os.exit(127);
     } else {
         const result = std.os.waitpid(pid, 0);
@@ -100,11 +97,11 @@ pub const CopyDirError = std.fs.Dir.StatError || std.fs.File.OpenError || std.os
 
 pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
     const lastSep = findLastSep(to);
-    if(lastSep == null) {
-        return error.BadPathName;    // Not absolute
+    if (lastSep == null) {
+        return error.BadPathName; // Not absolute
     }
     const toBase = to[0..lastSep.?];
-    const toName = to[lastSep.? + 1..];
+    const toName = to[lastSep.? + 1 ..];
 
     // create target dir
     {
@@ -118,20 +115,17 @@ pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
     errdefer toDir.close();
 
     // begin iterating from source
-    var fromDir = try std.fs.openDirAbsolute(
-        from, 
-        .{.iterate = true, .no_follow = true}
-    );
+    var fromDir = try std.fs.openDirAbsolute(from, .{ .iterate = true, .no_follow = true });
     errdefer fromDir.close();
     var it = fromDir.iterate();
 
-    while(try it.next()) |entry| {
+    while (try it.next()) |entry| {
         try copyEntry(fromDir, entry, toDir);
     }
 }
 
 fn copyEntry(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
-    switch(entry.kind) {
+    switch (entry.kind) {
         .File => {
             try copyFileImpl(from, entry, to);
         },
@@ -141,7 +135,7 @@ fn copyEntry(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirE
         .SymLink => {
             try copyFileImpl(from, entry, to);
         },
-        else => {}
+        else => {},
     }
 }
 
@@ -150,7 +144,7 @@ fn copyFileImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) !void
 }
 
 fn copyDirImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
-    var fromDir = try from.openDir(entry.name, .{.iterate = true, .no_follow = true});
+    var fromDir = try from.openDir(entry.name, .{ .iterate = true, .no_follow = true });
     errdefer fromDir.close();
 
     try std.os.mkdirat(to.fd, entry.name, 0o755);
@@ -158,24 +152,24 @@ fn copyDirImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDi
     errdefer toDir.close();
 
     var it = fromDir.iterate();
-    while(try it.next()) |subEntry| {
+    while (try it.next()) |subEntry| {
         try copyEntry(fromDir, subEntry, toDir);
     }
 }
 
 pub fn findLastSep(in: []const u8) ?usize {
     var i: usize = in.len - 1;
-    while(i > 0 and in[i] != std.fs.path.sep) : (i -= 1) {}
-    return if(i >= 0) i else null;
+    while (i > 0 and in[i] != std.fs.path.sep) : (i -= 1) {}
+    return if (i >= 0) i else null;
 }
 
 pub fn entryKindAbsolute(path: []const u8) !std.fs.Dir.Entry.Kind {
     const lastSep = findLastSep(path);
-    if(lastSep == null) {
+    if (lastSep == null) {
         return error.BadPathName;
     }
     const basePath = path[0..lastSep.?];
-    const entryPath = path[lastSep.? + 1..];
+    const entryPath = path[lastSep.? + 1 ..];
     var dir = try std.fs.openDirAbsolute(basePath, .{});
     defer dir.close();
     const stat = try dir.statFile(entryPath);
@@ -193,7 +187,7 @@ pub fn readFileOrCreateAlloc(path: []const u8, ally: std.mem.Allocator) ![]u8 {
 }
 
 pub fn escapeHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Allocator) ![]u8 {
-    if(original[0] == '~') {
+    if (original[0] == '~') {
         return prependHomeAlloc(original, home, ally);
     }
     return ally.dupe(original);
@@ -203,7 +197,7 @@ pub fn prependHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Al
     var totalLen = home.len + original.len + 1;
     var buf = try ally.alloc(u8, totalLen);
     std.mem.copy(u8, buf[0..], home);
-    std.mem.copy(u8, buf[home.len + 1..], original);
+    std.mem.copy(u8, buf[home.len + 1 ..], original);
     buf[home.len] = std.fs.path.sep;
     return buf;
 }
