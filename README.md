@@ -5,10 +5,10 @@ Keybinds:
 ```
 'h': Left (../) ←
 'l': Right (go down/open) →
-'j': Down	↓
+'j': Down ↓
 'k': Up ↑
 'c': Create file
-'C': Create directoru
+'C': Create directory
 'D': Delete item(s)
 'f': Fast travel
 ' ': Mark item
