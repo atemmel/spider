@@ -22,9 +22,7 @@ Keybinds:
 ## Dependencies
 
 * ncurses
-* libmagic
-* libgit2
-* c++17(???)
+* zig
 
 ## Future work:
 
