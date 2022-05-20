@@ -14,7 +14,6 @@ Keybinds:
 ' ': Mark item
 'R': Rename item
 'm': Remove all marks
-~~'a': Read MIME data~~
 'p': Paste marked files
 'v': Move marked files
 ```
