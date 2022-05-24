@@ -1,5 +1,5 @@
 const std = @import("std");
-const ncurses = @cImport(@cInclude("ncurses.h"));
+const term = @import("term.zig");
 const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
 const config = @import("config.zig");
@@ -123,11 +123,11 @@ pub const Browser = struct {
         }
 
         std.sort.sort(FileEntry, self.entries.items, {}, compByEntryKind);
-        _ = ncurses.erase();
+        term.erase();
     }
 
     pub fn draw(self: *Browser) void {
-        _ = ncurses.erase();
+        term.erase();
         self.printHeader();
         self.printDirs() catch unreachable;
 
@@ -138,15 +138,15 @@ pub const Browser = struct {
     }
 
     fn printHeader(self: *Browser) void {
-        const x = ncurses.getmaxx(ncurses.stdscr);
-        var i: i32 = 0;
+        const x = term.getWidth();
+        var i: u32 = 0;
         while (i < x) : (i += 1) {
-            _ = ncurses.mvprintw(0, i, " ");
+            term.mvprint(0, i, " ", .{});
         }
 
-        _ = ncurses.attron(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
-        _ = ncurses.mvprintw(0, 0, self.cwd.ptr);
-        _ = ncurses.attroff(@as(c_int, ncurses.A_BOLD) | ncurses.COLOR_PAIR(1));
+        term.attrOn(term.Bold | term.color(1));
+        term.mvprint(0, 0, self.cwd.ptr, .{});
+        term.attrOff(term.Bold | term.color(1));
     }
 
     fn printDirs(self: *Browser) !void {
@@ -154,7 +154,7 @@ pub const Browser = struct {
         const lnStr = "~> ";
         const ox = 0;
         const oy = 1;
-        const height = @intCast(i32, ncurses.getmaxy(ncurses.stdscr));
+        const height = term.getHeight();
 
         var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divFloor(height, 2))));
         var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divFloor(height, 2)));
@@ -173,9 +173,9 @@ pub const Browser = struct {
             //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
 
-            _ = ncurses.attroff(ncurses.A_REVERSE);
+            term.attrOff(term.Reverse);
             if (self.index == current) {
-                _ = ncurses.attron(ncurses.A_REVERSE);
+                term.attrOn(term.Reverse);
             }
 
             std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
@@ -184,24 +184,24 @@ pub const Browser = struct {
             const mark = self.marks.get(key);
             const markStr = if (mark == null) "" else " ";
 
-            _ = ncurses.attroff(ncurses.A_BOLD);
+            term.attrOff(term.Bold);
             if (entry.kind == .Directory) {
-                _ = ncurses.attron(ncurses.A_BOLD);
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr);
+                term.attrOn(term.Bold);
+                term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
             } else if (entry.kind == .SymLink) {
-                _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr);
+                term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
             } else {
                 if (entry.sizeStr) |size| {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " %03o %10s %s%s ", entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr);
+                    term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr });
                 } else {
-                    _ = ncurses.mvprintw(@intCast(c_int, i + oy), ox, " ??? %10s %s%s ", "?  ", markStr.ptr, printedName.ptr);
+                    term.mvprint(@intCast(u32, i + oy), ox, " ??? %10s %s%s ", .{ "?  ", markStr.ptr, printedName.ptr });
                 }
             }
         }
         self.cwdBuf[self.cwd.len] = 0;
 
-        _ = ncurses.attroff(ncurses.A_REVERSE);
-        _ = ncurses.attroff(ncurses.A_BOLD);
+        term.attrOff(term.Reverse);
+        term.attrOff(term.Bold);
     }
 
     fn exitDir(self: *Browser) !void {
@@ -535,12 +535,12 @@ pub const Browser = struct {
 
     fn showBookmarks(self: *Browser) !void {
         var it = self.bookmarks.keyIterator();
-        var y: i32 = 0;
+        var y: u32 = 0;
 
-        _ = ncurses.erase();
+        term.erase();
 
         while (it.next()) |bookmark| {
-            _ = ncurses.mvprintw(y, 0, "%c %s", 'a' + y, bookmark.ptr);
+            term.mvprint(y, 0, "%c %s", .{ 'a' + y, bookmark.ptr });
             y += 1;
         }
 
@@ -580,9 +580,9 @@ pub const Browser = struct {
     fn startShell() void {
         const shell = config.shell orelse config.shellEnv orelse return;
 
-        _ = ncurses.endwin();
+        term.disable();
         const code = utils.spawn(shell) catch 128;
-        _ = ncurses.initscr();
+        term.enable();
         handleSpawnResult(code);
         //if(code == 128) {
         //_ = prompt.get("", "Unable to fork process!");
@@ -591,7 +591,7 @@ pub const Browser = struct {
         //}
     }
 
-    pub fn update(self: *Browser, key: i32) !bool {
+    pub fn update(self: *Browser, key: u32) !bool {
         switch (key) {
             4, 'q' => { // die
                 return false;
@@ -688,7 +688,7 @@ pub const Browser = struct {
         }
     }
 
-    fn checkBindings(self: *Browser, key: i32) !void {
+    fn checkBindings(self: *Browser, key: u32) !void {
         for (config.binds.items) |bind| {
             if (bind.key == key) {
                 try self.doBinding(bind);
@@ -701,18 +701,18 @@ pub const Browser = struct {
         const newSize = std.mem.replacementSize(u8, bind.command, "%F", self.cwd);
         var code: u32 = undefined;
         if (newSize == bind.command.len) {
-            _ = ncurses.endwin();
+            term.disable();
             code = utils.spawnShCommand(bind.command) catch 128;
-            _ = ncurses.initscr();
+            term.enable();
         } else {
             var newCommand = try self.ally.alloc(u8, newSize + 1);
             defer self.ally.free(newCommand);
             _ = std.mem.replace(u8, bind.command, "%F", self.cwd, newCommand);
             newCommand[newSize] = 0;
-            _ = ncurses.endwin();
+            term.disable();
             const slice = newCommand[0..newSize :0];
             code = utils.spawnShCommand(slice) catch 128;
-            _ = ncurses.initscr();
+            term.enable();
         }
         handleSpawnResult(code);
     }

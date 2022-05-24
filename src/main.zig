@@ -1,11 +1,11 @@
 const std = @import("std");
-const ncurses = @cImport(@cInclude("ncurses.h"));
+const term = @import("term.zig");
 const Browser = @import("browser.zig").Browser;
 const utils = @import("utils.zig");
 const config = @import("config.zig");
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
-    _ = ncurses.endwin();
+    term.disable();
     std.debug.print("{s}\n", .{msg});
     if (error_return_trace) |trace| {
         std.debug.dumpStackTrace(trace.*);
@@ -13,15 +13,6 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) nore
         std.debug.print("No trace lmao\n", .{});
     }
     std.os.exit(0);
-}
-
-pub fn initCurses() void {
-    _ = ncurses.initscr();
-    _ = ncurses.noecho();
-    _ = ncurses.curs_set(0);
-    _ = ncurses.start_color(); // TODO: Check for return
-    _ = ncurses.init_pair(1, ncurses.COLOR_YELLOW, ncurses.COLOR_BLACK);
-    _ = ncurses.keypad(ncurses.stdscr, true);
 }
 
 pub fn createDefaultConfigPath(ally: std.mem.Allocator) ![]u8 {
@@ -45,14 +36,14 @@ pub fn main() anyerror!void {
     try browser.init(&ally);
     defer browser.deinit();
 
-    initCurses();
+    term.init();
     while (true) {
         browser.draw();
-        const ch: i32 = ncurses.getch();
+        const ch: u32 = term.getChar();
         if (!try browser.update(ch)) {
             break;
         }
     }
 
-    _ = ncurses.endwin();
+    term.disable();
 }
