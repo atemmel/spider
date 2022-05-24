@@ -225,13 +225,15 @@ pub const Browser = struct {
 
     fn enterDir(self: *Browser) void {
         const entry = &self.entries.items[self.index];
-        const oldLen = self.cwd.len;
+        var oldLen = self.cwd.len;
         var newLen = self.cwd.len + entry.name.len;
-        if (self.cwdBuf[self.cwd.len] != std.fs.path.sep) {
-            self.cwdBuf[self.cwd.len] = std.fs.path.sep;
+
+        if (self.cwdBuf[oldLen - 1] != std.fs.path.sep) {
+            self.cwdBuf[oldLen] = std.fs.path.sep;
             newLen += 1;
+            oldLen += 1;
         }
-        var remainder = self.cwdBuf[self.cwd.len + 1 ..];
+        const remainder = self.cwdBuf[oldLen..];
         std.mem.copy(u8, remainder, entry.name);
         self.cwdBuf[newLen] = 0;
         self.cwd = self.cwdBuf[0..newLen];
