@@ -88,13 +88,14 @@ pub const Browser = struct {
     }
 
     fn fillEntries(self: *Browser) !void {
-        self.clearEntries();
-
         var dir = try std.fs.openDirAbsolute(
             self.cwd,
-            .{ .iterate = true, .no_follow = true },
+            //.{ .iterate = true, .no_follow = true },
+            .{ .iterate = true, .no_follow = false },
         );
         defer dir.close();
+
+        self.clearEntries();
 
         var it = dir.iterate();
         while (try it.next()) |entry| {
@@ -236,15 +237,17 @@ pub const Browser = struct {
         self.cwd = self.cwdBuf[0..newLen];
 
         std.os.chdir(self.cwd) catch |err| {
-            _ = prompt.get(@errorName(err), "Error: Could not enter enter dir!");
+            _ = prompt.get(@errorName(err), "Could not enter dir: ");
             self.cwdBuf[oldLen] = 0;
             self.cwd = self.cwdBuf[0..oldLen];
             return;
         };
 
-        self.fillEntries() catch {
+        self.fillEntries() catch |err| {
+            _ = prompt.get(@errorName(err), "Could not read dir: ");
             self.cwdBuf[oldLen] = 0;
             self.cwd = self.cwdBuf[0..oldLen];
+            return;
         };
 
         //if(self.index >= self.entries.items.len) {
