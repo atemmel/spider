@@ -137,7 +137,7 @@ pub const Browser = struct {
     }
 
     fn printHeader(self: *Browser) void {
-        var x = ncurses.getmaxx(ncurses.stdscr);
+        const x = ncurses.getmaxx(ncurses.stdscr);
         var i: i32 = 0;
         while (i < x) : (i += 1) {
             _ = ncurses.mvprintw(0, i, " ");
@@ -235,7 +235,8 @@ pub const Browser = struct {
         self.cwdBuf[newLen] = 0;
         self.cwd = self.cwdBuf[0..newLen];
 
-        std.os.chdir(self.cwd) catch {
+        std.os.chdir(self.cwd) catch |err| {
+            _ = prompt.get(@errorName(err), "Error: Could not enter enter dir!");
             self.cwdBuf[oldLen] = 0;
             self.cwd = self.cwdBuf[0..oldLen];
             return;
