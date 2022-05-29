@@ -3,6 +3,7 @@ const term = @import("term.zig");
 const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
 const config = @import("config.zig");
+const logo = @import("logo.zig");
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -128,6 +129,9 @@ pub const Browser = struct {
 
     pub fn draw(self: *Browser) void {
         term.erase();
+        term.attrOn(term.color(2));
+        logo.dumpCenter();
+        term.attrOff(term.color(2));
         self.printHeader();
         self.printDirs() catch unreachable;
 
@@ -167,6 +171,7 @@ pub const Browser = struct {
 
         var i: usize = 0;
         self.cwdBuf[self.cwd.len] = std.fs.path.sep;
+
         while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
@@ -670,6 +675,9 @@ pub const Browser = struct {
             'g' => { // show all bookmarks
                 try self.showBookmarks();
             },
+            '?' => {
+                self.showLogo();
+            },
             else => {
                 try self.checkBindings(key);
                 // printf debugging :)))
@@ -678,6 +686,14 @@ pub const Browser = struct {
             },
         }
         return true;
+    }
+
+    fn showLogo(_: *Browser) void {
+        term.erase();
+        term.attrOn(term.color(3) | term.Bold);
+        logo.dumpCenter();
+        _ = term.getChar();
+        term.attrOff(term.color(3) | term.Bold);
     }
 
     fn handleSpawnResult(code: u32) void {

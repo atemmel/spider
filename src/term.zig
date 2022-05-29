@@ -9,6 +9,8 @@ pub fn init() void {
     _ = ncurses.curs_set(0);
     _ = ncurses.start_color(); // TODO: Check for return
     _ = ncurses.init_pair(1, ncurses.COLOR_YELLOW, ncurses.COLOR_BLACK);
+    _ = ncurses.init_pair(2, 8, ncurses.COLOR_BLACK);
+    _ = ncurses.init_pair(3, 15, ncurses.COLOR_BLACK);
     _ = ncurses.keypad(ncurses.stdscr, true);
 }
 
@@ -46,7 +48,6 @@ pub fn attrOff(flags: u32) void {
 
 pub fn mvprint(y: u32, x: u32, fmt: [*]const u8, args: anytype) void {
     const callargs = .{ @intCast(c_int, y), @intCast(c_int, x), fmt } ++ args;
-    //_ = ncurses.mvprintw(x, y, fmt, args);
     _ = @call(.{}, ncurses.mvprintw, callargs);
 }
 
@@ -56,6 +57,13 @@ pub fn move(y: u32, x: u32) void {
 
 pub fn addChar(char: u8) void {
     _ = ncurses.addch(char);
+}
+
+pub fn mvSlice(y: u32, x: u32, str: []const u8) void {
+    move(y, x);
+    for (str) |char| {
+        addChar(char);
+    }
 }
 
 pub fn timeout(time: i32) void {

@@ -6,13 +6,7 @@ const config = @import("config.zig");
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
     term.disable();
-    std.debug.print("{s}\n", .{msg});
-    if (error_return_trace) |trace| {
-        std.debug.dumpStackTrace(trace.*);
-    } else {
-        std.debug.print("No trace lmao\n", .{});
-    }
-    std.os.exit(0);
+    std.debug.panicImpl(error_return_trace, @returnAddress(), msg);
 }
 
 pub fn createDefaultConfigPath(ally: std.mem.Allocator) ![]u8 {
@@ -37,6 +31,7 @@ pub fn main() anyerror!void {
     defer browser.deinit();
 
     term.init();
+
     while (true) {
         browser.draw();
         const ch: u32 = term.getChar();

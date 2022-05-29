@@ -201,3 +201,13 @@ pub fn prependHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Al
     buf[home.len] = std.fs.path.sep;
     return buf;
 }
+
+pub fn splitLine(comptime str: []const u8) []const []const u8 {
+    @setEvalBranchQuota(str.len * 4);
+    var iter = std.mem.split(u8, str, "\n");
+    var lines_split: []const []const u8 = &.{};
+    while (iter.next()) |line| {
+        lines_split = lines_split ++ [_][]const u8{line};
+    }
+    return lines_split;
+}
