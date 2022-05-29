@@ -73,3 +73,23 @@ pub fn timeout(time: i32) void {
 pub fn getChar() u32 {
     return @intCast(u32, ncurses.getch());
 }
+
+pub fn footer(str: []const u8) void {
+    const w = getWidth();
+    const w2 = w / 2;
+    const y = getHeight() - 1;
+    const width2: u32 = @intCast(u32, str.len) / 2;
+
+    attrOn(Bold | color(1) | Reverse);
+    var i: u32 = 0;
+    while (i < w) : (i += 1) {
+        move(y, i);
+        addChar(' ');
+    }
+
+    if (w2 >= width2) {
+        mvSlice(y, w2 - width2, str);
+    }
+
+    attrOff(Bold | color(1) | Reverse);
+}

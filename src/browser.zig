@@ -133,6 +133,7 @@ pub const Browser = struct {
         logo.dumpCenter();
         term.attrOff(term.color(2));
         self.printHeader();
+        term.footer("browser");
         self.printDirs() catch unreachable;
 
         if (!config.goodParse) {
@@ -158,7 +159,7 @@ pub const Browser = struct {
         const lnStr = "~> ";
         const ox = 0;
         const oy = 1;
-        const height = term.getHeight();
+        const height = term.getHeight() - 1;
 
         var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divFloor(height, 2))));
         var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divFloor(height, 2)));
@@ -172,7 +173,7 @@ pub const Browser = struct {
         var i: usize = 0;
         self.cwdBuf[self.cwd.len] = std.fs.path.sep;
 
-        while (i + @intCast(usize, limit) < self.entries.items.len) : (i += 1) {
+        while (i + @intCast(usize, limit) < self.entries.items.len and i + oy < height) : (i += 1) {
             const current = i + @intCast(usize, limit);
             const entry = &self.entries.items[current];
             //TODO: shorten name here if appropriate
