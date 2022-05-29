@@ -26,10 +26,10 @@ fn exit(x: u32, y: u32) void {
 pub fn getString(message: [:0]const u8) ?[]u8 {
     var x: u32 = undefined;
     var y: u32 = undefined;
-    var c: u32 = undefined;
+    var c: i32 = undefined;
 
     x = term.getWidth();
-    y = term.getHeight();
+    y = term.getHeight() - 1;
     term.timeout(-1);
 
     clear(x, y);
@@ -78,13 +78,13 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
     unreachable;
 }
 
-pub fn get(value: [:0]const u8, message: [:0]const u8) ?u32 {
+pub fn get(value: [:0]const u8, message: [:0]const u8) ?i32 {
     var x: u32 = undefined;
     var y: u32 = undefined;
-    var c: u32 = undefined;
+    var c: i32 = undefined;
 
     x = term.getWidth();
-    y = term.getHeight();
+    y = term.getHeight() - 1;
     term.timeout(-1);
 
     print(y, value, message);

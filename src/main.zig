@@ -34,7 +34,7 @@ pub fn main() anyerror!void {
 
     while (true) {
         browser.draw();
-        const ch: u32 = term.getChar();
+        const ch: i32 = term.getChar();
         if (!try browser.update(ch)) {
             break;
         }

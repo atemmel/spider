@@ -70,8 +70,8 @@ pub fn timeout(time: i32) void {
     _ = ncurses.timeout(time);
 }
 
-pub fn getChar() u32 {
-    return @intCast(u32, ncurses.getch());
+pub fn getChar() i32 {
+    return @intCast(i32, ncurses.getch());
 }
 
 pub fn footer(str: []const u8) void {

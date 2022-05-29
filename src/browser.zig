@@ -597,7 +597,7 @@ pub const Browser = struct {
         //}
     }
 
-    pub fn update(self: *Browser, key: u32) !bool {
+    pub fn update(self: *Browser, key: i32) !bool {
         switch (key) {
             4, 'q' => { // die
                 return false;
@@ -705,7 +705,7 @@ pub const Browser = struct {
         }
     }
 
-    fn checkBindings(self: *Browser, key: u32) !void {
+    fn checkBindings(self: *Browser, key: i32) !void {
         for (config.binds.items) |bind| {
             if (bind.key == key) {
                 try self.doBinding(bind);
