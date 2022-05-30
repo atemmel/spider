@@ -4,6 +4,7 @@ const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
 const config = @import("config.zig");
 const logo = @import("logo.zig");
+const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -597,10 +598,13 @@ pub const Browser = struct {
         //}
     }
 
-    pub fn update(self: *Browser, key: i32) !bool {
+    pub fn update(self: *Browser, key: i32) !ModuleUpdateResult {
         switch (key) {
             4, 'q' => { // die
-                return false;
+                return ModuleUpdateResult{
+                    .running = false,
+                    .used_input = true,
+                };
             },
             's' => { // open shell
                 startShell();
@@ -686,7 +690,10 @@ pub const Browser = struct {
                 //_ = ncurses.getch();
             },
         }
-        return true;
+        return ModuleUpdateResult{
+            .running = true,
+            .used_input = true,
+        };
     }
 
     fn showLogo(_: *Browser) void {

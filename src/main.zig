@@ -1,8 +1,10 @@
 const std = @import("std");
 const term = @import("term.zig");
 const Browser = @import("browser.zig").Browser;
+const Todo = @import("todo.zig").Todo;
 const utils = @import("utils.zig");
 const config = @import("config.zig");
+const Modules = @import("module.zig").Modules;
 
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
     term.disable();
@@ -30,14 +32,29 @@ pub fn main() anyerror!void {
     try browser.init(ally);
     defer browser.deinit();
 
+    var todo: Todo = .{};
+    todo.init(ally);
+    defer todo.deinit();
+
     term.init();
 
-    while (true) {
-        browser.draw();
-        const ch: i32 = term.getChar();
-        if (!try browser.update(ch)) {
-            break;
+    var module = Modules.Browser;
+    var running = true;
+
+    while (running) {
+        switch (module) {
+            .Browser => browser.draw(),
+            .Todo => todo.draw(),
         }
+
+        const input: i32 = term.getChar();
+
+        const output = switch (module) {
+            .Browser => try browser.update(input),
+            .Todo => todo.update(input),
+        };
+
+        running = output.running;
     }
 
     term.disable();
