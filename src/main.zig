@@ -27,7 +27,7 @@ pub fn main() anyerror!void {
     try config.loadFile(confPath);
 
     var browser: Browser = .{};
-    try browser.init(&ally);
+    try browser.init(ally);
     defer browser.deinit();
 
     term.init();

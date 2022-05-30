@@ -35,16 +35,16 @@ pub const Browser = struct {
     //TODO: These should be marked 0-terminated
     cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
     cwd: []u8 = undefined,
-    ally: *std.mem.Allocator = undefined,
+    ally: std.mem.Allocator = undefined,
     entries: Entries = undefined,
     marks: Marks = undefined,
     bookmarks: Bookmarks = undefined,
 
-    pub fn init(browser: *Browser, ally: *std.mem.Allocator) !void {
+    pub fn init(browser: *Browser, ally: std.mem.Allocator) !void {
         browser.ally = ally;
-        browser.entries = Entries.init(ally.*);
-        browser.marks = Marks.init(ally.*);
-        browser.bookmarks = Bookmarks.init(ally.*);
+        browser.entries = Entries.init(ally);
+        browser.marks = Marks.init(ally);
+        browser.bookmarks = Bookmarks.init(ally);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
         browser.cwdBuf[browser.cwd.len] = 0;
 
@@ -315,7 +315,7 @@ pub const Browser = struct {
     }
 
     fn deleteEntriesMarked(self: *Browser) !void {
-        var promptStr = try std.fmt.allocPrintZ(self.ally.*, "Delete ({d}) marked entries? Y/N", .{
+        var promptStr = try std.fmt.allocPrintZ(self.ally, "Delete ({d}) marked entries? Y/N", .{
             self.marks.count(),
         });
         defer self.ally.free(promptStr);
@@ -455,7 +455,7 @@ pub const Browser = struct {
 
     fn copyFileMark(self: *Browser, from: []const u8, to: []const u8) !void {
         std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
-            var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
+            var errStr = try std.fmt.allocPrintZ(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
@@ -466,7 +466,7 @@ pub const Browser = struct {
 
     fn copyDirMark(self: *Browser, from: []const u8, to: []const u8) !void {
         utils.copyDirAbsolute(from, to) catch |err| {
-            var errStr = try std.fmt.allocPrintZ(self.ally.*, "{s}, {s}", .{
+            var errStr = try std.fmt.allocPrintZ(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
@@ -495,7 +495,7 @@ pub const Browser = struct {
 
     fn loadBookmarks(self: *Browser) !void {
         self.clearBookmarks();
-        var bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally.*);
+        var bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally);
         defer self.ally.free(bookmarksStr);
         var it = std.mem.tokenize(u8, bookmarksStr, "\n");
         while (it.next()) |slice| {
