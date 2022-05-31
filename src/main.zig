@@ -38,7 +38,8 @@ pub fn main() anyerror!void {
 
     term.init();
 
-    var module = Modules.Browser;
+    //var module = Modules.Browser;
+    var module = Modules.Todo;
     var running = true;
 
     while (running) {
@@ -55,6 +56,19 @@ pub fn main() anyerror!void {
         };
 
         running = output.running;
+
+        // if unused input
+        if (!output.used_input) {
+            module = switch (input) {
+                't' => Modules.Todo, // open todo
+                'b' => Modules.Browser, // open browser
+                else => module,
+            };
+            running = switch (input) {
+                'q', 4 => false, // exit
+                else => true, // keep running
+            };
+        }
     }
 
     term.disable();

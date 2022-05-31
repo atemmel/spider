@@ -600,12 +600,6 @@ pub const Browser = struct {
 
     pub fn update(self: *Browser, key: i32) !ModuleUpdateResult {
         switch (key) {
-            4, 'q' => { // die
-                return ModuleUpdateResult{
-                    .running = false,
-                    .used_input = true,
-                };
-            },
             's' => { // open shell
                 startShell();
             },
@@ -659,11 +653,9 @@ pub const Browser = struct {
                 try self.renameEntry();
                 try self.fillEntries();
             },
-            'G' => {}, //TODO: Git mode(?)
             'm' => {
                 self.clearMarks();
             },
-            'a' => {}, //TODO: File info
             'p' => { // paste marks
                 try self.copyMarks();
                 self.clearMarks();
@@ -684,10 +676,12 @@ pub const Browser = struct {
                 self.showLogo();
             },
             else => {
-                try self.checkBindings(key);
-                // printf debugging :)))
-                //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
-                //_ = ncurses.getch();
+                if (!try self.checkBindings(key)) {
+                    return ModuleUpdateResult{
+                        .running = true,
+                        .used_input = false,
+                    };
+                }
             },
         }
         return ModuleUpdateResult{
@@ -712,13 +706,14 @@ pub const Browser = struct {
         }
     }
 
-    fn checkBindings(self: *Browser, key: i32) !void {
+    fn checkBindings(self: *Browser, key: i32) !bool {
         for (config.binds.items) |bind| {
             if (bind.key == key) {
                 try self.doBinding(bind);
-                break;
+                return true;
             }
         }
+        return false;
     }
 
     fn doBinding(self: *Browser, bind: config.Bind) !void {

@@ -3,6 +3,8 @@ const ncurses = @cImport(@cInclude("ncurses.h"));
 pub const Reverse = ncurses.A_REVERSE;
 pub const Bold = ncurses.A_BOLD;
 
+pub const Line = ncurses.WA_LEFT;
+
 pub fn init() void {
     enable();
     _ = ncurses.noecho();

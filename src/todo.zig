@@ -1,5 +1,7 @@
 const std = @import("std");
 const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
+const term = @import("term.zig");
+const container = @import("./container.zig");
 
 pub const Todo = struct {
     pub const TodoItem = struct {
@@ -24,13 +26,26 @@ pub const Todo = struct {
 
     pub fn draw(self: *Todo) void {
         _ = self;
+        term.erase();
+        //term.mvprint(4, 4, "James Bond", .{});
+        container.draw(4, 4);
     }
 
     pub fn update(self: *Todo, input: i32) ModuleUpdateResult {
         _ = self;
         _ = input;
+        switch (input) {
+            'q', 4 => return .{
+                .running = false,
+                .used_input = true,
+            },
+            else => return .{
+                .running = true,
+                .used_input = false,
+            },
+        }
         return .{
-            .running = false,
+            .running = true,
             .used_input = true,
         };
     }
