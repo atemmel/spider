@@ -4,6 +4,7 @@ const term = @import("term.zig");
 const logo = @import("logo.zig");
 const prompt = @import("prompt.zig");
 const ui = @import("ui.zig");
+const utils = @import("utils.zig");
 
 pub const Todo = struct {
     const State = enum {
@@ -33,6 +34,7 @@ pub const Todo = struct {
     state: State = State.ViewingCategories,
     categories: TodoCategories = undefined,
     todoCategoryIndex: usize = undefined,
+    todoIndex: usize = undefined,
     ally: std.mem.Allocator = undefined,
 
     fn clearCategories(self: *Todo) void {
@@ -70,6 +72,7 @@ pub const Todo = struct {
         //TODO: abstract away this
         try self.readTodoList("./todo.json");
         self.todoCategoryIndex = 0;
+        self.todoIndex = 0;
     }
 
     pub fn deinit(self: *Todo) void {
@@ -116,7 +119,7 @@ pub const Todo = struct {
         const cat = &self.categories.items[self.todoCategoryIndex];
 
         const title_x = 4;
-        const title_y = 4;
+        const title_y = 2;
 
         const list_begin_x = title_x;
         const list_begin_y = title_y + 2;
@@ -127,9 +130,15 @@ pub const Todo = struct {
         term.attrOff(term.bold);
 
         for(cat.todos.items) |*todo, i| {
+            if(i == self.todoIndex) {
+                term.attrOn(term.color(1));
+            }
             const y = @intCast(u32, list_begin_y + i);
-            term.mvSlice(y, list_begin_x, "*");
+            term.mvSlice(y, list_begin_x, "\u{2022}");
             term.mvSlice(y, list_begin_x + 2, todo.content);
+            if(i == self.todoIndex) {
+                term.attrOff(term.color(1));
+            }
         }
     }
 
@@ -274,40 +283,42 @@ pub const Todo = struct {
     }
 
     fn enterCategoriesView(self: *Todo) void {
+        self.todoIndex = 0;
         self.state = .ViewingCategories;
     }
 
     fn nextCategory(self: *Todo) void {
-        if(self.todoCategoryIndex + 1 >= self.categories.items.len) {   // if end is reached, wrap around
-            self.todoCategoryIndex = 0;
-        } else {
-            self.todoCategoryIndex += 1;    // otherwise go next
-        }
+        self.todoIndex = 0;
+        self.todoCategoryIndex = utils.wrapRight(self.todoCategoryIndex, self.categories.items.len);
     }
 
     fn prevCategory(self: *Todo) void {
-        // can overflow when no items unless len check
-        if(self.todoCategoryIndex == 0 and self.categories.items.len > 0) { // if beginning is recahed, wrap around
-            self.todoCategoryIndex = self.categories.items.len - 1;
-        } else if(self.categories.items.len > 0) {  // otherwise go prev
-            self.todoCategoryIndex -= 1;
-        }
+        self.todoIndex = 0;
+        self.todoCategoryIndex = utils.wrapLeft(self.todoCategoryIndex, self.categories.items.len);
+    }
+
+    fn nextTodo(self: *Todo) void {
+        const cat = &self.categories.items[self.todoCategoryIndex];
+        self.todoIndex = utils.wrapRight(self.todoIndex, cat.todos.items.len);
+    }
+
+    fn prevTodo(self: *Todo) void {
+        const cat = &self.categories.items[self.todoCategoryIndex];
+        self.todoIndex = utils.wrapLeft(self.todoIndex, cat.todos.items.len);
     }
 
     pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
-        _ = self;
-        _ = input;
         switch (input) {
-            term.Key.down, 'k' => { // down
-                switch(self.state) {
-                    .ViewingCategories => self.move(0, 1),
-                    .ViewingCategory => {},
-                }
-            },
-            term.Key.up, 'j' => { // up
+            term.Key.down, 'j' => { // down
                 switch(self.state) {
                     .ViewingCategories => self.move(0, -1),
-                    .ViewingCategory => {},
+                    .ViewingCategory => self.nextTodo(),
+                }
+            },
+            term.Key.up, 'k' => { // up
+                switch(self.state) {
+                    .ViewingCategories => self.move(0, 1),
+                    .ViewingCategory => self.prevTodo(),
                 }
             },
             term.Key.right, 'l' => { // right
