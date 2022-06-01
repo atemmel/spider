@@ -264,28 +264,33 @@ pub const Todo = struct {
         _ = self;
         _ = input;
         switch (input) {
-            259, 'k' => { // down
-                //self.todoCategoryIndex -= 1;
+            term.Key.down, 'k' => { // down
                 self.move(0, 1);
             },
-            258, 'j' => { // up
-                //self.todoCategoryIndex += 1;
+            term.Key.up, 'j' => { // up
                 self.move(0, -1);
             },
-            261, 'l' => { // right
+            term.Key.right, 'l' => { // right
                 self.move(1, 0);
             },
-            260, 'h' => { // left
+            term.Key.left, 'h' => { // left
                 self.move(-1, 0);
             },
             'n' => {
                 try self.createCategory();
             },
-            'o', term.key_enter => {
+            term.Key.enter, term.Key.space => {
                 self.selectCategory();
             },
-            27 => {
-                self.enterCategoriesView();
+            term.Key.eof, term.Key.esc, 'q' => {
+                if (self.state == .ViewingCategory) {
+                    self.enterCategoriesView();
+                } else {
+                    return ModuleUpdateResult{
+                        .running = true,
+                        .used_input = false,
+                    };
+                }
             },
             else => return ModuleUpdateResult{
                 .running = true,

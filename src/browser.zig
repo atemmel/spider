@@ -603,7 +603,7 @@ pub const Browser = struct {
             's' => { // open shell
                 startShell();
             },
-            259, 'k' => { // down
+            term.Key.down, 'k' => { // down
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
@@ -612,7 +612,7 @@ pub const Browser = struct {
                     }
                 }
             },
-            258, 'j' => { // up
+            term.Key.up, 'j' => { // up
                 if (self.entries.items.len > 0) {
                     if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
@@ -621,10 +621,10 @@ pub const Browser = struct {
                     }
                 }
             },
-            261, 'l' => { // right
+            term.Key.right, 'l' => { // right
                 self.enterDir();
             },
-            260, 'h' => { // left
+            term.Key.left, 'h' => { // left
                 try self.exitDir();
             },
             'c' => { // create file
@@ -642,7 +642,7 @@ pub const Browser = struct {
             'f' => { // find
                 try self.findFile();
             },
-            ' ' => { // mark/unmark
+            term.Key.space => { // mark/unmark
                 try self.addMark();
                 if (self.index < self.entries.items.len - 1) {
                     self.index += 1;

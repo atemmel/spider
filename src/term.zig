@@ -4,9 +4,17 @@ const c_locale = @cImport(@cInclude("locale.h"));
 pub const Reverse = ncurses.A_REVERSE;
 pub const Bold = ncurses.A_BOLD;
 
-pub const key_enter = ncurses.KEY_ENTER;
+pub const Key = struct {
+    pub const enter = 10;
+    pub const space = ' ';
+    pub const esc = 27;
+    pub const eof = 4;
 
-pub const Line = ncurses.WA_LEFT;
+    pub const down = 259;
+    pub const up = 258;
+    pub const right = 261;
+    pub const left = 260;
+};
 
 pub fn init() void {
     _ = c_locale.setlocale(c_locale.LC_ALL, "");
