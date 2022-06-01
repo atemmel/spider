@@ -91,7 +91,7 @@ pub fn get(value: [:0]const u8, message: [:0]const u8) ?i32 {
     c = term.getChar();
     exit(x, y);
 
-    if (c > 127) {
+    if (c > 127 and c != 263) {
         return null;
     }
 

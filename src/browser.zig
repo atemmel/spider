@@ -347,7 +347,7 @@ pub const Browser = struct {
                 continue;
             }
 
-            if (c.? == 127 and i > 0) { // backspace
+            if (c.? == 263 and i > 0) { // backspace
                 i -= 1;
                 input[i] = 0;
             } else if (c.? == 27) { // escape
