@@ -4,6 +4,8 @@ const c_locale = @cImport(@cInclude("locale.h"));
 pub const Reverse = ncurses.A_REVERSE;
 pub const Bold = ncurses.A_BOLD;
 
+pub const key_enter = ncurses.KEY_ENTER;
+
 pub const Line = ncurses.WA_LEFT;
 
 pub fn init() void {

@@ -2,9 +2,14 @@ const std = @import("std");
 const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
 const term = @import("term.zig");
 const logo = @import("logo.zig");
+const prompt = @import("prompt.zig");
 const ui = @import("ui.zig");
 
 pub const Todo = struct {
+    const State = enum {
+        ViewingCategories,
+        ViewingCategory,
+    };
     pub const TodoItem = struct {
         //priority: u32,
         //origin: []const u8,
@@ -211,8 +216,6 @@ pub const Todo = struct {
     fn calcGrid() Bounds {
         const w = (term.getWidth()) / (max_grid_item_width + 2);
         const h = (term.getHeight()) / (max_grid_item_height + 2);
-        //const x = self.todoCategoryIndex % w;
-        //const y = self.todoCategoryIndex / w;
         return Bounds{
             .x = 0,
             .y = 0,
@@ -221,7 +224,18 @@ pub const Todo = struct {
         };
     }
 
-    pub fn update(self: *Todo, input: i32) ModuleUpdateResult {
+    fn createCategory(self: *Todo) !void {
+        var title = prompt.getString("Create new category: ");
+        if (title == null) {
+            return;
+        }
+        try self.categories.append(.{
+            .title = try self.ally.dupe(u8, title.?[0..title.?.len]),
+            .todos = TodoItems.init(self.ally),
+        });
+    }
+
+    pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
         _ = self;
         _ = input;
         switch (input) {
@@ -239,12 +253,15 @@ pub const Todo = struct {
             260, 'h' => { // left
                 self.move(-1, 0);
             },
-            else => return .{
+            'n' => {
+                try self.createCategory();
+            },
+            else => return ModuleUpdateResult{
                 .running = true,
                 .used_input = false,
             },
         }
-        return .{
+        return ModuleUpdateResult{
             .running = true,
             .used_input = true,
         };

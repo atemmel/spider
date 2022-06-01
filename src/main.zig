@@ -52,7 +52,7 @@ pub fn main() anyerror!void {
 
         const output = switch (module) {
             .Browser => try browser.update(input),
-            .Todo => todo.update(input),
+            .Todo => try todo.update(input),
         };
 
         running = output.running;
