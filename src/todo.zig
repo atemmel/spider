@@ -17,6 +17,11 @@ pub const Todo = struct {
         todos: TodoItems,
     };
 
+    const TodoCategoryJson = struct {
+        title: []const u8,
+        todos: []TodoItem,
+    };
+
     const TodoItems = std.ArrayList(TodoItem);
     const TodoCategories = std.ArrayList(TodoCategory);
 
@@ -24,36 +29,44 @@ pub const Todo = struct {
     todoCategoryIndex: usize = undefined,
     ally: std.mem.Allocator = undefined,
 
+    fn clearCategories(self: *Todo) void {
+        for (self.categories.items) |*cat| {
+            for (cat.todos.items) |todo| {
+                self.ally.free(todo.content);
+            }
+            self.ally.free(cat.title);
+            cat.todos.clearAndFree();
+        }
+        self.categories.clearRetainingCapacity();
+    }
+
+    fn readTodoList(self: *Todo, from: []const u8) !void {
+        var str = std.fs.cwd().readFileAlloc(self.ally, from, std.math.maxInt(usize)) catch {
+            return;
+        };
+        defer self.ally.free(str);
+        var stream = std.json.TokenStream.init(str);
+        const parsedData = try std.json.parse([]TodoCategoryJson, &stream, .{
+            .allocator = self.ally,
+        });
+
+        try self.categories.resize(parsedData.len);
+        for (self.categories.items) |*cat, i| {
+            cat.title = parsedData[i].title;
+            cat.todos = TodoItems.fromOwnedSlice(self.ally, parsedData[i].todos);
+        }
+        self.ally.free(parsedData);
+    }
+
     pub fn init(self: *Todo, ally: std.mem.Allocator) !void {
         self.ally = ally;
         self.categories = TodoCategories.init(ally);
+        try self.readTodoList("./todo.json");
         self.todoCategoryIndex = 0;
-
-        try self.categories.append(.{
-            .title = "Todo category 1",
-            .todos = TodoItems.init(ally),
-        });
-
-        try self.categories.items[0].todos.append(.{
-            .content = "Do the gaming",
-        });
-        try self.categories.items[0].todos.append(.{
-            .content = "Do more gaming",
-        });
-        try self.categories.items[0].todos.append(.{
-            .content = "Do even more gaming (inspiring)",
-        });
-        try self.categories.items[0].todos.append(.{
-            .content = "This gaming won't displaying",
-        });
-
-        try self.categories.append(.{
-            .title = "Very cool long pog category by me",
-            .todos = TodoItems.init(ally),
-        });
     }
 
     pub fn deinit(self: *Todo) void {
+        self.clearCategories();
         for (self.categories.items) |*cat| {
             cat.todos.deinit();
         }
@@ -67,16 +80,17 @@ pub const Todo = struct {
         var y: u32 = 2;
         for (self.categories.items) |*cat, i| {
             const bounds = categoryBounds(cat, x, y);
+
+            if (bounds.y + bounds.h > term.getHeight()) {
+                break;
+            }
+
             drawCategory(cat, bounds, i == self.todoCategoryIndex);
             if (y == bounds.y) {
                 x += max_grid_item_width + 2;
             } else {
                 x = bounds.x;
                 y = bounds.y;
-            }
-
-            if (y > term.getHeight()) {
-                break;
             }
         }
     }
