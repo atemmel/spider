@@ -113,8 +113,24 @@ pub const Todo = struct {
     }
 
     fn drawCategoryView(self: *Todo) void {
-        _ = self;
-        term.mvSlice(4, 4, "Biggest gaming in the world");
+        const cat = &self.categories.items[self.todoCategoryIndex];
+
+        const title_x = 4;
+        const title_y = 4;
+
+        const list_begin_x = title_x;
+        const list_begin_y = title_y + 2;
+
+        // print title
+        term.attrOn(term.bold);
+        term.mvSlice(title_y, title_x, cat.title);
+        term.attrOff(term.bold);
+
+        for(cat.todos.items) |*todo, i| {
+            const y = @intCast(u32, list_begin_y + i);
+            term.mvSlice(y, list_begin_x, "*");
+            term.mvSlice(y, list_begin_x + 2, todo.content);
+        }
     }
 
     const Bounds = struct {
@@ -131,9 +147,10 @@ pub const Todo = struct {
 
     fn categoryBounds(cat: *TodoCategory, x: u32, y: u32) Bounds {
         const proposed_grid_item_height = @intCast(u32, min_grid_item_height + cat.todos.items.len);
-        const proposed_grid_item_width = @intCast(u32, min_grid_item_width + cat.title.len);
+        //const proposed_grid_item_width = @intCast(u32, min_grid_item_width + cat.title.len);
 
-        const w = if (proposed_grid_item_width > max_grid_item_width) max_grid_item_width else proposed_grid_item_width;
+        //const w = if (proposed_grid_item_width > max_grid_item_width) max_grid_item_width else proposed_grid_item_width;
+        const w = max_grid_item_width;
         const h = if (proposed_grid_item_height > max_grid_item_height) max_grid_item_height else proposed_grid_item_height;
 
         var x_out = x;
@@ -260,29 +277,58 @@ pub const Todo = struct {
         self.state = .ViewingCategories;
     }
 
+    fn nextCategory(self: *Todo) void {
+        if(self.todoCategoryIndex + 1 >= self.categories.items.len) {   // if end is reached, wrap around
+            self.todoCategoryIndex = 0;
+        } else {
+            self.todoCategoryIndex += 1;    // otherwise go next
+        }
+    }
+
+    fn prevCategory(self: *Todo) void {
+        // can overflow when no items unless len check
+        if(self.todoCategoryIndex == 0 and self.categories.items.len > 0) { // if beginning is recahed, wrap around
+            self.todoCategoryIndex = self.categories.items.len - 1;
+        } else if(self.categories.items.len > 0) {  // otherwise go prev
+            self.todoCategoryIndex -= 1;
+        }
+    }
+
     pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
         _ = self;
         _ = input;
         switch (input) {
             term.Key.down, 'k' => { // down
-                self.move(0, 1);
+                switch(self.state) {
+                    .ViewingCategories => self.move(0, 1),
+                    .ViewingCategory => {},
+                }
             },
             term.Key.up, 'j' => { // up
-                self.move(0, -1);
+                switch(self.state) {
+                    .ViewingCategories => self.move(0, -1),
+                    .ViewingCategory => {},
+                }
             },
             term.Key.right, 'l' => { // right
-                self.move(1, 0);
+                switch(self.state) {
+                    .ViewingCategories => self.move(1, 0),
+                    .ViewingCategory => self.nextCategory(),
+                }
             },
             term.Key.left, 'h' => { // left
-                self.move(-1, 0);
+                switch(self.state) {
+                    .ViewingCategories => self.move(-1, 0),
+                    .ViewingCategory => self.prevCategory(),
+                }
             },
-            'n' => {
+            'c' => {
                 try self.createCategory();
             },
             term.Key.enter, term.Key.space => {
                 self.selectCategory();
             },
-            term.Key.eof, term.Key.esc => {
+            term.Key.eof, term.Key.esc, 'q' => {
                 if (self.state == .ViewingCategory) {
                     self.enterCategoriesView();
                 } else {

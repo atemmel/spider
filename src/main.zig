@@ -65,7 +65,7 @@ pub fn main() anyerror!void {
                 else => module,
             };
             running = switch (input) {
-                'q', 4 => false, // exit
+                'q', term.Key.eof => false, // exit
                 else => true, // keep running
             };
         }
