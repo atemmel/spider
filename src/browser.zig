@@ -150,9 +150,9 @@ pub const Browser = struct {
             term.mvprint(0, i, " ", .{});
         }
 
-        term.attrOn(term.Bold | term.color(1));
+        term.attrOn(term.bold | term.color(1));
         term.mvprint(0, 0, self.cwd.ptr, .{});
-        term.attrOff(term.Bold | term.color(1));
+        term.attrOff(term.bold | term.color(1));
     }
 
     fn printDirs(self: *Browser) !void {
@@ -180,9 +180,9 @@ pub const Browser = struct {
             //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
 
-            term.attrOff(term.Reverse);
+            term.attrOff(term.reverse);
             if (self.index == current) {
-                term.attrOn(term.Reverse);
+                term.attrOn(term.reverse);
             }
 
             std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
@@ -191,9 +191,9 @@ pub const Browser = struct {
             const mark = self.marks.get(key);
             const markStr = if (mark == null) "" else " ";
 
-            term.attrOff(term.Bold);
+            term.attrOff(term.bold);
             if (entry.kind == .Directory) {
-                term.attrOn(term.Bold);
+                term.attrOn(term.bold);
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
             } else if (entry.kind == .SymLink) {
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
@@ -207,8 +207,8 @@ pub const Browser = struct {
         }
         self.cwdBuf[self.cwd.len] = 0;
 
-        term.attrOff(term.Reverse);
-        term.attrOff(term.Bold);
+        term.attrOff(term.reverse);
+        term.attrOff(term.bold);
     }
 
     fn exitDir(self: *Browser) !void {
@@ -692,10 +692,10 @@ pub const Browser = struct {
 
     fn showLogo(_: *Browser) void {
         term.erase();
-        term.attrOn(term.color(3) | term.Bold);
+        term.attrOn(term.color(3) | term.bold);
         logo.dumpCenter();
         _ = term.getChar();
-        term.attrOff(term.color(3) | term.Bold);
+        term.attrOff(term.color(3) | term.bold);
     }
 
     fn handleSpawnResult(code: u32) void {

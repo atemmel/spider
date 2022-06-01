@@ -174,9 +174,9 @@ pub const Todo = struct {
         var len = ellipsize(cat.title);
         var str = buffer[0..len];
 
-        term.attrOn(term.Bold);
+        term.attrOn(term.bold);
         term.mvSlice(bounds.y + 1, bounds.x + 2, str);
-        term.attrOff(term.Bold);
+        term.attrOff(term.bold);
         for (cat.todos.items) |*todo, j| {
             const i = @intCast(u32, j);
             len = ellipsize(todo.content);
@@ -282,7 +282,7 @@ pub const Todo = struct {
             term.Key.enter, term.Key.space => {
                 self.selectCategory();
             },
-            term.Key.eof, term.Key.esc, 'q' => {
+            term.Key.eof, term.Key.esc => {
                 if (self.state == .ViewingCategory) {
                     self.enterCategoriesView();
                 } else {

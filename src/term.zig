@@ -1,8 +1,8 @@
 const ncurses = @cImport(@cInclude("ncurses.h"));
 const c_locale = @cImport(@cInclude("locale.h"));
 
-pub const Reverse = ncurses.A_REVERSE;
-pub const Bold = ncurses.A_BOLD;
+pub const reverse = ncurses.A_REVERSE;
+pub const bold = ncurses.A_BOLD;
 
 pub const Key = struct {
     pub const enter = 10;
@@ -95,7 +95,7 @@ pub fn footer(str: []const u8) void {
     const y = getHeight() - 1;
     const width2: u32 = @intCast(u32, str.len) / 2;
 
-    attrOn(Bold | color(1) | Reverse);
+    attrOn(bold | color(1) | reverse);
     var i: u32 = 0;
     while (i < w) : (i += 1) {
         move(y, i);
@@ -106,5 +106,5 @@ pub fn footer(str: []const u8) void {
         mvSlice(y, w2 - width2, str);
     }
 
-    attrOff(Bold | color(1) | Reverse);
+    attrOff(bold | color(1) | reverse);
 }
