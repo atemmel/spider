@@ -282,6 +282,17 @@ pub const Todo = struct {
         self.state = .ViewingCategory;
     }
 
+    fn createTodo(self: *Todo) !void {
+        var content = prompt.getString("Create new todo: ");
+        if(content == null) {
+            return;
+        }
+        var cat = &self.categories.items[self.todoCategoryIndex];
+        try cat.todos.append(.{
+            .content = try self.ally.dupe(u8, content.?[0..content.?.len]),
+        });
+    }
+
     fn enterCategoriesView(self: *Todo) void {
         self.todoIndex = 0;
         self.state = .ViewingCategories;
@@ -333,8 +344,11 @@ pub const Todo = struct {
                     .ViewingCategory => self.prevCategory(),
                 }
             },
-            'c' => {
-                try self.createCategory();
+            'c' => {    // create
+                switch(self.state) {
+                    .ViewingCategories => try self.createCategory(),
+                    .ViewingCategory => try self.createTodo(),
+                }
             },
             term.Key.enter, term.Key.space => {
                 self.selectCategory();
