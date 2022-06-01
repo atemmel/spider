@@ -79,6 +79,7 @@ pub const Todo = struct {
         term.attrOn(term.color(2));
         logo.dumpCenter();
         term.attrOff(term.color(2));
+        term.footer("todo");
         var x: u32 = 2;
         var y: u32 = 2;
         for (self.categories.items) |*cat, i| {
