@@ -33,7 +33,7 @@ pub fn main() anyerror!void {
     defer browser.deinit();
 
     var todo: Todo = .{};
-    todo.init(ally);
+    try todo.init(ally);
     defer todo.deinit();
 
     term.init();

@@ -1,4 +1,5 @@
 const ncurses = @cImport(@cInclude("ncurses.h"));
+const c_locale = @cImport(@cInclude("locale.h"));
 
 pub const Reverse = ncurses.A_REVERSE;
 pub const Bold = ncurses.A_BOLD;
@@ -6,6 +7,7 @@ pub const Bold = ncurses.A_BOLD;
 pub const Line = ncurses.WA_LEFT;
 
 pub fn init() void {
+    _ = c_locale.setlocale(c_locale.LC_ALL, "");
     enable();
     _ = ncurses.noecho();
     _ = ncurses.curs_set(0);
@@ -14,6 +16,7 @@ pub fn init() void {
     _ = ncurses.init_pair(2, 8, ncurses.COLOR_BLACK);
     _ = ncurses.init_pair(3, 15, ncurses.COLOR_BLACK);
     _ = ncurses.keypad(ncurses.stdscr, true);
+    timeout(1000);
 }
 
 pub fn enable() void {
