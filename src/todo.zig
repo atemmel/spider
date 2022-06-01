@@ -92,7 +92,7 @@ pub const Todo = struct {
             if (y == bounds.y) {
                 x += max_grid_item_width + 2;
             } else {
-                x = bounds.x;
+                x = bounds.x + max_grid_item_width + 2;
                 y = bounds.y;
             }
         }
@@ -170,13 +170,73 @@ pub const Todo = struct {
         term.attrOff(term.color(1));
     }
 
+    fn move(self: *Todo, x: i32, y: i32) void {
+        const bounds = calcGrid();
+        const ideal = bounds.w * bounds.h;
+        if (y < 0) { // down
+            if (self.todoCategoryIndex + bounds.w < self.categories.items.len) {
+                self.todoCategoryIndex += bounds.w;
+            } else {
+                self.todoCategoryIndex %= bounds.w;
+            }
+        } else if (y > 0) { // up
+            if (@intCast(i32, self.todoCategoryIndex) - @intCast(i32, bounds.w) >= 0) {
+                self.todoCategoryIndex -= bounds.w;
+            } else {
+                if (self.todoCategoryIndex < self.categories.items.len % bounds.w) {
+                    self.todoCategoryIndex = ideal - bounds.w * 2 + self.todoCategoryIndex;
+                } else {
+                    self.todoCategoryIndex = self.categories.items.len - bounds.w - (self.categories.items.len % bounds.w) + self.todoCategoryIndex;
+                }
+            }
+        }
+        if (x > 0) { // right
+            self.todoCategoryIndex += 1;
+            if (self.todoCategoryIndex % bounds.w == 0 or self.todoCategoryIndex >= self.categories.items.len) {
+                self.todoCategoryIndex -= bounds.w;
+            }
+        } else if (x < 0) { // left
+            if (self.todoCategoryIndex % bounds.w == 0) {
+                self.todoCategoryIndex += bounds.w;
+            }
+            self.todoCategoryIndex -= 1;
+        }
+
+        if (self.todoCategoryIndex >= self.categories.items.len) {
+            self.todoCategoryIndex = self.categories.items.len - 1;
+        }
+    }
+
+    fn calcGrid() Bounds {
+        const w = (term.getWidth()) / (max_grid_item_width + 2);
+        const h = (term.getHeight()) / (max_grid_item_height + 2);
+        //const x = self.todoCategoryIndex % w;
+        //const y = self.todoCategoryIndex / w;
+        return Bounds{
+            .x = 0,
+            .y = 0,
+            .w = w,
+            .h = h,
+        };
+    }
+
     pub fn update(self: *Todo, input: i32) ModuleUpdateResult {
         _ = self;
         _ = input;
         switch (input) {
-            'q', 4 => return .{
-                .running = false,
-                .used_input = true,
+            259, 'k' => { // down
+                //self.todoCategoryIndex -= 1;
+                self.move(0, 1);
+            },
+            258, 'j' => { // up
+                //self.todoCategoryIndex += 1;
+                self.move(0, -1);
+            },
+            261, 'l' => { // right
+                self.move(1, 0);
+            },
+            260, 'h' => { // left
+                self.move(-1, 0);
             },
             else => return .{
                 .running = true,
