@@ -30,6 +30,7 @@ pub const Todo = struct {
     const TodoItems = std.ArrayList(TodoItem);
     const TodoCategories = std.ArrayList(TodoCategory);
 
+    state: State = State.ViewingCategories,
     categories: TodoCategories = undefined,
     todoCategoryIndex: usize = undefined,
     ally: std.mem.Allocator = undefined,
@@ -85,6 +86,13 @@ pub const Todo = struct {
         logo.dumpCenter();
         term.attrOff(term.color(2));
         term.footer("todo");
+        switch (self.state) {
+            .ViewingCategories => self.drawCategoriesView(),
+            .ViewingCategory => self.drawCategoryView(),
+        }
+    }
+
+    fn drawCategoriesView(self: *Todo) void {
         var x: u32 = 2;
         var y: u32 = 2;
         for (self.categories.items) |*cat, i| {
@@ -102,6 +110,11 @@ pub const Todo = struct {
                 y = bounds.y;
             }
         }
+    }
+
+    fn drawCategoryView(self: *Todo) void {
+        _ = self;
+        term.mvSlice(4, 4, "Biggest gaming in the world");
     }
 
     const Bounds = struct {
@@ -235,6 +248,18 @@ pub const Todo = struct {
         });
     }
 
+    fn selectCategory(self: *Todo) void {
+        if (self.todoCategoryIndex >= self.categories.items.len) {
+            _ = prompt.get("No category selected!", "");
+            return;
+        }
+        self.state = .ViewingCategory;
+    }
+
+    fn enterCategoriesView(self: *Todo) void {
+        self.state = .ViewingCategories;
+    }
+
     pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
         _ = self;
         _ = input;
@@ -255,6 +280,12 @@ pub const Todo = struct {
             },
             'n' => {
                 try self.createCategory();
+            },
+            'o', term.key_enter => {
+                self.selectCategory();
+            },
+            27 => {
+                self.enterCategoriesView();
             },
             else => return ModuleUpdateResult{
                 .running = true,
