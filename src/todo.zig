@@ -61,6 +61,7 @@ pub const Todo = struct {
     pub fn init(self: *Todo, ally: std.mem.Allocator) !void {
         self.ally = ally;
         self.categories = TodoCategories.init(ally);
+        //TODO: abstract away this
         try self.readTodoList("./todo.json");
         self.todoCategoryIndex = 0;
     }
@@ -75,7 +76,9 @@ pub const Todo = struct {
 
     pub fn draw(self: *Todo) void {
         term.erase();
+        term.attrOn(term.color(2));
         logo.dumpCenter();
+        term.attrOff(term.color(2));
         var x: u32 = 2;
         var y: u32 = 2;
         for (self.categories.items) |*cat, i| {
@@ -132,7 +135,7 @@ pub const Todo = struct {
 
     var buffer: [max_grid_item_width - 4]u8 = undefined;
 
-    fn ellipize(str: []const u8) u32 {
+    fn ellipsize(str: []const u8) u32 {
         if (buffer.len >= str.len) {
             std.mem.copy(u8, &buffer, str);
             return @intCast(u32, str.len);
@@ -149,7 +152,7 @@ pub const Todo = struct {
             term.attrOn(term.color(1));
         }
         ui.draw(bounds.x, bounds.y, bounds.w, bounds.h);
-        var len = ellipize(cat.title);
+        var len = ellipsize(cat.title);
         var str = buffer[0..len];
 
         term.attrOn(term.Bold);
@@ -157,7 +160,7 @@ pub const Todo = struct {
         term.attrOff(term.Bold);
         for (cat.todos.items) |*todo, j| {
             const i = @intCast(u32, j);
-            len = ellipize(todo.content);
+            len = ellipsize(todo.content);
             str = buffer[0..len];
             term.mvSlice(bounds.y + 3 + i, bounds.x + 2, str);
             if (i + max_grid_item_height - 1 > bounds.h) {

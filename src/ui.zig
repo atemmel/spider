@@ -10,7 +10,15 @@ const down_right_corner = "\u{256F}";
 const down_left_corner = "\u{2570}";
 
 pub fn draw(x: u32, y: u32, w: u32, h: u32) void {
-    var i: u32 = 1;
+    var i: u32 = 0;
+    while (i < w) : (i += 1) {
+        var j: u32 = 0;
+        while (j < h) : (j += 1) {
+            term.mvprint(j + y, i + x, " ", .{});
+        }
+    }
+
+    i = 1;
     while (i < w - 1) : (i += 1) {
         term.mvSlice(y, x + i, horizontal_line);
         term.mvSlice(y + h - 1, x + i, horizontal_line);
