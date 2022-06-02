@@ -327,6 +327,35 @@ pub const Todo = struct {
         }
     }
 
+    fn renameCategory(self: *Todo) !void {
+        if(self.categories.items.len == 0) {
+            return;
+        }
+
+        const new_name = prompt.getString("Rename category: ");
+        if(new_name == null) {
+            return;
+        }
+        var cat = &self.categories.items[self.todoCategoryIndex];
+        self.ally.free(cat.title);
+        cat.title = try self.ally.dupe(u8, new_name.?[0..new_name.?.len]);
+    }
+
+    fn renameTodo(self: *Todo) !void {
+        var cat = &self.categories.items[self.todoCategoryIndex];
+        if(cat.todos.items.len == 0) {
+            return;
+        }
+        
+        const new_name = prompt.getString("Rename todo: ");
+        if(new_name == null) {
+            return;
+        }
+        var todo = &cat.todos.items[self.todoIndex];
+        self.ally.free(todo.content);
+        todo.content = try self.ally.dupe(u8, new_name.?[0..new_name.?.len]);
+    }
+
     fn enterCategoriesView(self: *Todo) void {
         self.todoIndex = 0;
         self.state = .ViewingCategories;
@@ -388,6 +417,12 @@ pub const Todo = struct {
                 switch(self.state) {
                     .ViewingCategories => self.deleteCategory(),
                     .ViewingCategory => self.deleteTodo(),
+                }
+            },
+            'R' => {    // rename
+                switch(self.state) {
+                    .ViewingCategories => try self.renameCategory(),
+                    .ViewingCategory => try self.renameTodo(),
                 }
             },
             term.Key.enter, term.Key.space => {
