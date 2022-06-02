@@ -293,6 +293,40 @@ pub const Todo = struct {
         });
     }
 
+    fn deleteCategory(self: *Todo) void {
+        if(self.categories.items.len == 0) {
+            return;
+        }
+
+        const cat = &self.categories.items[self.todoCategoryIndex];
+        for(cat.todos.items) |*todo| {
+            self.ally.free(todo.content);
+        }
+        self.ally.free(cat.title);
+        cat.todos.clearAndFree();
+        _ = self.categories.orderedRemove(self.todoCategoryIndex);
+        if(self.todoCategoryIndex >= self.categories.items.len) {
+            if(self.todoCategoryIndex != 0) {
+                self.todoCategoryIndex -= 1;
+            }
+        }
+    }
+
+    fn deleteTodo(self: *Todo) void {
+        var cat = &self.categories.items[self.todoCategoryIndex];
+        if(cat.todos.items.len == 0) {
+            return;
+        }
+
+        self.ally.free(cat.todos.items[self.todoIndex].content);
+        _ = cat.todos.orderedRemove(self.todoIndex);
+        if(self.todoIndex >= cat.todos.items.len) {
+            if(self.todoIndex != 0) {
+                self.todoIndex -= 1;
+            }
+        }
+    }
+
     fn enterCategoriesView(self: *Todo) void {
         self.todoIndex = 0;
         self.state = .ViewingCategories;
@@ -348,6 +382,12 @@ pub const Todo = struct {
                 switch(self.state) {
                     .ViewingCategories => try self.createCategory(),
                     .ViewingCategory => try self.createTodo(),
+                }
+            },
+            'D' => {    // delete
+                switch(self.state) {
+                    .ViewingCategories => self.deleteCategory(),
+                    .ViewingCategory => self.deleteTodo(),
                 }
             },
             term.Key.enter, term.Key.space => {

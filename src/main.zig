@@ -37,6 +37,8 @@ pub fn main() anyerror!void {
     defer todo.deinit();
 
     term.init();
+    defer term.disable();
+    errdefer term.disable();
 
     //var module = Modules.Browser;
     var module = Modules.Todo;
@@ -70,6 +72,4 @@ pub fn main() anyerror!void {
             };
         }
     }
-
-    term.disable();
 }
