@@ -16,7 +16,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     exe.addSystemIncludeDir("/usr/include/");
     //exe.addObjectFile("ncurses/lib/libncursesw.6.dylib");
-    exe.linkSystemLibrary("ncurses");
+    exe.linkSystemLibrary("ncursesw");
     exe.linkLibC();
     exe.install();
 

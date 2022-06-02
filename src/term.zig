@@ -1,9 +1,23 @@
 const ncurses = @cImport(@cInclude("ncurses.h"));
+const c_locale = @cImport(@cInclude("locale.h"));
 
-pub const Reverse = ncurses.A_REVERSE;
-pub const Bold = ncurses.A_BOLD;
+pub const reverse = ncurses.A_REVERSE;
+pub const bold = ncurses.A_BOLD;
+
+pub const Key = struct {
+    pub const enter = 10;
+    pub const space = ' ';
+    pub const esc = 27;
+    pub const eof = 4;
+
+    pub const down = 259;
+    pub const up = 258;
+    pub const right = 261;
+    pub const left = 260;
+};
 
 pub fn init() void {
+    _ = c_locale.setlocale(c_locale.LC_ALL, "");
     enable();
     _ = ncurses.noecho();
     _ = ncurses.curs_set(0);
@@ -12,6 +26,7 @@ pub fn init() void {
     _ = ncurses.init_pair(2, 8, ncurses.COLOR_BLACK);
     _ = ncurses.init_pair(3, 15, ncurses.COLOR_BLACK);
     _ = ncurses.keypad(ncurses.stdscr, true);
+    timeout(1000);
 }
 
 pub fn enable() void {
@@ -80,7 +95,7 @@ pub fn footer(str: []const u8) void {
     const y = getHeight() - 1;
     const width2: u32 = @intCast(u32, str.len) / 2;
 
-    attrOn(Bold | color(1) | Reverse);
+    attrOn(bold | color(1) | reverse);
     var i: u32 = 0;
     while (i < w) : (i += 1) {
         move(y, i);
@@ -91,5 +106,5 @@ pub fn footer(str: []const u8) void {
         mvSlice(y, w2 - width2, str);
     }
 
-    attrOff(Bold | color(1) | Reverse);
+    attrOff(bold | color(1) | reverse);
 }

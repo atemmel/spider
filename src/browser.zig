@@ -4,6 +4,7 @@ const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
 const config = @import("config.zig");
 const logo = @import("logo.zig");
+const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -149,9 +150,9 @@ pub const Browser = struct {
             term.mvprint(0, i, " ", .{});
         }
 
-        term.attrOn(term.Bold | term.color(1));
+        term.attrOn(term.bold | term.color(1));
         term.mvprint(0, 0, self.cwd.ptr, .{});
-        term.attrOff(term.Bold | term.color(1));
+        term.attrOff(term.bold | term.color(1));
     }
 
     fn printDirs(self: *Browser) !void {
@@ -179,9 +180,9 @@ pub const Browser = struct {
             //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
 
-            term.attrOff(term.Reverse);
+            term.attrOff(term.reverse);
             if (self.index == current) {
-                term.attrOn(term.Reverse);
+                term.attrOn(term.reverse);
             }
 
             std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
@@ -190,9 +191,9 @@ pub const Browser = struct {
             const mark = self.marks.get(key);
             const markStr = if (mark == null) "" else " ";
 
-            term.attrOff(term.Bold);
+            term.attrOff(term.bold);
             if (entry.kind == .Directory) {
-                term.attrOn(term.Bold);
+                term.attrOn(term.bold);
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
             } else if (entry.kind == .SymLink) {
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
@@ -206,8 +207,8 @@ pub const Browser = struct {
         }
         self.cwdBuf[self.cwd.len] = 0;
 
-        term.attrOff(term.Reverse);
-        term.attrOff(term.Bold);
+        term.attrOff(term.reverse);
+        term.attrOff(term.bold);
     }
 
     fn exitDir(self: *Browser) !void {
@@ -346,7 +347,7 @@ pub const Browser = struct {
                 continue;
             }
 
-            if (c.? == 127 and i > 0) { // backspace
+            if (c.? == 263 and i > 0) { // backspace
                 i -= 1;
                 input[i] = 0;
             } else if (c.? == 27) { // escape
@@ -597,15 +598,12 @@ pub const Browser = struct {
         //}
     }
 
-    pub fn update(self: *Browser, key: i32) !bool {
+    pub fn update(self: *Browser, key: i32) !ModuleUpdateResult {
         switch (key) {
-            4, 'q' => { // die
-                return false;
-            },
             's' => { // open shell
                 startShell();
             },
-            259, 'k' => { // down
+            term.Key.down, 'k' => { // down
                 if (self.entries.items.len > 0) {
                     if (self.index <= 0) {
                         self.index = self.entries.items.len - 1;
@@ -614,7 +612,7 @@ pub const Browser = struct {
                     }
                 }
             },
-            258, 'j' => { // up
+            term.Key.up, 'j' => { // up
                 if (self.entries.items.len > 0) {
                     if (self.index >= self.entries.items.len - 1) {
                         self.index = 0;
@@ -623,10 +621,10 @@ pub const Browser = struct {
                     }
                 }
             },
-            261, 'l' => { // right
+            term.Key.right, 'l' => { // right
                 self.enterDir();
             },
-            260, 'h' => { // left
+            term.Key.left, 'h' => { // left
                 try self.exitDir();
             },
             'c' => { // create file
@@ -644,7 +642,7 @@ pub const Browser = struct {
             'f' => { // find
                 try self.findFile();
             },
-            ' ' => { // mark/unmark
+            term.Key.space => { // mark/unmark
                 try self.addMark();
                 if (self.index < self.entries.items.len - 1) {
                     self.index += 1;
@@ -655,11 +653,9 @@ pub const Browser = struct {
                 try self.renameEntry();
                 try self.fillEntries();
             },
-            'G' => {}, //TODO: Git mode(?)
             'm' => {
                 self.clearMarks();
             },
-            'a' => {}, //TODO: File info
             'p' => { // paste marks
                 try self.copyMarks();
                 self.clearMarks();
@@ -680,21 +676,26 @@ pub const Browser = struct {
                 self.showLogo();
             },
             else => {
-                try self.checkBindings(key);
-                // printf debugging :)))
-                //_ = ncurses.mvprintw(20, 10, "%d", self.marks.count());
-                //_ = ncurses.getch();
+                if (!try self.checkBindings(key)) {
+                    return ModuleUpdateResult{
+                        .running = true,
+                        .used_input = false,
+                    };
+                }
             },
         }
-        return true;
+        return ModuleUpdateResult{
+            .running = true,
+            .used_input = true,
+        };
     }
 
     fn showLogo(_: *Browser) void {
         term.erase();
-        term.attrOn(term.color(3) | term.Bold);
+        term.attrOn(term.color(3) | term.bold);
         logo.dumpCenter();
         _ = term.getChar();
-        term.attrOff(term.color(3) | term.Bold);
+        term.attrOff(term.color(3) | term.bold);
     }
 
     fn handleSpawnResult(code: u32) void {
@@ -705,13 +706,14 @@ pub const Browser = struct {
         }
     }
 
-    fn checkBindings(self: *Browser, key: i32) !void {
+    fn checkBindings(self: *Browser, key: i32) !bool {
         for (config.binds.items) |bind| {
             if (bind.key == key) {
                 try self.doBinding(bind);
-                break;
+                return true;
             }
         }
+        return false;
     }
 
     fn doBinding(self: *Browser, bind: config.Bind) !void {

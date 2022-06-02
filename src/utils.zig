@@ -211,3 +211,17 @@ pub fn splitLine(comptime str: []const u8) []const []const u8 {
     }
     return lines_split;
 }
+
+pub fn wrapLeft(u: usize, max: usize) usize {
+    if(u == 0) {
+        return max - 1;
+    }
+    return u - 1;
+}
+
+pub fn wrapRight(u: usize, max: usize) usize {
+    if(u + 1 >= max) {
+        return 0;
+    }
+    return u + 1;
+}

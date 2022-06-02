@@ -45,10 +45,10 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             '\t' => {
                 continue;
             },
-            127 => { // backspce
+            8, 127, 263 => { // backspace
                 if (prompt.len > 0) {
+                    promptBuf[prompt.len - 1] = 0;
                     prompt = promptBuf[0 .. prompt.len - 1 :0];
-                    promptBuf[prompt.len] = 0;
                 }
             },
             27 => { // escape
@@ -65,7 +65,7 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             else => {
                 if (prompt.len < maxPromptSize) {
                     promptBuf[prompt.len + 1] = 0;
-                    promptBuf[prompt.len] = @intCast(u8, c);
+                    promptBuf[prompt.len] = @truncate(u8, @intCast(u32, c));
                     prompt = promptBuf[0 .. prompt.len + 1 :0];
                 }
             },
@@ -91,7 +91,7 @@ pub fn get(value: [:0]const u8, message: [:0]const u8) ?i32 {
     c = term.getChar();
     exit(x, y);
 
-    if (c > 127) {
+    if (c > 127 and c != 263) {
         return null;
     }
 
