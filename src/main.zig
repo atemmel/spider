@@ -15,10 +15,28 @@ pub fn createDefaultConfigPath(ally: std.mem.Allocator) ![]u8 {
     return try utils.prependHomeAlloc(".config/spider/config.json", config.home, ally);
 }
 
+pub fn createDefaultTodoPath(ally: std.mem.Allocator) ![]u8 {
+    return try utils.prependHomeAlloc(".local/spider/notes.json", config.home, ally);
+}
+
+pub fn createTodoDir(ally: std.mem.Allocator) !void {
+    var local = try utils.prependHomeAlloc(".local", config.home, ally);
+    defer ally.free(local);
+    _ = std.fs.cwd().statFile(local) catch {
+        try std.fs.makeDirAbsolute(local);
+    };
+    var spider = try utils.prependHomeAlloc(".local/spider", config.home, ally);
+    defer ally.free(spider);
+    _ = std.fs.cwd().statFile(spider) catch {
+        try std.fs.makeDirAbsolute(spider);
+    };
+}
+
 pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
-    defer std.debug.assert(!gpa.deinit());
+    //defer std.debug.assert(!gpa.deinit());
+    defer _ = gpa.deinit();
 
     config.init(ally);
     defer config.deinit();
@@ -28,12 +46,17 @@ pub fn main() anyerror!void {
     defer ally.free(confPath);
     try config.loadFile(confPath);
 
+    try createTodoDir(ally);
+
+    const todoPath = try createDefaultTodoPath(ally);
+    defer ally.free(todoPath);
+
     var browser: Browser = .{};
     try browser.init(ally);
     defer browser.deinit();
 
     var todo: Todo = .{};
-    try todo.init(ally);
+    try todo.init(ally, todoPath);
     defer todo.deinit();
 
     term.init();

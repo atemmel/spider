@@ -35,6 +35,7 @@ pub const Todo = struct {
     categories: TodoCategories = undefined,
     todoCategoryIndex: usize = undefined,
     todoIndex: usize = undefined,
+    jsonPath: []const u8 = undefined,
     ally: std.mem.Allocator = undefined,
 
     fn clearCategories(self: *Todo) void {
@@ -66,11 +67,26 @@ pub const Todo = struct {
         self.ally.free(parsedData);
     }
 
-    pub fn init(self: *Todo, ally: std.mem.Allocator) !void {
+    fn writeTodoList(self: *Todo) !void {
+        var string = std.ArrayList(u8).init(self.ally);
+        defer string.deinit();
+
+        var categories = std.ArrayList(TodoCategoryJson).init(self.ally);
+        defer categories.deinit();
+        try categories.resize(self.categories.items.len);
+        for(categories.items) |*cat, i| {
+            cat.title = self.categories.items[i].title;
+            cat.todos = self.categories.items[i].todos.items;
+        }
+        try std.json.stringify(categories.items, .{}, string.writer());
+        try std.fs.cwd().writeFile(self.jsonPath, string.items);
+    }
+
+    pub fn init(self: *Todo, ally: std.mem.Allocator, path: []const u8) !void {
         self.ally = ally;
         self.categories = TodoCategories.init(ally);
-        //TODO: abstract away this
-        try self.readTodoList("./todo.json");
+        self.jsonPath = path;
+        try self.readTodoList(path);
         self.todoCategoryIndex = 0;
         self.todoIndex = 0;
     }
@@ -216,6 +232,9 @@ pub const Todo = struct {
     }
 
     fn move(self: *Todo, x: i32, y: i32) void {
+        if(self.categories.items.len == 0) {
+            return;
+        }
         const bounds = calcGrid();
         const ideal = bounds.w * bounds.h;
         if (y < 0) { // down
@@ -442,6 +461,15 @@ pub const Todo = struct {
                 .running = true,
                 .used_input = false,
             },
+        }
+
+        switch(input) {
+            'c', 'D', 'R' => {
+                self.writeTodoList() catch |err| {
+                    _ = prompt.get(@errorName(err), "Could not save todo items: ");
+                };
+            },
+            else => {},
         }
         return ModuleUpdateResult{
             .running = true,
