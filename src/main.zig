@@ -63,8 +63,7 @@ pub fn main() anyerror!void {
     defer term.disable();
     errdefer term.disable();
 
-    //var module = Modules.Browser;
-    var module = Modules.Todo;
+    var module = Modules.Browser;
     var running = true;
 
     while (running) {
