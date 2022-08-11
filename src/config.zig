@@ -7,6 +7,7 @@ pub var shell: ?[:0]const u8 = null;
 pub var openerEnv: ?[:0]const u8 = null;
 pub var shellEnv: ?[:0]const u8 = null;
 pub var home: []const u8 = "";
+pub var drawBg: bool = false;
 
 pub var ally: std.mem.Allocator = undefined;
 pub var goodParse = true;
@@ -69,6 +70,9 @@ pub fn loadFile(path: []const u8) !void {
     }
     if (root.Object.get("opener")) |myOpener| {
         opener = try ally.dupeZ(u8, myOpener.String);
+    }
+    if (root.Object.get("drawBg")) |myDrawBg| {
+        drawBg = myDrawBg.Bool;
     }
 
     if (root.Object.get("binds")) |myBinds| {
