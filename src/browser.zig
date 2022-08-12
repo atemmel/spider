@@ -130,11 +130,9 @@ pub const Browser = struct {
 
     pub fn draw(self: *Browser) void {
         term.erase();
-        if (config.drawBg) {
-            term.attrOn(term.color(2));
-            logo.dumpCenter();
-            term.attrOff(term.color(2));
-        }
+        term.attrOn(term.color(2));
+        logo.dumpCenter();
+        term.attrOff(term.color(2));
         self.printHeader();
         term.footer("browser");
         self.printDirs() catch unreachable;

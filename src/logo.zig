@@ -1,5 +1,6 @@
 const utils = @import("utils.zig");
 const term = @import("term.zig");
+const config = @import("config.zig");
 
 const logo_embed = @embedFile("../resources/logo.txt");
 const logo_arr = utils.splitLine(logo_embed);
@@ -7,6 +8,9 @@ pub const height: u32 = logo_arr.len;
 pub const width: u32 = logo_arr[0].len;
 
 pub fn dump(y: u32, x: u32) void {
+    if (!config.drawBg) {
+        return;
+    }
     for (logo_arr) |line, row| {
         term.mvSlice(y + @intCast(u32, row), x, line);
     }
