@@ -92,7 +92,6 @@ pub const Browser = struct {
     fn fillEntries(self: *Browser) !void {
         var dir = try std.fs.openDirAbsolute(
             self.cwd,
-            //.{ .iterate = true, .no_follow = true },
             .{ .iterate = true, .no_follow = false },
         );
         defer dir.close();
@@ -591,11 +590,6 @@ pub const Browser = struct {
         const code = utils.spawn(shell) catch 128;
         term.enable();
         handleSpawnResult(code);
-        //if(code == 128) {
-        //_ = prompt.get("", "Unable to fork process!");
-        //} else if(code != 0) {
-        //_ = prompt.get("", "Unable to open shell!");
-        //}
     }
 
     pub fn update(self: *Browser, key: i32) !ModuleUpdateResult {
@@ -717,22 +711,23 @@ pub const Browser = struct {
     }
 
     fn doBinding(self: *Browser, bind: config.Bind) !void {
-        const newSize = std.mem.replacementSize(u8, bind.command, "%F", self.cwd);
+        const currentDirEscape = "%F";
+        const newSize = std.mem.replacementSize(u8, bind.command, currentDirEscape, self.cwd);
         var code: u32 = undefined;
         if (newSize == bind.command.len) {
             term.disable();
             code = utils.spawnShCommand(bind.command) catch 128;
-            term.enable();
         } else {
             var newCommand = try self.ally.alloc(u8, newSize + 1);
             defer self.ally.free(newCommand);
-            _ = std.mem.replace(u8, bind.command, "%F", self.cwd, newCommand);
+            _ = std.mem.replace(u8, bind.command, currentDirEscape, self.cwd, newCommand);
             newCommand[newSize] = 0;
             term.disable();
             const slice = newCommand[0..newSize :0];
             code = utils.spawnShCommand(slice) catch 128;
-            term.enable();
         }
+        term.enable();
+        try self.fillEntries();
         handleSpawnResult(code);
     }
 };

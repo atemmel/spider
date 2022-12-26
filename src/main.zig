@@ -35,8 +35,7 @@ pub fn createTodoDir(ally: std.mem.Allocator) !void {
 pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
-    //defer std.debug.assert(!gpa.deinit());
-    defer _ = gpa.deinit();
+    defer std.debug.assert(!gpa.deinit());
 
     config.init(ally);
     defer config.deinit();
@@ -61,7 +60,6 @@ pub fn main() anyerror!void {
 
     term.init();
     defer term.disable();
-    errdefer term.disable();
 
     var module = Modules.Browser;
     var running = true;
