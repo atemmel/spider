@@ -14,8 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     const exe = b.addExecutable("spider", "src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
-    exe.addSystemIncludeDir("/usr/include/");
-    //exe.addObjectFile("ncurses/lib/libncursesw.6.dylib");
+    exe.addSystemIncludePath("/usr/include/");
     exe.linkSystemLibrary("ncursesw");
     exe.linkLibC();
     exe.install();

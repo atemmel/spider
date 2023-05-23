@@ -2,7 +2,7 @@ const utils = @import("utils.zig");
 const term = @import("term.zig");
 const config = @import("config.zig");
 
-const logo_embed = @embedFile("../resources/logo.txt");
+const logo_embed = @embedFile("resources/logo.txt");
 const logo_arr = utils.splitLine(logo_embed);
 pub const height: u32 = logo_arr.len;
 pub const width: u32 = logo_arr[0].len;

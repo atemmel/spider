@@ -6,7 +6,7 @@ const utils = @import("utils.zig");
 const config = @import("config.zig");
 const Modules = @import("module.zig").Modules;
 
-pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
+pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?usize) noreturn {
     term.disable();
     std.debug.panicImpl(error_return_trace, @returnAddress(), msg);
 }

@@ -90,10 +90,7 @@ pub const Browser = struct {
     }
 
     fn fillEntries(self: *Browser) !void {
-        var dir = try std.fs.openDirAbsolute(
-            self.cwd,
-            .{ .iterate = true, .no_follow = false },
-        );
+        var dir = try std.fs.openIterableDirAbsolute(self.cwd, .{ .no_follow = true });
         defer dir.close();
 
         self.clearEntries();
@@ -109,7 +106,7 @@ pub const Browser = struct {
             };
             errdefer self.ally.free(newEntry.name);
 
-            const st = dir.statFile(entry.name) catch {
+            const st = dir.dir.statFile(entry.name) catch {
                 newEntry.sizeStr = null;
                 newEntry.size = 0;
                 newEntry.mode = 0;
@@ -412,7 +409,7 @@ pub const Browser = struct {
         // try to put mark
         var existing = self.marks.getKey(mark);
         if (existing == null) {
-            try self.marks.put(mark, .{});
+            try self.marks.put(mark, undefined);
         } else { // remove mark
             _ = self.marks.remove(mark);
             self.ally.free(existing.?);
@@ -436,15 +433,9 @@ pub const Browser = struct {
             const kind = try utils.entryKindAbsolute(from);
 
             switch (kind) {
-                .File => {
-                    try self.copyFileMark(from, to);
-                },
-                .Directory => {
-                    try self.copyDirMark(from, to);
-                },
-                .SymLink => {
-                    try self.copyFileMark(from, to);
-                },
+                .File => try self.copyFileMark(from, to),
+                .Directory => try self.copyDirMark(from, to),
+                .SymLink => try self.copyFileMark(from, to),
                 else => {
                     //TODO: Present error message (responsible)
                 },
