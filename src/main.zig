@@ -78,6 +78,7 @@ pub fn main() anyerror!void {
 }
 
 test {
+    _ = @import("html.zig");
     _ = @import("http.zig");
     std.testing.refAllDecls(@This());
 }
