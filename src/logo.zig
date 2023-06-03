@@ -11,7 +11,7 @@ pub fn dump(y: u32, x: u32) void {
     if (!config.drawBg) {
         return;
     }
-    for (logo_arr) |line, row| {
+    for (logo_arr, 0..) |line, row| {
         term.mvSlice(y + @intCast(u32, row), x, line);
     }
 }

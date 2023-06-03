@@ -57,7 +57,7 @@ pub fn loadFile(path: []const u8) !void {
         return;
     };
     defer ally.free(str);
-    var parser = std.json.Parser.init(ally, false);
+    var parser = std.json.Parser.init(ally, .alloc_always);
     defer parser.deinit();
     var tree = parser.parse(str) catch {
         goodParse = false;
@@ -65,25 +65,25 @@ pub fn loadFile(path: []const u8) !void {
     };
     defer tree.deinit();
     var root = tree.root;
-    if (root.Object.get("shell")) |myShell| {
-        shell = try ally.dupeZ(u8, myShell.String);
+    if (root.object.get("shell")) |myShell| {
+        shell = try ally.dupeZ(u8, myShell.string);
     }
-    if (root.Object.get("opener")) |myOpener| {
-        opener = try ally.dupeZ(u8, myOpener.String);
+    if (root.object.get("opener")) |myOpener| {
+        opener = try ally.dupeZ(u8, myOpener.string);
     }
-    if (root.Object.get("drawBg")) |myDrawBg| {
-        drawBg = myDrawBg.Bool;
+    if (root.object.get("drawBg")) |myDrawBg| {
+        drawBg = myDrawBg.bool;
     }
 
-    if (root.Object.get("binds")) |myBinds| {
-        var it = myBinds.Object.iterator();
+    if (root.object.get("binds")) |myBinds| {
+        var it = myBinds.object.iterator();
         while (it.next()) |pair| {
             if (pair.key_ptr.len == 0) {
                 continue;
             }
             const bind = Bind{
                 .key = pair.key_ptr.*[0],
-                .command = try ally.dupeZ(u8, pair.value_ptr.String),
+                .command = try ally.dupeZ(u8, pair.value_ptr.string),
             };
 
             try binds.append(bind);

@@ -1,4 +1,6 @@
 const std = @import("std");
+const config = @import("config.zig");
+const consts = @import("consts.zig");
 
 pub fn clamp(value: i32, min: i32, max: i32) i32 {
     if (value < min) {
@@ -126,9 +128,9 @@ pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
 
 fn copyEntry(from: std.fs.Dir, entry: std.fs.IterableDir.Entry, to: std.fs.Dir) CopyDirError!void {
     switch (entry.kind) {
-        .File => try copyFileImpl(from, entry, to),
-        .Directory => try copyDirImpl(from, entry, to),
-        .SymLink => try copyFileImpl(from, entry, to),
+        .file => try copyFileImpl(from, entry, to),
+        .directory => try copyDirImpl(from, entry, to),
+        .sym_link => try copyFileImpl(from, entry, to),
         else => {},
     }
 }
@@ -218,4 +220,11 @@ pub fn wrapRight(u: usize, max: usize) usize {
         return 0;
     }
     return u + 1;
+}
+
+pub fn createTodoDir(ally: std.mem.Allocator) !void {
+    const tail = consts.todo_dir;
+    var spider = try prependHomeAlloc(tail, config.home, ally);
+    defer ally.free(spider);
+    try std.fs.cwd().makePath(spider);
 }

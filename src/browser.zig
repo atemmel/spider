@@ -20,13 +20,13 @@ pub const Browser = struct {
     const Bookmarks = std.StringHashMap(void);
 
     fn compByEntryKind(_: void, lhs: FileEntry, rhs: FileEntry) bool {
-        if (rhs.kind == .Directory) {
-            if (lhs.kind == .Directory) {
+        if (rhs.kind == .directory) {
+            if (lhs.kind == .directory) {
                 return utils.caseInsensitiveComparison(lhs.name, rhs.name);
             } else {
                 return false;
             }
-        } else if (lhs.kind == .Directory) {
+        } else if (lhs.kind == .directory) {
             return true;
         }
         return utils.caseInsensitiveComparison(lhs.name, rhs.name);
@@ -65,9 +65,8 @@ pub const Browser = struct {
     fn clearEntries(self: *Browser) void {
         for (self.entries.items) |e| {
             self.ally.free(e.name);
-            if (e.sizeStr != null) {
-                const ptr = e.sizeStr.?;
-                self.ally.free(std.mem.span(ptr));
+            if (e.sizeStr) |ptr| {
+                self.ally.free(ptr);
             }
         }
         self.entries.clearRetainingCapacity();
@@ -120,7 +119,7 @@ pub const Browser = struct {
             try self.entries.append(newEntry);
         }
 
-        std.sort.sort(FileEntry, self.entries.items, {}, compByEntryKind);
+        std.sort.pdq(FileEntry, self.entries.items, {}, compByEntryKind);
         term.erase();
     }
 
@@ -188,10 +187,10 @@ pub const Browser = struct {
             const markStr = if (mark == null) "" else " ";
 
             term.attrOff(term.bold);
-            if (entry.kind == .Directory) {
+            if (entry.kind == .directory) {
                 term.attrOn(term.bold);
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
-            } else if (entry.kind == .SymLink) {
+            } else if (entry.kind == .sym_link) {
                 term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
             } else {
                 if (entry.sizeStr) |size| {
@@ -255,9 +254,6 @@ pub const Browser = struct {
             return;
         };
 
-        //if(self.index >= self.entries.items.len) {
-        //self.index = self.entries.items.len - 1;
-        //}
         self.index = 0;
     }
 
@@ -304,9 +300,9 @@ pub const Browser = struct {
         defer dir.close();
 
         const entry = self.entries.items[self.index];
-        if (entry.kind == .File) {
+        if (entry.kind == .file) {
             try dir.deleteFile(entry.name);
-        } else if (entry.kind == .Directory) {
+        } else if (entry.kind == .directory) {
             try dir.deleteTree(entry.name);
         }
     }
@@ -354,7 +350,7 @@ pub const Browser = struct {
                 input[i] = 0;
             }
 
-            for (self.entries.items) |_, index| {
+            for (self.entries.items, 0..) |_, index| {
                 if (!self.entryStartsWith(index, input[0..i])) {
                     continue;
                 }
@@ -376,7 +372,7 @@ pub const Browser = struct {
     fn entryStartsWith(self: *Browser, entryIndex: usize, value: []const u8) bool {
         const entry = &self.entries.items[entryIndex];
 
-        for (value) |char, index| {
+        for (value, 0..) |char, index| {
             if (entry.name.len <= index or entry.name[index] != char) {
                 return false;
             }
@@ -433,9 +429,9 @@ pub const Browser = struct {
             const kind = try utils.entryKindAbsolute(from);
 
             switch (kind) {
-                .File => try self.copyFileMark(from, to),
-                .Directory => try self.copyDirMark(from, to),
-                .SymLink => try self.copyFileMark(from, to),
+                .file => try self.copyFileMark(from, to),
+                .directory => try self.copyDirMark(from, to),
+                .sym_link => try self.copyFileMark(from, to),
                 else => {
                     //TODO: Present error message (responsible)
                 },

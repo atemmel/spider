@@ -54,13 +54,9 @@ pub const Todo = struct {
             return;
         };
         defer self.ally.free(str);
-        var stream = std.json.TokenStream.init(str);
-        const parsedData = try std.json.parse([]TodoCategoryJson, &stream, .{
-            .allocator = self.ally,
-        });
-
+        var parsedData = try std.json.parseFromSlice([]TodoCategoryJson, self.ally, str, .{});
         try self.categories.resize(parsedData.len);
-        for (self.categories.items) |*cat, i| {
+        for (self.categories.items, 0..) |*cat, i| {
             cat.title = parsedData[i].title;
             cat.todos = TodoItems.fromOwnedSlice(self.ally, parsedData[i].todos);
         }
@@ -74,7 +70,7 @@ pub const Todo = struct {
         var categories = std.ArrayList(TodoCategoryJson).init(self.ally);
         defer categories.deinit();
         try categories.resize(self.categories.items.len);
-        for(categories.items) |*cat, i| {
+        for (categories.items, 0..) |*cat, i| {
             cat.title = self.categories.items[i].title;
             cat.todos = self.categories.items[i].todos.items;
         }
@@ -114,7 +110,7 @@ pub const Todo = struct {
     fn drawCategoriesView(self: *Todo) void {
         var x: u32 = 2;
         var y: u32 = 2;
-        for (self.categories.items) |*cat, i| {
+        for (self.categories.items, 0..) |*cat, i| {
             const bounds = categoryBounds(cat, x, y);
 
             if (bounds.y + bounds.h > term.getHeight()) {
@@ -145,14 +141,14 @@ pub const Todo = struct {
         term.mvSlice(title_y, title_x, cat.title);
         term.attrOff(term.bold);
 
-        for(cat.todos.items) |*todo, i| {
-            if(i == self.todoIndex) {
+        for (cat.todos.items, 0..) |*todo, i| {
+            if (i == self.todoIndex) {
                 term.attrOn(term.color(1));
             }
             const y = @intCast(u32, list_begin_y + i);
             term.mvSlice(y, list_begin_x, "\u{2022}");
             term.mvSlice(y, list_begin_x + 2, todo.content);
-            if(i == self.todoIndex) {
+            if (i == self.todoIndex) {
                 term.attrOff(term.color(1));
             }
         }
@@ -219,7 +215,7 @@ pub const Todo = struct {
         term.attrOn(term.bold);
         term.mvSlice(bounds.y + 1, bounds.x + 2, str);
         term.attrOff(term.bold);
-        for (cat.todos.items) |*todo, j| {
+        for (cat.todos.items, 0..) |*todo, j| {
             const i = @intCast(u32, j);
             len = ellipsize(todo.content);
             str = buffer[0..len];
@@ -232,7 +228,7 @@ pub const Todo = struct {
     }
 
     fn move(self: *Todo, x: i32, y: i32) void {
-        if(self.categories.items.len == 0) {
+        if (self.categories.items.len == 0) {
             return;
         }
         const bounds = calcGrid();
@@ -303,7 +299,7 @@ pub const Todo = struct {
 
     fn createTodo(self: *Todo) !void {
         var content = prompt.getString("Create new todo: ");
-        if(content == null) {
+        if (content == null) {
             return;
         }
         var cat = &self.categories.items[self.todoCategoryIndex];
@@ -313,19 +309,19 @@ pub const Todo = struct {
     }
 
     fn deleteCategory(self: *Todo) void {
-        if(self.categories.items.len == 0) {
+        if (self.categories.items.len == 0) {
             return;
         }
 
         const cat = &self.categories.items[self.todoCategoryIndex];
-        for(cat.todos.items) |*todo| {
+        for (cat.todos.items) |*todo| {
             self.ally.free(todo.content);
         }
         self.ally.free(cat.title);
         cat.todos.clearAndFree();
         _ = self.categories.orderedRemove(self.todoCategoryIndex);
-        if(self.todoCategoryIndex >= self.categories.items.len) {
-            if(self.todoCategoryIndex != 0) {
+        if (self.todoCategoryIndex >= self.categories.items.len) {
+            if (self.todoCategoryIndex != 0) {
                 self.todoCategoryIndex -= 1;
             }
         }
@@ -333,26 +329,26 @@ pub const Todo = struct {
 
     fn deleteTodo(self: *Todo) void {
         var cat = &self.categories.items[self.todoCategoryIndex];
-        if(cat.todos.items.len == 0) {
+        if (cat.todos.items.len == 0) {
             return;
         }
 
         self.ally.free(cat.todos.items[self.todoIndex].content);
         _ = cat.todos.orderedRemove(self.todoIndex);
-        if(self.todoIndex >= cat.todos.items.len) {
-            if(self.todoIndex != 0) {
+        if (self.todoIndex >= cat.todos.items.len) {
+            if (self.todoIndex != 0) {
                 self.todoIndex -= 1;
             }
         }
     }
 
     fn renameCategory(self: *Todo) !void {
-        if(self.categories.items.len == 0) {
+        if (self.categories.items.len == 0) {
             return;
         }
 
         const new_name = prompt.getString("Rename category: ");
-        if(new_name == null) {
+        if (new_name == null) {
             return;
         }
         var cat = &self.categories.items[self.todoCategoryIndex];
@@ -362,12 +358,12 @@ pub const Todo = struct {
 
     fn renameTodo(self: *Todo) !void {
         var cat = &self.categories.items[self.todoCategoryIndex];
-        if(cat.todos.items.len == 0) {
+        if (cat.todos.items.len == 0) {
             return;
         }
-        
+
         const new_name = prompt.getString("Rename todo: ");
-        if(new_name == null) {
+        if (new_name == null) {
             return;
         }
         var todo = &cat.todos.items[self.todoIndex];
@@ -403,43 +399,43 @@ pub const Todo = struct {
     pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
         switch (input) {
             term.Key.down, 'j' => { // down
-                switch(self.state) {
+                switch (self.state) {
                     .ViewingCategories => self.move(0, -1),
                     .ViewingCategory => self.nextTodo(),
                 }
             },
             term.Key.up, 'k' => { // up
-                switch(self.state) {
+                switch (self.state) {
                     .ViewingCategories => self.move(0, 1),
                     .ViewingCategory => self.prevTodo(),
                 }
             },
             term.Key.right, 'l' => { // right
-                switch(self.state) {
+                switch (self.state) {
                     .ViewingCategories => self.move(1, 0),
                     .ViewingCategory => self.nextCategory(),
                 }
             },
             term.Key.left, 'h' => { // left
-                switch(self.state) {
+                switch (self.state) {
                     .ViewingCategories => self.move(-1, 0),
                     .ViewingCategory => self.prevCategory(),
                 }
             },
-            'c' => {    // create
-                switch(self.state) {
+            'c' => { // create
+                switch (self.state) {
                     .ViewingCategories => try self.createCategory(),
                     .ViewingCategory => try self.createTodo(),
                 }
             },
-            'D' => {    // delete
-                switch(self.state) {
+            'D' => { // delete
+                switch (self.state) {
                     .ViewingCategories => self.deleteCategory(),
                     .ViewingCategory => self.deleteTodo(),
                 }
             },
-            'R' => {    // rename
-                switch(self.state) {
+            'R' => { // rename
+                switch (self.state) {
                     .ViewingCategories => try self.renameCategory(),
                     .ViewingCategory => try self.renameTodo(),
                 }
@@ -463,7 +459,7 @@ pub const Todo = struct {
             },
         }
 
-        switch(input) {
+        switch (input) {
             'c', 'D', 'R' => {
                 self.writeTodoList() catch |err| {
                     _ = prompt.get(@errorName(err), "Could not save todo items: ");

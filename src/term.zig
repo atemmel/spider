@@ -1,3 +1,4 @@
+const std = @import("std");
 const ncurses = @cImport(@cInclude("ncurses.h"));
 const c_locale = @cImport(@cInclude("locale.h"));
 
@@ -63,7 +64,7 @@ pub fn attrOff(flags: u32) void {
 
 pub fn mvprint(y: u32, x: u32, fmt: [*]const u8, args: anytype) void {
     const callargs = .{ @intCast(c_int, y), @intCast(c_int, x), fmt } ++ args;
-    _ = @call(.{}, ncurses.mvprintw, callargs);
+    _ = @call(.auto, ncurses.mvprintw, callargs);
 }
 
 pub fn move(y: u32, x: u32) void {
