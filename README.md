@@ -20,8 +20,10 @@ Keybinds:
 
 ## Dependencies
 
+* curl
 * ncurses
-* zig
+* tidy
+* zig 0.11.0
 
 ## Future work:
 
