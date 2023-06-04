@@ -123,7 +123,7 @@ fn parseHtml(ctx: *ParseCtx) !void {
         if (eql(u8, "head", name_slice)) {
             try parseHead(ctx, child);
         } else if (eql(u8, "body", name_slice)) {
-            try parseBody(ctx);
+            try parseBody(ctx, child);
         } else if (eql(u8, "html", name_slice)) {
             child = c.tidyGetChild(child);
             continue;
@@ -153,9 +153,19 @@ fn parseInnerHtml(ctx: *ParseCtx, node: c.TidyNode) ![]u8 {
     return try dupeBuff(ctx.ally, buffer);
 }
 
-fn parseBody(ctx: *ParseCtx) !void {
-    _ = ctx;
+fn parseBody(ctx: *ParseCtx, body: c.TidyNode) !void {
     std.debug.print("found_body\n", .{});
+    var child = c.tidyGetChild(body);
+    while (child != null) {
+        defer child = c.tidyGetNext(child);
+        const maybe_name = c.tidyNodeGetName(child);
+        if (maybe_name) |name| {
+            const name_slice = span(name);
+            if (eql(u8, "title", name_slice)) {
+                ctx.title = try parseInnerHtml(ctx, c.tidyGetChild(child));
+            }
+        }
+    }
 }
 
 fn parseTitle(ctx: *ParseCtx, doc: c.TidyDoc, node: c.TidyNode) !void {
@@ -195,4 +205,5 @@ test "html parse" {
 
     try expectEqual(true, tree.title != null);
     try expectEqualStrings("Cool title", tree.title.?);
+    try expectEqual(@as(usize, 4), tree.elements.len);
 }
