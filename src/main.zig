@@ -6,6 +6,7 @@ const utils = @import("utils.zig");
 const config = @import("config.zig");
 const consts = @import("consts.zig");
 const Modules = @import("module.zig").Modules;
+const Web = @import("web.zig").Web;
 
 const assert = std.debug.assert;
 
@@ -17,13 +18,10 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?
 pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     var ally = gpa.allocator();
-    defer {
-        assert(gpa.deinit() == .ok);
-    }
+    defer assert(gpa.deinit() == .ok);
 
-    config.init(ally);
+    try config.init(ally);
     defer config.deinit();
-    try config.loadEnv();
 
     const confPath = try consts.createDefaultConfigPath(ally);
     defer ally.free(confPath);
@@ -33,13 +31,15 @@ pub fn main() anyerror!void {
     const todoPath = try consts.createDefaultTodoPath(ally);
     defer ally.free(todoPath);
 
-    var browser: Browser = .{};
+    var browser = Browser{};
     try browser.init(ally);
     defer browser.deinit();
 
-    var todo: Todo = .{};
-    try todo.init(ally, todoPath);
+    var todo = try Todo.init(ally, todoPath);
     defer todo.deinit();
+
+    var web = try Web.init(ally);
+    defer web.deinit();
 
     term.init();
     defer term.disable();
@@ -51,6 +51,7 @@ pub fn main() anyerror!void {
         switch (module) {
             .Browser => browser.draw(),
             .Todo => todo.draw(),
+            .Web => web.draw(),
         }
 
         const input: i32 = term.getChar();
@@ -58,6 +59,7 @@ pub fn main() anyerror!void {
         const output = switch (module) {
             .Browser => try browser.update(input),
             .Todo => try todo.update(input),
+            .Web => web.update(input),
         };
 
         running = output.running;
@@ -67,6 +69,7 @@ pub fn main() anyerror!void {
             module = switch (input) {
                 'b' => Modules.Browser, // open browser
                 't' => Modules.Todo, // open todo
+                'w' => Modules.Web, // open web
                 else => module,
             };
             running = switch (input) {

@@ -1,8 +1,8 @@
 const std = @import("std");
-const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
-const term = @import("term.zig");
 const logo = @import("logo.zig");
+const module = @import("module.zig");
 const prompt = @import("prompt.zig");
+const term = @import("term.zig");
 const ui = @import("ui.zig");
 const utils = @import("utils.zig");
 
@@ -78,13 +78,16 @@ pub const Todo = struct {
         try std.fs.cwd().writeFile(self.jsonPath, string.items);
     }
 
-    pub fn init(self: *Todo, ally: std.mem.Allocator, path: []const u8) !void {
-        self.ally = ally;
-        self.categories = TodoCategories.init(ally);
-        self.jsonPath = path;
-        try self.readTodoList(path);
-        self.todoCategoryIndex = 0;
-        self.todoIndex = 0;
+    pub fn init(ally: std.mem.Allocator, path: []const u8) !Todo {
+        var todo = Todo{
+            .ally = ally,
+            .categories = TodoCategories.init(ally),
+            .jsonPath = path,
+            .todoCategoryIndex = 0,
+            .todoIndex = 0,
+        };
+        try todo.readTodoList(path);
+        return todo;
     }
 
     pub fn deinit(self: *Todo) void {
@@ -168,9 +171,6 @@ pub const Todo = struct {
 
     fn categoryBounds(cat: *TodoCategory, x: u32, y: u32) Bounds {
         const proposed_grid_item_height = @intCast(u32, min_grid_item_height + cat.todos.items.len);
-        //const proposed_grid_item_width = @intCast(u32, min_grid_item_width + cat.title.len);
-
-        //const w = if (proposed_grid_item_width > max_grid_item_width) max_grid_item_width else proposed_grid_item_width;
         const w = max_grid_item_width;
         const h = if (proposed_grid_item_height > max_grid_item_height) max_grid_item_height else proposed_grid_item_height;
 
@@ -396,7 +396,7 @@ pub const Todo = struct {
         self.todoIndex = utils.wrapLeft(self.todoIndex, cat.todos.items.len);
     }
 
-    pub fn update(self: *Todo, input: i32) !ModuleUpdateResult {
+    pub fn update(self: *Todo, input: i32) !module.Result {
         switch (input) {
             term.Key.down, 'j' => { // down
                 switch (self.state) {
@@ -447,13 +447,13 @@ pub const Todo = struct {
                 if (self.state == .ViewingCategory) {
                     self.enterCategoriesView();
                 } else {
-                    return ModuleUpdateResult{
+                    return module.Result{
                         .running = true,
                         .used_input = false,
                     };
                 }
             },
-            else => return ModuleUpdateResult{
+            else => return module.Result{
                 .running = true,
                 .used_input = false,
             },
@@ -467,7 +467,7 @@ pub const Todo = struct {
             },
             else => {},
         }
-        return ModuleUpdateResult{
+        return module.Result{
             .running = true,
             .used_input = true,
         };

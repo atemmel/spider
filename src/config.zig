@@ -21,9 +21,10 @@ pub const Bind = struct {
     command: [:0]const u8,
 };
 
-pub fn init(allyo: std.mem.Allocator) void {
+pub fn init(allyo: std.mem.Allocator) !void {
     ally = allyo;
     binds = std.ArrayList(Bind).init(ally);
+    try loadEnv();
 }
 
 pub fn deinit() void {

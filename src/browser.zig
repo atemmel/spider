@@ -4,7 +4,7 @@ const utils = @import("utils.zig");
 const prompt = @import("prompt.zig");
 const config = @import("config.zig");
 const logo = @import("logo.zig");
-const ModuleUpdateResult = @import("module.zig").ModuleUpdateResult;
+const module = @import("module.zig");
 
 pub const Browser = struct {
     const FileEntry = struct {
@@ -579,7 +579,7 @@ pub const Browser = struct {
         handleSpawnResult(code);
     }
 
-    pub fn update(self: *Browser, key: i32) !ModuleUpdateResult {
+    pub fn update(self: *Browser, key: i32) !module.Result {
         switch (key) {
             's' => { // open shell
                 startShell();
@@ -658,14 +658,14 @@ pub const Browser = struct {
             },
             else => {
                 if (!try self.checkBindings(key)) {
-                    return ModuleUpdateResult{
+                    return module.Result{
                         .running = true,
                         .used_input = false,
                     };
                 }
             },
         }
-        return ModuleUpdateResult{
+        return module.Result{
             .running = true,
             .used_input = true,
         };
