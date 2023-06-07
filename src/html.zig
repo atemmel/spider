@@ -10,6 +10,12 @@ const eql = std.mem.eql;
 
 const Allocator = std.mem.Allocator;
 
+pub const Error = error{
+    DomParseError,
+    NameParseError,
+    TitleParseError,
+};
+
 pub const Root = struct {
     pub const Node = struct {
         href: ?[]const u8,
@@ -47,7 +53,9 @@ pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
     defer c.tidyRelease(doc);
 
     _ = c.tidySetErrorBuffer(doc, &buffer);
-    _ = c.tidyParseString(doc, &html[0]);
+    if (c.tidyParseString(doc, &html[0]) == 0) {
+        return error.DomParseError;
+    }
 
     var ctx = ParseCtx{
         .ally = ally,
@@ -74,7 +82,9 @@ pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
 fn parseHtml(ctx: *ParseCtx) !void {
     var child = c.tidyGetChild(ctx.node);
     while (child != null) {
-        const name = c.tidyNodeGetName(child) orelse unreachable;
+        const name = c.tidyNodeGetName(child) orelse {
+            return error.NameParseError;
+        };
         const name_slice = span(name);
         if (eql(u8, "head", name_slice)) {
             try parseHead(ctx, child);
@@ -96,7 +106,9 @@ fn parseHead(ctx: *ParseCtx, head: c.TidyNode) !void {
         if (maybe_name) |name| {
             const name_slice = span(name);
             if (eql(u8, "title", name_slice)) {
-                ctx.title = try parseInnerHtml(ctx, c.tidyGetChild(child));
+                if (c.tidyGetChild(child)) |title_child| {
+                    ctx.title = try parseInnerHtml(ctx, title_child);
+                }
             }
         }
     }
@@ -138,7 +150,9 @@ fn parseTitle(ctx: *ParseCtx, doc: c.TidyDoc, node: c.TidyNode) !void {
     var child = c.tidyGetChild(node);
     var buffer = makeBuffer();
     defer c.tidyBufFree(&buffer);
-    _ = c.tidyNodeGetText(doc, child, &buffer);
+    if (c.tidyNodeGetText(doc, child, &buffer) != 0) {
+        return error.TitleParseError;
+    }
     ctx.title = try dupeBuff(ctx.ally, buffer);
 }
 
