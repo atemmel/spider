@@ -53,7 +53,7 @@ pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
     defer c.tidyRelease(doc);
 
     _ = c.tidySetErrorBuffer(doc, &buffer);
-    if (c.tidyParseString(doc, &html[0]) == 0) {
+    if (c.tidyParseString(doc, &html[0]) != 0) {
         return error.DomParseError;
     }
 
