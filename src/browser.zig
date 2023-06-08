@@ -486,7 +486,7 @@ pub const Browser = struct {
         defer self.ally.free(bookmarksStr);
         var it = std.mem.tokenize(u8, bookmarksStr, "\n");
         while (it.next()) |slice| {
-            var bookmark = try self.ally.dupeZ(u8, slice);
+            var bookmark = try self.ally.dupe(u8, slice);
             try self.bookmarks.put(bookmark, void{});
         }
     }
@@ -504,7 +504,7 @@ pub const Browser = struct {
     fn addBookmark(self: *Browser) !void {
         try self.loadBookmarks();
         {
-            var newBookmark = try self.ally.dupeZ(u8, self.cwd);
+            var newBookmark = try self.ally.dupe(u8, self.cwd);
             errdefer self.ally.free(newBookmark);
 
             const existing = self.bookmarks.getKey(newBookmark);
@@ -533,7 +533,9 @@ pub const Browser = struct {
         term.erase();
 
         while (it.next()) |bookmark| {
-            term.mvprint(y, 0, "%c %s", .{ 'a' + y, bookmark.ptr });
+            term.move(y, 0);
+            term.addChar(@intCast(u8, 'a' + y));
+            term.mvSlice(y, 2, bookmark.*);
             y += 1;
         }
 
