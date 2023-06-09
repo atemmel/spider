@@ -32,10 +32,15 @@ pub const Web = struct {
     }
 
     fn drawHtml(self: *Web) void {
+        const max_y = term.getHeight();
         var y: u32 = 0;
         for (self.root.elements) |node| {
-            term.mvSlice(y, 0, node.inner_html);
+            term.mvSlice(y, 0, "h:");
+            term.mvSlice(y, 3, node.inner_html);
             y += 1;
+            if (y >= max_y) {
+                break;
+            }
         }
     }
 

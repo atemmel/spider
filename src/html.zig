@@ -141,6 +141,10 @@ fn parseBodyElement(ctx: *ParseCtx, parent: c.TidyNode) !void {
             try parseBodyElement(ctx, child);
         } else {
             const inner_html = try parseInnerHtml(ctx, child);
+            if (eql(u8, "", inner_html)) {
+                ctx.ally.free(inner_html);
+                continue;
+            }
             try ctx.elements.append(.{
                 .href = null,
                 .inner_html = inner_html,
@@ -158,7 +162,7 @@ fn makeBuffer() c.TidyBuffer {
 fn dupeBuff(ally: Allocator, buffer: c.TidyBuffer) ![]u8 {
     assert(buffer.size > 0);
     const sentinel_slice = span(buffer.bp);
-    const slice = std.mem.trimRight(u8, sentinel_slice, " \n\r\t");
+    const slice = std.mem.trim(u8, sentinel_slice, " \n\r\t");
     return try ally.dupe(u8, slice);
 }
 
