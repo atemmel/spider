@@ -1,5 +1,6 @@
 const std = @import("std");
 const html = @import("html.zig");
+const http = @import("http.zig");
 const term = @import("term.zig");
 const logo = @import("logo.zig");
 const module = @import("module.zig");
@@ -9,9 +10,11 @@ pub const Web = struct {
     root: html.Root,
 
     pub fn init(ally: std.mem.Allocator) !Web {
+        const src = try http.get("https://www.wikipedia.org", ally);
+        defer ally.free(src);
         return Web{
             .ally = ally,
-            .root = try html.parse(ally, @embedFile("resources/test.html")),
+            .root = try html.parse(ally, src),
         };
     }
 

@@ -53,8 +53,8 @@ pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
     defer c.tidyRelease(doc);
 
     _ = c.tidySetErrorBuffer(doc, &buffer);
-    if (c.tidyParseString(doc, &html[0]) != 0) {
-        return error.DomParseError;
+    if (c.tidyParseString(doc, &html[0]) >= 0) {
+        _ = c.tidyCleanAndRepair(doc);
     }
 
     var ctx = ParseCtx{
@@ -91,8 +91,11 @@ fn parseHtml(ctx: *ParseCtx) !void {
         } else if (eql(u8, "body", name_slice)) {
             try parseBody(ctx, child);
         } else if (eql(u8, "html", name_slice)) {
-            child = c.tidyGetChild(child);
-            continue;
+            const maybe_child = c.tidyGetChild(child);
+            if (maybe_child) |yes_child| {
+                child = yes_child;
+                continue;
+            }
         }
         child = c.tidyGetNext(child);
     }
@@ -146,16 +149,6 @@ fn parseBodyElement(ctx: *ParseCtx, parent: c.TidyNode) !void {
     }
 }
 
-fn parseTitle(ctx: *ParseCtx, doc: c.TidyDoc, node: c.TidyNode) !void {
-    var child = c.tidyGetChild(node);
-    var buffer = makeBuffer();
-    defer c.tidyBufFree(&buffer);
-    if (c.tidyNodeGetText(doc, child, &buffer) != 0) {
-        return error.TitleParseError;
-    }
-    ctx.title = try dupeBuff(ctx.ally, buffer);
-}
-
 fn makeBuffer() c.TidyBuffer {
     var buffer: c.TidyBuffer = undefined;
     c.tidyBufInit(&buffer);
@@ -191,4 +184,20 @@ test "html parse" {
     try expectEqualStrings("The paragraph", elements[1].inner_html);
     try expectEqualStrings("The other paragraph", elements[2].inner_html);
     try expectEqualStrings("To google", elements[3].inner_html);
+}
+
+test "html parse 2" {
+    const ally = std.testing.allocator;
+    const http = @import("http.zig");
+    const src = try http.get("https://www.wikipedia.org", ally);
+    defer ally.free(src);
+    var tree = try parse(ally, src);
+    defer tree.deinit();
+
+    const elements = tree.elements;
+
+    std.debug.print("title: {?s}\n", .{tree.title});
+    for (elements) |e| {
+        std.debug.print("inner_html: {s}\n", .{e.inner_html});
+    }
 }
