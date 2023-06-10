@@ -8,6 +8,7 @@ const module = @import("module.zig");
 pub const Web = struct {
     ally: std.mem.Allocator,
     root: html.Root,
+    scroll_y: u32,
 
     pub fn init(ally: std.mem.Allocator) !Web {
         const src = try http.get("https://www.wikipedia.org", ally);
@@ -15,6 +16,7 @@ pub const Web = struct {
         return Web{
             .ally = ally,
             .root = try html.parse(ally, src),
+            .scroll_y = 0,
         };
     }
 
@@ -32,24 +34,43 @@ pub const Web = struct {
     }
 
     fn drawHtml(self: *Web) void {
-        const max_y = term.getHeight();
+        const max_y = term.getHeight() - 1;
         var y: u32 = 0;
-        for (self.root.elements) |node| {
+        const base_y = @intCast(u32, (@min(self.scroll_y, self.root.elements.len - max_y)));
+        while (y < max_y) {
+            const cy = base_y + y;
+            const node = self.root.elements[cy];
             term.mvSlice(y, 0, "h:");
             term.mvSlice(y, 3, node.inner_html);
             y += 1;
-            if (y >= max_y) {
-                break;
-            }
+        }
+    }
+
+    fn up(self: *Web) void {
+        if (self.scroll_y > 0) {
+            self.scroll_y -= 1;
+        }
+    }
+
+    fn down(self: *Web) void {
+        //TODO: if at bottom, should perhaps immediately jump up?
+        if (self.scroll_y < self.root.elements.len) {
+            self.scroll_y += 1;
         }
     }
 
     pub fn update(self: *Web, input: i32) module.Result {
-        _ = input;
-        _ = self;
+        switch (input) {
+            'j' => self.down(),
+            'k' => self.up(),
+            else => return module.Result{
+                .running = true,
+                .used_input = false,
+            },
+        }
         return module.Result{
             .running = true,
-            .used_input = false,
+            .used_input = true,
         };
     }
 };
