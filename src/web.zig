@@ -7,21 +7,21 @@ const module = @import("module.zig");
 
 pub const Web = struct {
     ally: std.mem.Allocator,
-    root: html.Root,
+    root: ?html.Root,
     scroll_y: u32,
 
     pub fn init(ally: std.mem.Allocator) !Web {
-        const src = try http.get("https://www.wikipedia.org", ally);
-        defer ally.free(src);
         return Web{
             .ally = ally,
-            .root = try html.parse(ally, src),
+            .root = null,
             .scroll_y = 0,
         };
     }
 
     pub fn deinit(self: *Web) void {
-        self.root.deinit();
+        if (self.root) |*root| {
+            root.deinit();
+        }
     }
 
     pub fn draw(self: *Web) void {
@@ -35,14 +35,17 @@ pub const Web = struct {
 
     fn drawHtml(self: *Web) void {
         const max_y = term.getHeight() - 1;
-        var y: u32 = 0;
-        const base_y = @intCast(u32, (@min(self.scroll_y, self.root.elements.len - max_y)));
-        while (y < max_y) {
-            const cy = base_y + y;
-            const node = self.root.elements[cy];
-            term.mvSlice(y, 0, "h:");
-            term.mvSlice(y, 3, node.inner_html);
-            y += 1;
+        if (self.root) |*root| {
+            var y: u32 = 0;
+            const len = if (root.elements.len < max_y) root.elements.len else root.elements.len - max_y;
+            const base_y = @intCast(u32, (@min(self.scroll_y, len)));
+            while (y < max_y) {
+                const cy = base_y + y;
+                const node = root.elements[cy];
+                term.mvSlice(y, 0, "h:");
+                term.mvSlice(y, 3, node.inner_html);
+                y += 1;
+            }
         }
     }
 
@@ -54,12 +57,23 @@ pub const Web = struct {
 
     fn down(self: *Web) void {
         //TODO: if at bottom, should perhaps immediately jump up?
-        if (self.scroll_y < self.root.elements.len) {
-            self.scroll_y += 1;
+        if (self.root) |*root| {
+            if (self.scroll_y < root.elements.len) {
+                self.scroll_y += 1;
+            }
         }
     }
 
+    fn open(self: *Web, url: []const u8) !void {
+        const src = try http.get(url, self.ally);
+        defer self.ally.free(src);
+        self.root = try html.parse(self.ally, src);
+    }
+
     pub fn update(self: *Web, input: i32) module.Result {
+        if (self.root == null) {
+            self.open("https://www.wikipedia.org") catch unreachable;
+        }
         switch (input) {
             'j' => self.down(),
             'k' => self.up(),
