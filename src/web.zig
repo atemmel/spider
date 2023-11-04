@@ -38,7 +38,7 @@ pub const Web = struct {
         if (self.root) |*root| {
             var y: u32 = 0;
             const len = if (root.elements.len < max_y) root.elements.len else root.elements.len - max_y;
-            const base_y = @intCast(u32, (@min(self.scroll_y, len)));
+            const base_y: u32 = @intCast((@min(self.scroll_y, len)));
             while (y < max_y) {
                 const cy = base_y + y;
                 const node = root.elements[cy];

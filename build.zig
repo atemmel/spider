@@ -17,7 +17,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.addSystemIncludePath("/usr/include/");
+    exe.addSystemIncludePath(.{
+        .path = "/usr/include/",
+    });
     for (libs) |lib| {
         exe.linkSystemLibrary(lib);
     }
@@ -39,7 +41,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    unit_tests.addSystemIncludePath("/usr/include");
+    unit_tests.addSystemIncludePath(.{
+        .path = "/usr/include/",
+    });
     for (libs) |lib| {
         unit_tests.linkSystemLibrary(lib);
     }

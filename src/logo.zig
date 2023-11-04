@@ -12,7 +12,8 @@ pub fn dump(y: u32, x: u32) void {
         return;
     }
     for (logo_arr, 0..) |line, row| {
-        term.mvSlice(y + @intCast(u32, row), x, line);
+        const oy: u32 = @intCast(row);
+        term.mvSlice(y + oy, x, line);
     }
 }
 

@@ -42,7 +42,7 @@ fn curlWriteCallback(
     nmemb: c_uint,
     userp: *anyopaque,
 ) callconv(.C) c_uint {
-    var data = @ptrCast(*CallbackData, @alignCast(@alignOf(CallbackData), userp));
+    var data: *CallbackData = @alignCast(@ptrCast(userp));
     const all = size * nmemb;
     const slice = contents[0..all];
     data.content.appendSlice(slice) catch unreachable;

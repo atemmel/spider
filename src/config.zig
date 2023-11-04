@@ -2,19 +2,13 @@ const std = @import("std");
 const utils = @import("utils.zig");
 
 pub var bookmarkPath: []u8 = undefined;
-pub var opener: ?[:0]const u8 = null;
 pub var shell: ?[:0]const u8 = null;
-pub var openerEnv: ?[:0]const u8 = null;
-pub var shellEnv: ?[:0]const u8 = null;
 pub var home: []const u8 = "";
 pub var drawBg: bool = false;
 
 pub var ally: std.mem.Allocator = undefined;
 pub var goodParse = true;
 pub var binds: std.ArrayList(Bind) = undefined;
-
-//TODO: Port this
-//pub var editor: ?[:0]u8 = undefined;
 
 pub const Bind = struct {
     key: i32,
@@ -28,18 +22,6 @@ pub fn init(allyo: std.mem.Allocator) !void {
 }
 
 pub fn deinit() void {
-    if (openerEnv) |env| {
-        ally.free(env);
-    }
-    if (shellEnv) |env| {
-        ally.free(env);
-    }
-    if (opener) |env| {
-        ally.free(env);
-    }
-    if (shell) |env| {
-        ally.free(env);
-    }
     ally.free(bookmarkPath);
 
     clearBinds();
@@ -58,46 +40,37 @@ pub fn loadFile(path: []const u8) !void {
         return;
     };
     defer ally.free(str);
-    var parser = std.json.Parser.init(ally, .alloc_always);
-    defer parser.deinit();
-    var tree = parser.parse(str) catch {
+
+    var parsed = std.json.parseFromSlice(std.json.Value, ally, str, .{ .allocate = .alloc_if_needed }) catch {
         goodParse = false;
         return;
     };
-    defer tree.deinit();
-    var root = tree.root;
-    if (root.object.get("shell")) |myShell| {
-        shell = try ally.dupeZ(u8, myShell.string);
-    }
-    if (root.object.get("opener")) |myOpener| {
-        opener = try ally.dupeZ(u8, myOpener.string);
-    }
-    if (root.object.get("drawBg")) |myDrawBg| {
-        drawBg = myDrawBg.bool;
+    defer parsed.deinit();
+    var root = parsed.value;
+
+    if (root.object.get("drawBg")) |child| {
+        drawBg = child.bool;
     }
 
-    if (root.object.get("binds")) |myBinds| {
-        var it = myBinds.object.iterator();
-        while (it.next()) |pair| {
-            if (pair.key_ptr.len == 0) {
+    if (root.object.get("binds")) |child| {
+        var it = child.object.iterator();
+        while (it.next()) |item| {
+            const key = item.key_ptr;
+            if (key.len <= 0) {
                 continue;
             }
-            const bind = Bind{
-                .key = pair.key_ptr.*[0],
-                .command = try ally.dupeZ(u8, pair.value_ptr.string),
-            };
-
-            try binds.append(bind);
+            const command = item.value_ptr;
+            try binds.append(Bind{
+                .key = key.*[0],
+                .command = try ally.dupeZ(u8, command.string),
+            });
         }
     }
 }
 
 pub fn loadEnv() !void {
-    if (std.os.getenv("SPIDER-OPENER")) |env| {
-        openerEnv = try ally.dupeZ(u8, env);
-    }
     if (std.os.getenv("SHELL")) |env| {
-        shellEnv = try ally.dupeZ(u8, env);
+        shell = env;
     }
     if (std.os.getenv("HOME")) |env| {
         home = env;

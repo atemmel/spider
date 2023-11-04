@@ -39,7 +39,7 @@ pub fn disable() void {
 }
 
 pub fn color(id: u32) u32 {
-    return @intCast(u32, ncurses.COLOR_PAIR(@intCast(c_int, id)));
+    return @intCast(ncurses.COLOR_PAIR(@intCast(id)));
 }
 
 pub fn erase() void {
@@ -47,28 +47,28 @@ pub fn erase() void {
 }
 
 pub fn getWidth() u32 {
-    return @intCast(u32, ncurses.getmaxx(ncurses.stdscr));
+    return @intCast(ncurses.getmaxx(ncurses.stdscr));
 }
 
 pub fn getHeight() u32 {
-    return @intCast(u32, ncurses.getmaxy(ncurses.stdscr));
+    return @intCast(ncurses.getmaxy(ncurses.stdscr));
 }
 
 pub fn attrOn(flags: u32) void {
-    _ = ncurses.attron(@intCast(c_int, flags));
+    _ = ncurses.attron(@intCast(flags));
 }
 
 pub fn attrOff(flags: u32) void {
-    _ = ncurses.attroff(@intCast(c_int, flags));
+    _ = ncurses.attroff(@intCast(flags));
 }
 
 pub fn mvprint(y: u32, x: u32, fmt: [*]const u8, args: anytype) void {
-    const callargs = .{ @intCast(c_int, y), @intCast(c_int, x), fmt } ++ args;
+    const callargs = .{ @as(c_int, @intCast(y)), @as(c_int, @intCast(x)), fmt } ++ args;
     _ = @call(.auto, ncurses.mvprintw, callargs);
 }
 
 pub fn move(y: u32, x: u32) void {
-    _ = ncurses.move(@intCast(c_int, y), @intCast(c_int, x));
+    _ = ncurses.move(@intCast(y), @intCast(x));
 }
 
 pub fn addChar(char: u8) void {
@@ -87,14 +87,14 @@ pub fn timeout(time: i32) void {
 }
 
 pub fn getChar() i32 {
-    return @intCast(i32, ncurses.getch());
+    return @intCast(ncurses.getch());
 }
 
 pub fn footer(str: []const u8) void {
     const w = getWidth();
     const w2 = w / 2;
     const y = getHeight() - 1;
-    const width2: u32 = @intCast(u32, str.len) / 2;
+    const width2: u32 = @as(u32, @intCast(str.len)) / 2;
 
     attrOn(bold | color(1) | reverse);
     var i: u32 = 0;

@@ -65,7 +65,7 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
             else => {
                 if (prompt.len < maxPromptSize) {
                     promptBuf[prompt.len + 1] = 0;
-                    promptBuf[prompt.len] = @truncate(u8, @intCast(u32, c));
+                    promptBuf[prompt.len] = @truncate(@as(u32, @intCast(c)));
                     prompt = promptBuf[0 .. prompt.len + 1 :0];
                 }
             },
@@ -79,16 +79,13 @@ pub fn getString(message: [:0]const u8) ?[]u8 {
 }
 
 pub fn get(value: [:0]const u8, message: [:0]const u8) ?i32 {
-    var x: u32 = undefined;
-    var y: u32 = undefined;
-    var c: i32 = undefined;
+    var x: u32 = term.getWidth();
+    var y: u32 = term.getHeight() - 1;
 
-    x = term.getWidth();
-    y = term.getHeight() - 1;
     term.timeout(-1);
 
     print(y, value, message);
-    c = term.getChar();
+    var c = term.getChar();
     exit(x, y);
 
     if (c > 127 and c != 263) {

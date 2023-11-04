@@ -9,7 +9,7 @@ pub const config_dir = ".config/spider";
 pub const config_path = config_dir ++ "/config.json";
 
 pub fn createDefaultConfigPath(ally: std.mem.Allocator) ![]u8 {
-    return try utils.prependHomeAlloc(config_dir, config.home, ally);
+    return try utils.prependHomeAlloc(config_path, config.home, ally);
 }
 
 pub fn createDefaultTodoPath(ally: std.mem.Allocator) ![]u8 {

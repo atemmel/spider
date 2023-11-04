@@ -157,8 +157,8 @@ pub const Browser = struct {
         const oy = 1;
         const height = term.getHeight() - 1;
 
-        var upperLimit = @intCast(i32, try std.math.absInt(@intCast(i64, self.entries.items.len) - @intCast(i64, @divFloor(height, 2))));
-        var limit = @intCast(i32, @intCast(i64, oy + self.index) - @intCast(i64, @divFloor(height, 2)));
+        var upperLimit: i32 = @intCast(try std.math.absInt(@as(i64, @intCast(self.entries.items.len)) - @as(i64, @intCast(@divFloor(height, 2)))));
+        var limit: i32 = @intCast(@as(i64, @intCast(oy + self.index)) - @as(i64, @intCast(@divFloor(height, 2))));
 
         if (self.entries.items.len < height - oy) {
             upperLimit = 0;
@@ -169,8 +169,8 @@ pub const Browser = struct {
         var i: usize = 0;
         self.cwdBuf[self.cwd.len] = std.fs.path.sep;
 
-        while (i + @intCast(usize, limit) < self.entries.items.len and i + oy < height) : (i += 1) {
-            const current = i + @intCast(usize, limit);
+        while (i + @as(usize, @intCast(limit)) < self.entries.items.len and i + oy < height) : (i += 1) {
+            const current = i + @as(usize, @intCast(limit));
             const entry = &self.entries.items[current];
             //TODO: shorten name here if appropriate
             const printedName = entry.name[0..];
@@ -185,18 +185,19 @@ pub const Browser = struct {
 
             const mark = self.marks.get(key);
             const markStr = if (mark == null) "" else " ";
+            const y: u32 = @as(u32, @intCast(i)) + oy;
 
             term.attrOff(term.bold);
             if (entry.kind == .directory) {
                 term.attrOn(term.bold);
-                term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
+                term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
             } else if (entry.kind == .sym_link) {
-                term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
+                term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
             } else {
                 if (entry.sizeStr) |size| {
-                    term.mvprint(@intCast(u32, i + oy), ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr });
+                    term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr });
                 } else {
-                    term.mvprint(@intCast(u32, i + oy), ox, " ??? %10s %s%s ", .{ "?  ", markStr.ptr, printedName.ptr });
+                    term.mvprint(y, ox, " ??? %10s %s%s ", .{ "?  ", markStr.ptr, printedName.ptr });
                 }
             }
         }
@@ -344,8 +345,8 @@ pub const Browser = struct {
                 input[i] = 0;
             } else if (c.? == 27) { // escape
                 break;
-            } else if (std.ascii.isPrint(@intCast(u8, c.?))) {
-                input[i] = @intCast(u8, c.?);
+            } else if (std.ascii.isPrint(@intCast(c.?))) {
+                input[i] = @intCast(c.?);
                 i += 1;
                 input[i] = 0;
             }
@@ -534,7 +535,7 @@ pub const Browser = struct {
 
         while (it.next()) |bookmark| {
             term.move(y, 0);
-            term.addChar(@intCast(u8, 'a' + y));
+            term.addChar(@intCast('a' + y));
             term.mvSlice(y, 2, bookmark.*);
             y += 1;
         }
@@ -573,7 +574,7 @@ pub const Browser = struct {
     }
 
     fn startShell() void {
-        const shell = config.shell orelse config.shellEnv orelse return;
+        const shell = config.shell orelse return;
 
         term.disable();
         const code = utils.spawn(shell) catch 128;

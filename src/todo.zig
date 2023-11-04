@@ -55,12 +55,13 @@ pub const Todo = struct {
         };
         defer self.ally.free(str);
         var parsedData = try std.json.parseFromSlice([]TodoCategoryJson, self.ally, str, .{});
-        try self.categories.resize(parsedData.len);
+        defer parsedData.deinit();
+        const value = parsedData.value;
+        try self.categories.resize(value.len);
         for (self.categories.items, 0..) |*cat, i| {
-            cat.title = parsedData[i].title;
-            cat.todos = TodoItems.fromOwnedSlice(self.ally, parsedData[i].todos);
+            cat.title = value[i].title;
+            cat.todos = TodoItems.fromOwnedSlice(self.ally, value[i].todos);
         }
-        self.ally.free(parsedData);
     }
 
     fn writeTodoList(self: *Todo) !void {
@@ -148,7 +149,7 @@ pub const Todo = struct {
             if (i == self.todoIndex) {
                 term.attrOn(term.color(1));
             }
-            const y = @intCast(u32, list_begin_y + i);
+            const y: u32 = @intCast(list_begin_y + i);
             term.mvSlice(y, list_begin_x, "\u{2022}");
             term.mvSlice(y, list_begin_x + 2, todo.content);
             if (i == self.todoIndex) {
@@ -170,7 +171,7 @@ pub const Todo = struct {
     const max_grid_item_width = 33;
 
     fn categoryBounds(cat: *TodoCategory, x: u32, y: u32) Bounds {
-        const proposed_grid_item_height = @intCast(u32, min_grid_item_height + cat.todos.items.len);
+        const proposed_grid_item_height: u32 = @intCast(min_grid_item_height + cat.todos.items.len);
         const w = max_grid_item_width;
         const h = if (proposed_grid_item_height > max_grid_item_height) max_grid_item_height else proposed_grid_item_height;
 
@@ -195,13 +196,13 @@ pub const Todo = struct {
     fn ellipsize(str: []const u8) u32 {
         if (buffer.len >= str.len) {
             std.mem.copy(u8, &buffer, str);
-            return @intCast(u32, str.len);
+            return @intCast(str.len);
         }
         std.mem.copy(u8, &buffer, str[0..buffer.len]);
         buffer[buffer.len - 3] = '.';
         buffer[buffer.len - 2] = '.';
         buffer[buffer.len - 1] = '.';
-        return @intCast(u32, buffer.len);
+        return @intCast(buffer.len);
     }
 
     fn drawCategory(cat: *TodoCategory, bounds: Bounds, focused: bool) void {
@@ -216,7 +217,7 @@ pub const Todo = struct {
         term.mvSlice(bounds.y + 1, bounds.x + 2, str);
         term.attrOff(term.bold);
         for (cat.todos.items, 0..) |*todo, j| {
-            const i = @intCast(u32, j);
+            const i: u32 = @intCast(j);
             len = ellipsize(todo.content);
             str = buffer[0..len];
             term.mvSlice(bounds.y + 3 + i, bounds.x + 2, str);
@@ -240,7 +241,7 @@ pub const Todo = struct {
                 self.todoCategoryIndex %= bounds.w;
             }
         } else if (y > 0) { // up
-            if (@intCast(i32, self.todoCategoryIndex) - @intCast(i32, bounds.w) >= 0) {
+            if (@as(i32, @intCast(self.todoCategoryIndex)) - @as(i32, @intCast(bounds.w)) >= 0) {
                 self.todoCategoryIndex -= bounds.w;
             } else {
                 if (self.todoCategoryIndex < self.categories.items.len % bounds.w) {

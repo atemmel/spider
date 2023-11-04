@@ -44,7 +44,7 @@ pub fn sizeToString(ally: std.mem.Allocator, sizeInBytes: u64) ![:0]u8 {
         index += 1;
     }
 
-    var right = @intToFloat(f32, remainder);
+    var right: f32 = @floatFromInt(remainder);
     right /= 1024; // normalize
     right *= 10; // scale so that 0 < right < 10
 
