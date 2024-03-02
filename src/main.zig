@@ -16,9 +16,13 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?
 }
 
 pub fn main() anyerror!void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    var ally = gpa.allocator();
-    defer assert(gpa.deinit() == .ok);
+    var base_allocator = switch (std.debug.runtime_safety) {
+        true => std.heap.GeneralPurposeAllocator(.{}){},
+        false => std.heap.page_allocator,
+    };
+    defer std.debug.assert(base_allocator.deinit() == .ok);
+
+    var ally = base_allocator.allocator();
 
     try config.init(ally);
     defer config.deinit();

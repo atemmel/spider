@@ -20,6 +20,9 @@ pub fn build(b: *std.Build) void {
     exe.addSystemIncludePath(.{
         .path = "/usr/include/",
     });
+    exe.addLibraryPath(.{
+        .path = "/usr/lib/",
+    });
     for (libs) |lib| {
         exe.linkSystemLibrary(lib);
     }

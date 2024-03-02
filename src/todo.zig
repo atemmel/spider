@@ -21,6 +21,14 @@ pub const Todo = struct {
     pub const TodoCategory = struct {
         title: []const u8,
         todos: TodoItems,
+
+        pub fn deinit(self: *TodoCategory, ally: std.mem.Allocator) void {
+            for (self.todos.items) |todo| {
+                ally.free(todo.content);
+            }
+            ally.free(self.title);
+            self.todos.clearAndFree();
+        }
     };
 
     const TodoCategoryJson = struct {
@@ -32,25 +40,22 @@ pub const Todo = struct {
     const TodoCategories = std.ArrayList(TodoCategory);
 
     state: State = State.ViewingCategories,
-    categories: TodoCategories = undefined,
-    todoCategoryIndex: usize = undefined,
-    todoIndex: usize = undefined,
-    jsonPath: []const u8 = undefined,
-    ally: std.mem.Allocator = undefined,
+    categories: TodoCategories,
+    todoCategoryIndex: usize,
+    todoIndex: usize,
+    jsonPath: []const u8,
+    ally: std.mem.Allocator,
 
     fn clearCategories(self: *Todo) void {
         for (self.categories.items) |*cat| {
-            for (cat.todos.items) |todo| {
-                self.ally.free(todo.content);
-            }
-            self.ally.free(cat.title);
-            cat.todos.clearAndFree();
+            cat.deinit(self.ally);
         }
         self.categories.clearRetainingCapacity();
     }
 
     fn readTodoList(self: *Todo, from: []const u8) !void {
-        var str = std.fs.cwd().readFileAlloc(self.ally, from, std.math.maxInt(usize)) catch {
+        const read_size = std.math.maxInt(usize);
+        var str = std.fs.cwd().readFileAlloc(self.ally, from, read_size) catch {
             return;
         };
         defer self.ally.free(str);
@@ -59,8 +64,14 @@ pub const Todo = struct {
         const value = parsedData.value;
         try self.categories.resize(value.len);
         for (self.categories.items, 0..) |*cat, i| {
-            cat.title = value[i].title;
-            cat.todos = TodoItems.fromOwnedSlice(self.ally, value[i].todos);
+            const todos = value[i].todos;
+            const title = value[i].title;
+            cat.title = try self.ally.dupe(u8, title);
+            cat.todos = try TodoItems.initCapacity(self.ally, todos.len);
+            try cat.todos.appendSlice(todos);
+            for (value[i].todos, 0..) |todo, j| {
+                cat.todos.items[j].content = try self.ally.dupe(u8, todo.content);
+            }
         }
     }
 
@@ -173,7 +184,7 @@ pub const Todo = struct {
     fn categoryBounds(cat: *TodoCategory, x: u32, y: u32) Bounds {
         const proposed_grid_item_height: u32 = @intCast(min_grid_item_height + cat.todos.items.len);
         const w = max_grid_item_width;
-        const h = if (proposed_grid_item_height > max_grid_item_height) max_grid_item_height else proposed_grid_item_height;
+        const h = @min(proposed_grid_item_height, max_grid_item_height);
 
         var x_out = x;
         var y_out = y;
@@ -315,11 +326,7 @@ pub const Todo = struct {
         }
 
         const cat = &self.categories.items[self.todoCategoryIndex];
-        for (cat.todos.items) |*todo| {
-            self.ally.free(todo.content);
-        }
-        self.ally.free(cat.title);
-        cat.todos.clearAndFree();
+        cat.deinit(self.ally);
         _ = self.categories.orderedRemove(self.todoCategoryIndex);
         if (self.todoCategoryIndex >= self.categories.items.len) {
             if (self.todoCategoryIndex != 0) {
