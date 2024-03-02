@@ -25,8 +25,8 @@ pub fn caseInsensitiveComparison(lhs: []u8, rhs: []u8) bool {
     return lhs.len < rhs.len;
 }
 
-pub fn sizeToString(ally: std.mem.Allocator, sizeInBytes: u64) ![:0]u8 {
-    const prefix = [_]*const [3:0]u8{
+pub fn sizeToString(ally: std.mem.Allocator, sizeInBytes: u64) ![]u8 {
+    const prefix = [_]*const [3]u8{
         "Byt",
         "KiB",
         "MiB",
@@ -48,16 +48,16 @@ pub fn sizeToString(ally: std.mem.Allocator, sizeInBytes: u64) ![:0]u8 {
     right /= 1024; // normalize
     right *= 10; // scale so that 0 < right < 10
 
-    var buffer: [:0]u8 = undefined;
+    var buffer: []u8 = undefined;
 
     if (right > 1) {
-        buffer = try std.fmt.allocPrintZ(ally, "{d}.{d:.0}{s}", .{
+        buffer = try std.fmt.allocPrint(ally, "{d}.{d:.0}{s}", .{
             size,
             right,
             prefix[index],
         });
     } else {
-        buffer = try std.fmt.allocPrintZ(ally, "{d}{s}", .{
+        buffer = try std.fmt.allocPrint(ally, "{d}{s}", .{
             size,
             prefix[index],
         });

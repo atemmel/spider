@@ -62,9 +62,16 @@ pub fn attrOff(flags: u32) void {
     _ = ncurses.attroff(@intCast(flags));
 }
 
-pub fn mvprint(y: u32, x: u32, fmt: [*]const u8, args: anytype) void {
+pub fn mvprintf(y: u32, x: u32, fmt: [*]const u8, args: anytype) void {
     const callargs = .{ @as(c_int, @intCast(y)), @as(c_int, @intCast(x)), fmt } ++ args;
     _ = @call(.auto, ncurses.mvprintw, callargs);
+}
+
+var mvprintBuf: [2048]u8 = undefined;
+
+pub fn mvprint(y: u32, x: u32, comptime fmt: []const u8, args: anytype) void {
+    const slice = std.fmt.bufPrint(&mvprintBuf, fmt, args) catch unreachable;
+    mvSlice(y, x, slice);
 }
 
 pub fn move(y: u32, x: u32) void {

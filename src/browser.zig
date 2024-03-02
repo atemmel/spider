@@ -10,9 +10,9 @@ pub const Browser = struct {
     const FileEntry = struct {
         kind: std.fs.File.Kind,
         mode: std.fs.File.Mode,
-        name: [:0]u8,
+        name: []u8,
         size: u64,
-        sizeStr: ?[:0]u8,
+        sizeStr: ?[]u8,
     };
 
     const Entries = std.ArrayList(FileEntry);
@@ -33,8 +33,7 @@ pub const Browser = struct {
     }
 
     index: usize = 0,
-    //TODO: These should be marked 0-terminated
-    cwdBuf: [std.fs.MAX_PATH_BYTES + 1]u8 = undefined,
+    cwdBuf: [std.fs.MAX_PATH_BYTES]u8 = undefined,
     cwd: []u8 = undefined,
     ally: std.mem.Allocator = undefined,
     entries: Entries = undefined,
@@ -47,7 +46,6 @@ pub const Browser = struct {
         browser.marks = Marks.init(ally);
         browser.bookmarks = Bookmarks.init(ally);
         browser.cwd = try std.os.getcwd(&browser.cwdBuf);
-        browser.cwdBuf[browser.cwd.len] = 0;
 
         try browser.loadBookmarks();
         try browser.fillEntries();
@@ -99,7 +97,7 @@ pub const Browser = struct {
             var newEntry = FileEntry{
                 .kind = entry.kind,
                 .mode = undefined,
-                .name = try self.ally.dupeZ(u8, entry.name),
+                .name = try self.ally.dupe(u8, entry.name),
                 .size = undefined,
                 .sizeStr = undefined,
             };
@@ -142,11 +140,11 @@ pub const Browser = struct {
         const x = term.getWidth();
         var i: u32 = 0;
         while (i < x) : (i += 1) {
-            term.mvprint(0, i, " ", .{});
+            term.mvSlice(0, i, " ");
         }
 
         term.attrOn(term.bold | term.color(1));
-        term.mvprint(0, 0, self.cwd.ptr, .{});
+        term.mvSlice(0, 0, self.cwd);
         term.attrOff(term.bold | term.color(1));
     }
 
@@ -187,17 +185,19 @@ pub const Browser = struct {
             const markStr = if (mark == null) "" else " ";
             const y: u32 = @as(u32, @intCast(i)) + oy;
 
+            const fmt = " {o:03} {s:10} {s}{s} ";
+
             term.attrOff(term.bold);
             if (entry.kind == .directory) {
                 term.attrOn(term.bold);
-                term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, dirStr, markStr.ptr, printedName.ptr });
+                term.mvprint(y, ox, fmt, .{ entry.mode & 0o0777, dirStr, markStr, printedName });
             } else if (entry.kind == .sym_link) {
-                term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, lnStr, markStr.ptr, printedName.ptr });
+                term.mvprint(y, ox, fmt, .{ entry.mode & 0o0777, lnStr, markStr, printedName });
             } else {
                 if (entry.sizeStr) |size| {
-                    term.mvprint(y, ox, " %03o %10s %s%s ", .{ entry.mode & 0o0777, size.ptr, markStr.ptr, printedName.ptr });
+                    term.mvprint(y, ox, fmt, .{ entry.mode & 0o0777, size, markStr, printedName });
                 } else {
-                    term.mvprint(y, ox, " ??? %10s %s%s ", .{ "?  ", markStr.ptr, printedName.ptr });
+                    term.mvprint(y, ox, " ??? {s:10} {s}{s} ", .{ "?  ", markStr, printedName });
                 }
             }
         }
@@ -309,7 +309,7 @@ pub const Browser = struct {
     }
 
     fn deleteEntriesMarked(self: *Browser) !void {
-        var promptStr = try std.fmt.allocPrintZ(self.ally, "Delete ({d}) marked entries? Y/N", .{
+        var promptStr = try std.fmt.allocPrint(self.ally, "Delete ({d}) marked entries? Y/N", .{
             self.marks.count(),
         });
         defer self.ally.free(promptStr);
@@ -443,7 +443,7 @@ pub const Browser = struct {
 
     fn copyFileMark(self: *Browser, from: []const u8, to: []const u8) !void {
         std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
-            var errStr = try std.fmt.allocPrintZ(self.ally, "{s}, {s}", .{
+            var errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
@@ -454,7 +454,7 @@ pub const Browser = struct {
 
     fn copyDirMark(self: *Browser, from: []const u8, to: []const u8) !void {
         utils.copyDirAbsolute(from, to) catch |err| {
-            var errStr = try std.fmt.allocPrintZ(self.ally, "{s}, {s}", .{
+            var errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
