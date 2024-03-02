@@ -16,13 +16,22 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?
 }
 
 pub fn main() anyerror!void {
-    var base_allocator = switch (std.debug.runtime_safety) {
+    const debug = std.debug.runtime_safety;
+
+    var base_allocator = switch (debug) {
         true => std.heap.GeneralPurposeAllocator(.{}){},
         false => std.heap.page_allocator,
     };
-    defer std.debug.assert(base_allocator.deinit() == .ok);
 
-    var ally = base_allocator.allocator();
+    defer switch (debug) {
+        true => std.debug.assert(base_allocator.deinit() == .ok),
+        false => {},
+    };
+
+    var ally = switch (debug) {
+        true => base_allocator.allocator(),
+        false => std.heap.page_allocator,
+    };
 
     try config.init(ally);
     defer config.deinit();
