@@ -5,9 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const libs = [_][]const u8{
-        "curl",
         "ncursesw",
-        "tidy",
     };
 
     const exe = b.addExecutable(.{

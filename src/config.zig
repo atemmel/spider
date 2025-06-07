@@ -26,10 +26,6 @@ pub fn deinit() void {
 
     clearBinds();
     binds.deinit();
-    ally.free(home);
-    if (shell) |s| {
-        ally.free(s);
-    }
 }
 
 pub fn clearBinds() void {
