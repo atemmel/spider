@@ -49,7 +49,7 @@ const ParseCtx = struct {
 pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
     var buffer = makeBuffer();
     defer c.tidyBufFree(&buffer);
-    var doc = c.tidyCreate();
+    const doc = c.tidyCreate();
     defer c.tidyRelease(doc);
 
     _ = c.tidySetErrorBuffer(doc, &buffer);
@@ -66,7 +66,7 @@ pub fn parse(ally: Allocator, html: [:0]const u8) !Root {
         .node = undefined,
     };
 
-    var maybe_root = c.tidyGetRoot(doc);
+    const maybe_root = c.tidyGetRoot(doc);
     if (maybe_root) |root| {
         ctx.node = root;
         try parseHtml(&ctx);

@@ -12,17 +12,11 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "spider",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    exe.addSystemIncludePath(.{
-        .path = "/usr/include/",
-    });
-    exe.addLibraryPath(.{
-        .path = "/usr/lib/",
-    });
     for (libs) |lib| {
         exe.linkSystemLibrary(lib);
     }
@@ -39,14 +33,11 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    unit_tests.addSystemIncludePath(.{
-        .path = "/usr/include/",
-    });
     for (libs) |lib| {
         unit_tests.linkSystemLibrary(lib);
     }

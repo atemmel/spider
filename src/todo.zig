@@ -55,7 +55,7 @@ pub const Todo = struct {
 
     fn readTodoList(self: *Todo, from: []const u8) !void {
         const read_size = std.math.maxInt(usize);
-        var str = std.fs.cwd().readFileAlloc(self.ally, from, read_size) catch {
+        const str = std.fs.cwd().readFileAlloc(self.ally, from, read_size) catch {
             return;
         };
         defer self.ally.free(str);
@@ -87,7 +87,9 @@ pub const Todo = struct {
             cat.todos = self.categories.items[i].todos.items;
         }
         try std.json.stringify(categories.items, .{}, string.writer());
-        try std.fs.cwd().writeFile(self.jsonPath, string.items);
+        const file = try std.fs.cwd().createFile(self.jsonPath, .{});
+        defer file.close();
+        try file.writeAll(string.items);
     }
 
     pub fn init(ally: std.mem.Allocator, path: []const u8) !Todo {
@@ -206,10 +208,10 @@ pub const Todo = struct {
 
     fn ellipsize(str: []const u8) u32 {
         if (buffer.len >= str.len) {
-            std.mem.copy(u8, &buffer, str);
+            std.mem.copyForwards(u8, &buffer, str);
             return @intCast(str.len);
         }
-        std.mem.copy(u8, &buffer, str[0..buffer.len]);
+        std.mem.copyForwards(u8, &buffer, str[0..buffer.len]);
         buffer[buffer.len - 3] = '.';
         buffer[buffer.len - 2] = '.';
         buffer[buffer.len - 1] = '.';

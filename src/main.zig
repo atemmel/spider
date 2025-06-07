@@ -10,9 +10,9 @@ const Web = @import("web.zig").Web;
 
 const assert = std.debug.assert;
 
-pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?usize) noreturn {
+pub fn panic(msg: []const u8, _: ?*std.builtin.StackTrace, addr: ?usize) noreturn {
     term.disable();
-    std.debug.panicImpl(error_return_trace, @returnAddress(), msg);
+    std.debug.defaultPanic(msg, addr);
 }
 
 pub fn main() anyerror!void {

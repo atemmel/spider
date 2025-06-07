@@ -33,7 +33,7 @@ pub const Browser = struct {
     }
 
     index: usize = 0,
-    cwdBuf: [std.fs.MAX_PATH_BYTES]u8 = undefined,
+    cwdBuf: [std.fs.max_path_bytes]u8 = undefined,
     cwd: []u8 = undefined,
     ally: std.mem.Allocator = undefined,
     entries: Entries = undefined,
@@ -45,7 +45,7 @@ pub const Browser = struct {
         browser.entries = Entries.init(ally);
         browser.marks = Marks.init(ally);
         browser.bookmarks = Bookmarks.init(ally);
-        browser.cwd = try std.os.getcwd(&browser.cwdBuf);
+        browser.cwd = try std.posix.getcwd(&browser.cwdBuf);
 
         try browser.loadBookmarks();
         try browser.fillEntries();
@@ -87,7 +87,7 @@ pub const Browser = struct {
     }
 
     fn fillEntries(self: *Browser) !void {
-        var dir = try std.fs.openIterableDirAbsolute(self.cwd, .{ .no_follow = true });
+        var dir = try std.fs.openDirAbsolute(self.cwd, .{ .no_follow = true, .iterate = true });
         defer dir.close();
 
         self.clearEntries();
@@ -103,7 +103,7 @@ pub const Browser = struct {
             };
             errdefer self.ally.free(newEntry.name);
 
-            const st = dir.dir.statFile(entry.name) catch {
+            const st = dir.statFile(entry.name) catch {
                 newEntry.sizeStr = null;
                 newEntry.size = 0;
                 newEntry.mode = 0;
@@ -155,7 +155,7 @@ pub const Browser = struct {
         const oy = 1;
         const height = term.getHeight() - 1;
 
-        var upperLimit: i32 = @intCast(try std.math.absInt(@as(i64, @intCast(self.entries.items.len)) - @as(i64, @intCast(@divFloor(height, 2)))));
+        var upperLimit: i32 = @intCast(@abs((@as(i64, @intCast(self.entries.items.len)) - @as(i64, @intCast(@divFloor(height, 2))))));
         var limit: i32 = @intCast(@as(i64, @intCast(oy + self.index)) - @as(i64, @intCast(@divFloor(height, 2))));
 
         if (self.entries.items.len < height - oy) {
@@ -178,7 +178,7 @@ pub const Browser = struct {
                 term.attrOn(term.reverse);
             }
 
-            std.mem.copy(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
+            std.mem.copyForwards(u8, self.cwdBuf[self.cwd.len + 1 ..], entry.name);
             const key = self.cwdBuf[0 .. self.cwd.len + 1 + entry.name.len];
 
             const mark = self.marks.get(key);
@@ -222,7 +222,7 @@ pub const Browser = struct {
         self.cwdBuf[self.cwd.len] = 0;
         self.index = 0;
 
-        try std.os.chdir(self.cwd);
+        try std.posix.chdir(self.cwd);
         try self.fillEntries();
     }
 
@@ -237,11 +237,11 @@ pub const Browser = struct {
             oldLen += 1;
         }
         const remainder = self.cwdBuf[oldLen..];
-        std.mem.copy(u8, remainder, entry.name);
+        std.mem.copyForwards(u8, remainder, entry.name);
         self.cwdBuf[newLen] = 0;
         self.cwd = self.cwdBuf[0..newLen];
 
-        std.os.chdir(self.cwd) catch |err| {
+        std.posix.chdir(self.cwd) catch |err| {
             _ = prompt.get(@errorName(err), "Could not enter dir: ");
             self.cwdBuf[oldLen] = 0;
             self.cwd = self.cwdBuf[0..oldLen];
@@ -280,7 +280,7 @@ pub const Browser = struct {
 
         var dir = try std.fs.openDirAbsolute(self.cwd, .{});
         defer dir.close();
-        std.os.mkdirat(dir.fd, str.?, 0o755) catch {}; //TODO: Be responsible
+        std.posix.mkdirat(dir.fd, str.?, 0o755) catch {}; //TODO: Be responsible
     }
 
     fn deleteEntry(self: *Browser) !void {
@@ -309,7 +309,7 @@ pub const Browser = struct {
     }
 
     fn deleteEntriesMarked(self: *Browser) !void {
-        var promptStr = try std.fmt.allocPrint(self.ally, "Delete ({d}) marked entries? Y/N", .{
+        const promptStr = try std.fmt.allocPrint(self.ally, "Delete ({d}) marked entries? Y/N", .{
             self.marks.count(),
         });
         defer self.ally.free(promptStr);
@@ -334,7 +334,7 @@ pub const Browser = struct {
         input[0] = 0;
 
         while (true) {
-            var c = prompt.get(input[0..i :0], "Go:");
+            const c = prompt.get(input[0..i :0], "Go:");
 
             if (c == null) {
                 continue;
@@ -394,17 +394,17 @@ pub const Browser = struct {
     }
 
     fn addMark(self: *Browser) !void {
-        var entry = &self.entries.items[self.index];
+        const entry = &self.entries.items[self.index];
         const totalLen = self.cwd.len + 1 + entry.name.len;
 
         // create mark
         var mark: []u8 = try self.ally.alloc(u8, totalLen);
-        std.mem.copy(u8, mark, self.cwd);
-        std.mem.copy(u8, mark[self.cwd.len + 1 ..], entry.name);
+        std.mem.copyForwards(u8, mark, self.cwd);
+        std.mem.copyForwards(u8, mark[self.cwd.len + 1 ..], entry.name);
         mark[self.cwd.len] = std.fs.path.sep;
 
         // try to put mark
-        var existing = self.marks.getKey(mark);
+        const existing = self.marks.getKey(mark);
         if (existing == null) {
             try self.marks.put(mark, undefined);
         } else { // remove mark
@@ -423,7 +423,7 @@ pub const Browser = struct {
             // find last sep
             while (mark[i] != std.fs.path.sep) : (i -= 1) {}
             const dirName = mark[i..];
-            std.mem.copy(u8, self.cwdBuf[self.cwd.len..], dirName);
+            std.mem.copyForwards(u8, self.cwdBuf[self.cwd.len..], dirName);
 
             const from = mark;
             const to = self.cwdBuf[0 .. self.cwd.len + dirName.len];
@@ -443,7 +443,7 @@ pub const Browser = struct {
 
     fn copyFileMark(self: *Browser, from: []const u8, to: []const u8) !void {
         std.fs.copyFileAbsolute(from, to, .{}) catch |err| {
-            var errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
+            const errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
@@ -454,7 +454,7 @@ pub const Browser = struct {
 
     fn copyDirMark(self: *Browser, from: []const u8, to: []const u8) !void {
         utils.copyDirAbsolute(from, to) catch |err| {
-            var errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
+            const errStr = try std.fmt.allocPrint(self.ally, "{s}, {s}", .{
                 from,
                 @errorName(err),
             });
@@ -464,7 +464,7 @@ pub const Browser = struct {
     }
 
     fn moveMarks(self: *Browser) !void {
-        var to = std.fs.cwd();
+        const to = std.fs.cwd();
         var it = self.marks.keyIterator();
         while (it.next()) |markPtr| {
             const mark = markPtr.*;
@@ -483,11 +483,11 @@ pub const Browser = struct {
 
     fn loadBookmarks(self: *Browser) !void {
         self.clearBookmarks();
-        var bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally);
+        const bookmarksStr = try utils.readFileOrCreateAlloc(config.bookmarkPath, self.ally);
         defer self.ally.free(bookmarksStr);
-        var it = std.mem.tokenize(u8, bookmarksStr, "\n");
+        var it = std.mem.tokenizeScalar(u8, bookmarksStr, '\n');
         while (it.next()) |slice| {
-            var bookmark = try self.ally.dupe(u8, slice);
+            const bookmark = try self.ally.dupe(u8, slice);
             try self.bookmarks.put(bookmark, void{});
         }
     }
@@ -505,7 +505,7 @@ pub const Browser = struct {
     fn addBookmark(self: *Browser) !void {
         try self.loadBookmarks();
         {
-            var newBookmark = try self.ally.dupe(u8, self.cwd);
+            const newBookmark = try self.ally.dupe(u8, self.cwd);
             errdefer self.ally.free(newBookmark);
 
             const existing = self.bookmarks.getKey(newBookmark);
@@ -540,7 +540,7 @@ pub const Browser = struct {
             y += 1;
         }
 
-        var c = prompt.get("", "Select bookmark:");
+        const c = prompt.get("", "Select bookmark:");
 
         if (c == null or c.? < 'a' or c.? > 'z') {
             return;
@@ -566,10 +566,10 @@ pub const Browser = struct {
 
     fn setNewCwd(self: *Browser, newCwd: []const u8) !void {
         self.cwdBuf[newCwd.len] = 0;
-        std.mem.copy(u8, self.cwdBuf[0..], newCwd);
+        std.mem.copyForwards(u8, self.cwdBuf[0..], newCwd);
         self.cwd = self.cwdBuf[0..newCwd.len];
 
-        try std.os.chdir(self.cwd);
+        try std.posix.chdir(self.cwd);
         self.index = 0;
     }
 

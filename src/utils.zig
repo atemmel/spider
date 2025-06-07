@@ -67,35 +67,35 @@ pub fn sizeToString(ally: std.mem.Allocator, sizeInBytes: u64) ![]u8 {
 }
 
 pub fn spawn(what: [:0]const u8) !u32 {
-    const pid = try std.os.fork();
+    const pid = try std.posix.fork();
     if (pid == 0) { // offspring
         const env = std.c.environ;
         const args = [_:null]?[*:0]const u8{ what, null };
         const argsSlice = args[0..];
-        _ = std.os.execvpeZ(what, argsSlice, env) catch {};
-        std.os.exit(127);
+        _ = std.posix.execvpeZ(what, argsSlice, env) catch {};
+        std.posix.exit(127);
     } else { // parent
-        const result = std.os.waitpid(pid, 0);
+        const result = std.posix.waitpid(pid, 0);
         return result.status;
     }
     unreachable;
 }
 
 pub fn spawnShCommand(what: [:0]const u8) !u32 {
-    const pid = try std.os.fork();
+    const pid = try std.posix.fork();
     if (pid == 0) {
         const env = std.c.environ;
         const args = [_:null]?[*:0]const u8{ "sh", "-c", what, null };
-        _ = std.os.execvpeZ("sh", &args, env) catch {};
-        std.os.exit(127);
+        _ = std.posix.execvpeZ("sh", &args, env) catch {};
+        std.posix.exit(127);
     } else {
-        const result = std.os.waitpid(pid, 0);
+        const result = std.posix.waitpid(pid, 0);
         return result.status;
     }
     unreachable;
 }
 
-pub const CopyDirError = std.fs.Dir.StatError || std.fs.File.OpenError || std.os.MakeDirError || error{SystemResources} || std.os.CopyFileRangeError || std.os.SendFileError || error{RenameAcrossMountPoints};
+pub const CopyDirError = std.fs.Dir.StatError || std.fs.File.OpenError || std.posix.MakeDirError || error{SystemResources} || std.posix.CopyFileRangeError || std.posix.SendFileError || error{RenameAcrossMountPoints};
 
 pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
     const lastSep = findLastSep(to);
@@ -109,7 +109,7 @@ pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
     {
         var toBaseDir = try std.fs.openDirAbsolute(toBase, .{});
         errdefer toBaseDir.close();
-        try std.os.mkdirat(toBaseDir.fd, toName, 0o755);
+        try std.posix.mkdirat(toBaseDir.fd, toName, 0o755);
     }
 
     // open target dir
@@ -117,16 +117,16 @@ pub fn copyDirAbsolute(from: []const u8, to: []const u8) CopyDirError!void {
     errdefer toDir.close();
 
     // begin iterating from source
-    var fromDir = try std.fs.openIterableDirAbsolute(from, .{ .no_follow = true });
+    var fromDir = try std.fs.openDirAbsolute(from, .{ .no_follow = true, .iterate = true });
     errdefer fromDir.close();
     var it = fromDir.iterate();
 
     while (try it.next()) |entry| {
-        try copyEntry(fromDir.dir, entry, toDir);
+        try copyEntry(fromDir, entry, toDir);
     }
 }
 
-fn copyEntry(from: std.fs.Dir, entry: std.fs.IterableDir.Entry, to: std.fs.Dir) CopyDirError!void {
+fn copyEntry(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
     switch (entry.kind) {
         .file => try copyFileImpl(from, entry, to),
         .directory => try copyDirImpl(from, entry, to),
@@ -135,21 +135,21 @@ fn copyEntry(from: std.fs.Dir, entry: std.fs.IterableDir.Entry, to: std.fs.Dir) 
     }
 }
 
-fn copyFileImpl(from: std.fs.Dir, entry: std.fs.IterableDir.Entry, to: std.fs.Dir) !void {
+fn copyFileImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) !void {
     try from.copyFile(entry.name, to, entry.name, .{});
 }
 
-fn copyDirImpl(from: std.fs.Dir, entry: std.fs.IterableDir.Entry, to: std.fs.Dir) CopyDirError!void {
-    var fromDir = try from.openIterableDir(entry.name, .{ .no_follow = true });
+fn copyDirImpl(from: std.fs.Dir, entry: std.fs.Dir.Entry, to: std.fs.Dir) CopyDirError!void {
+    var fromDir = try from.openDir(entry.name, .{ .no_follow = true, .iterate = true });
     errdefer fromDir.close();
 
-    try std.os.mkdirat(to.fd, entry.name, 0o755);
+    try std.posix.mkdirat(to.fd, entry.name, 0o755);
     var toDir = try to.openDir(entry.name, .{});
     errdefer toDir.close();
 
     var it = fromDir.iterate();
     while (try it.next()) |subEntry| {
-        try copyEntry(fromDir.dir, subEntry, toDir);
+        try copyEntry(fromDir, subEntry, toDir);
     }
 }
 
@@ -190,17 +190,17 @@ pub fn escapeHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.All
 }
 
 pub fn prependHomeAlloc(original: []const u8, home: []const u8, ally: std.mem.Allocator) ![]u8 {
-    var totalLen = home.len + original.len + 1;
+    const totalLen = home.len + original.len + 1;
     var buf = try ally.alloc(u8, totalLen);
-    std.mem.copy(u8, buf[0..], home);
-    std.mem.copy(u8, buf[home.len + 1 ..], original);
+    std.mem.copyForwards(u8, buf[0..], home);
+    std.mem.copyForwards(u8, buf[home.len + 1 ..], original);
     buf[home.len] = std.fs.path.sep;
     return buf;
 }
 
 pub fn splitLine(comptime str: []const u8) []const []const u8 {
     @setEvalBranchQuota(str.len * 4);
-    var iter = std.mem.split(u8, str, "\n");
+    var iter = std.mem.splitScalar(u8, str, '\n');
     var lines_split: []const []const u8 = &.{};
     while (iter.next()) |line| {
         lines_split = lines_split ++ [_][]const u8{line};
@@ -224,7 +224,7 @@ pub fn wrapRight(u: usize, max: usize) usize {
 
 pub fn createTodoDir(ally: std.mem.Allocator) !void {
     const tail = consts.todo_dir;
-    var spider = try prependHomeAlloc(tail, config.home, ally);
+    const spider = try prependHomeAlloc(tail, config.home, ally);
     defer ally.free(spider);
     try std.fs.cwd().makePath(spider);
 }

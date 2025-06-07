@@ -12,7 +12,7 @@ const CallbackData = struct {
 };
 
 pub fn get(url: []const u8, ally: Allocator) ![:0]u8 {
-    var ctx = c.curl_easy_init() orelse @panic("Unable to init curl");
+    const ctx = c.curl_easy_init() orelse @panic("Unable to init curl");
     defer c.curl_easy_cleanup(ctx);
 
     var data = CallbackData{

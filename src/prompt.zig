@@ -78,13 +78,13 @@ pub fn getString(message: []const u8) ?[]u8 {
 }
 
 pub fn get(value: []const u8, message: []const u8) ?i32 {
-    var x: u32 = term.getWidth();
-    var y: u32 = term.getHeight() - 1;
+    const x: u32 = term.getWidth();
+    const y: u32 = term.getHeight() - 1;
 
     term.timeout(-1);
 
     print(y, value, message);
-    var c = term.getChar();
+    const c = term.getChar();
     exit(x, y);
 
     if (c > 127 and c != 263) {

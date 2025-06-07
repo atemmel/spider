@@ -26,6 +26,10 @@ pub fn deinit() void {
 
     clearBinds();
     binds.deinit();
+    ally.free(home);
+    if (shell) |s| {
+        ally.free(s);
+    }
 }
 
 pub fn clearBinds() void {
@@ -36,7 +40,7 @@ pub fn clearBinds() void {
 }
 
 pub fn loadFile(path: []const u8) !void {
-    var str = std.fs.cwd().readFileAlloc(ally, path, std.math.maxInt(usize)) catch {
+    const str = std.fs.cwd().readFileAlloc(ally, path, std.math.maxInt(usize)) catch {
         return;
     };
     defer ally.free(str);
@@ -69,10 +73,10 @@ pub fn loadFile(path: []const u8) !void {
 }
 
 pub fn loadEnv() !void {
-    if (std.os.getenv("SHELL")) |env| {
+    if (std.posix.getenv("SHELL")) |env| {
         shell = env;
     }
-    if (std.os.getenv("HOME")) |env| {
+    if (std.posix.getenv("HOME")) |env| {
         home = env;
     }
     bookmarkPath = try utils.prependHomeAlloc(".spider-bookmarks", home, ally);
