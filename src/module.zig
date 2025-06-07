@@ -1,7 +1,6 @@
 pub const Modules = enum {
     Browser,
     Todo,
-    Web,
 };
 
 pub const Result = struct {
