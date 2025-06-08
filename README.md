@@ -18,6 +18,12 @@ Keybinds:
 'v': Move marked files
 ```
 
+## Installation
+
+```
+yay -S spider
+```
+
 ## Dependencies
 
 * ncurses
